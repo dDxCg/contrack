@@ -14,9 +14,9 @@ Công ty dịch vụ định kỳ quy mô 10–80 nhân viên, 20–150 hợp đ
 
 - **Hợp đồng** — tạo hợp đồng, tự sinh lịch cả năm, cảnh báo sắp hết hạn
 - **Lịch & Phân công** — lịch tuần/tháng theo tổ, tự đẩy việc cho tổ trưởng
-- **Thực hiện hiện trường** — link mở trên điện thoại, chụp ảnh trước/sau, chữ ký khách
+- **Thực hiện hiện trường** — link mở trên điện thoại, chụp ảnh trước/sau, chụp biên lai đã ký khách
 - **Cảnh báo & Nhắc việc** — nhắc qua Zalo/SMS
-- **Bảng kê & Xuất hóa đơn** — xuất bảng kê tháng kèm ảnh + chữ ký, dạng PDF, 1 nút
+- **Bảng kê & Xuất hóa đơn** — xuất bảng kê tháng kèm ảnh + chữ ký, dạng PDF
 
 ## Tài liệu
 

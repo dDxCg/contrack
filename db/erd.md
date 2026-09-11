@@ -109,11 +109,10 @@ erDiagram
         date scheduled_date
         timestamp completed_at
         int status_id FK
-        varchar customer_signature
         numeric latitude
         numeric longitude
         timestamp captured_at
-        varchar confirmation_doc_url
+        varchar receipt_photo_url
         timestamp created_at
     }
 

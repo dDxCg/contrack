@@ -7,7 +7,7 @@
 
 **Vấn đề đang giải quyết:** Các công ty dịch vụ định kỳ (vệ sinh công nghiệp, bảo trì điều hòa/thang máy, diệt côn trùng, chăm sóc cây xanh, bảo trì PCCC) hiện quản lý lịch làm việc bằng Excel và điều phối qua Zalo. Hệ quả: quên lịch thực hiện → khách phàn nàn/mất hợp đồng; mất bằng chứng thực hiện khi khách khiếu nại; kế toán mất 1,5–3 ngày cuối tháng để đối chiếu thủ công; không ai theo dõi hợp đồng sắp hết hạn → mất khách vì không tái ký kịp.
 
-**Đối tượng phục vụ:** Công ty dịch vụ định kỳ quy mô 10–80 nhân viên, 20–150 hợp đồng đang chạy, doanh thu 3–30 tỷ/năm.
+**Đối tượng phục vụ:** Công ty dịch vụ định kỳ quy mô 10–80 nhân viên, 20–150 hợp đồng đang chạy.
 
 **Mục tiêu kinh doanh:**
 - Giúp khách hàng không mất hợp đồng vì quên lịch.
@@ -43,9 +43,9 @@
 
 | Module | Chức năng chính |
 |---|---|
-| Hợp đồng | Tạo hợp đồng (khách, tần suất, thời hạn, đơn giá, hạng mục) → tự sinh lịch cả năm; cảnh báo hợp đồng sắp hết hạn (30 ngày) |
+| Hợp đồng | Tạo hợp đồng (khách, thời hạn) → thêm 1 hoặc nhiều địa điểm thực hiện, mỗi địa điểm gồm hạng mục dịch vụ (tần suất, đơn giá), yêu cầu công việc, lưu ý → tự sinh lịch theo từng hạng mục; cảnh báo hợp đồng sắp hết hạn (30 ngày) |
 | Lịch & Phân công | Lịch tuần/tháng theo tổ/nhân viên; tự đẩy việc tuần cho tổ trưởng; đổi lịch khi có phát sinh |
-| Thực hiện hiện trường | Link mở trên điện thoại (không cần cài app); chụp ảnh trước/sau; chữ ký khách trên màn hình; đóng dấu GPS + thời gian, không sửa được |
+| Thực hiện hiện trường | Link mở trên điện thoại (không cần cài app); chụp ảnh trước/sau; khách ký biên lai giấy, nhân viên chụp lại biên lai đã ký làm bằng chứng, mang bản gốc về lưu hồ sơ sau; đóng dấu GPS + thời gian, không sửa được |
 | Cảnh báo & Nhắc việc | Nhắc hợp đồng chưa thực hiện đúng tần suất; nhắc hợp đồng sắp hết hạn; nhắc qua Zalo/SMS |
 | Bảng kê & Xuất hóa đơn | 1 nút xuất bảng kê tháng (kèm ảnh + chữ ký) dạng PDF gửi khách; đối chiếu tự động |
 
@@ -89,10 +89,10 @@
 
 **Quy trình mới (TO-BE) với LichHD:**
 
-1. Ký hợp đồng → nhập 1 lần (khách, tần suất, thời hạn, đơn giá) → hệ thống tự sinh lịch.
+1. Ký hợp đồng → nhập 1 lần (khách, địa điểm, hạng mục dịch vụ + tần suất + đơn giá theo từng địa điểm, thời hạn) → hệ thống tự sinh lịch.
 2. Sáng thứ 2: hệ thống tự đẩy danh sách việc tuần này cho từng tổ trưởng.
-3. Nhân viên mở link trên điện thoại → chụp trước/sau → khách ký biên bản xác nhận.
-4. Ảnh xác minh.
+3. Nhân viên mở link trên điện thoại → chụp trước/sau → khách ký biên lai giấy → nhân viên chụp lại biên lai đã ký.
+4. Ảnh hiện trường + ảnh biên lai đã ký + GPS + thời gian được đóng dấu, không sửa được. Nhân viên mang bản giấy gốc về lưu hồ sơ sau.
 5. Hệ thống cảnh báo: "Hợp đồng tòa nhà Y còn 3 ngày chưa thực hiện lần 2."
 6. Cuối tháng: 1 nút → bảng kê + ảnh minh chứng + chữ ký → PDF gửi khách.
 7. Cảnh báo: "5 hợp đồng hết hạn trong 30 ngày → cần tái ký."
@@ -106,12 +106,12 @@
 | Hạng mục | Yêu cầu |
 |---|---|
 | Nền tảng | Web app responsive, truy cập qua link trên điện thoại — không yêu cầu cài đặt app |
-| Bằng chứng hiện trường | Ảnh, GPS, timestamp|
+| Bằng chứng hiện trường | Ảnh hiện trường, ảnh biên lai ghi nhận của khách hàng, GPS, timestamp |
 | Kênh nhắc việc | Tích hợp gửi thông báo qua Zalo (ZNS) và/hoặc SMS |
 | Thanh toán | Tích hợp VietQR cho luồng thanh toán (Could-have) |
-| Hiệu năng | Trang chụp ảnh/ký tên hiện trường phải tải được trên mạng di động 3G/4G yếu (công trường, tầng hầm) |
+| Hiệu năng | Trang chụp ảnh hiện trường phải tải được trên mạng di động 3G/4G yếu (công trường, tầng hầm) |
 | Bảo mật & phân quyền | Phân quyền theo vai trò: giám đốc, kế toán, quản lý, tổ trưởng, nhân viên; log không thể xóa/sửa cho dữ liệu bằng chứng |
-| Khả năng mở rộng | Hỗ trợ tối thiểu 150 hợp đồng đang chạy song song / 1 tài khoản doanh nghiệp |
+| Khả năng mở rộng | Triển khai single-tenant |
 | Lưu trữ dữ liệu | Lưu trữ ảnh/chữ ký tối thiểu 12 tháng để phục vụ đối chiếu và tranh chấp hợp đồng |
 | Xuất dữ liệu | Xuất bảng kê/hóa đơn dạng PDF; có thể xuất dữ liệu thô (CSV/Excel) để đối chiếu với kế toán |
 
