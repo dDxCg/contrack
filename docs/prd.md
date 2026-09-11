@@ -1,180 +1,178 @@
 # PRD — LichHD
-### Phần mềm Quản lý Hợp đồng Dịch vụ Định kỳ
+### Recurring Service Contract Management Software
+
+*[Bản tiếng Việt](prd.vi.md)*
 
 ---
 
-## 1. Giới thiệu & Mục đích
+## 1. Introduction & Purpose
 
-**Vấn đề đang giải quyết:** Các công ty dịch vụ định kỳ (vệ sinh công nghiệp, bảo trì điều hòa/thang máy, diệt côn trùng, chăm sóc cây xanh, bảo trì PCCC) hiện quản lý lịch làm việc bằng Excel và điều phối qua Zalo. Hệ quả: quên lịch thực hiện → khách phàn nàn/mất hợp đồng; mất bằng chứng thực hiện khi khách khiếu nại; kế toán mất 1,5–3 ngày cuối tháng để đối chiếu thủ công; không ai theo dõi hợp đồng sắp hết hạn → mất khách vì không tái ký kịp.
+**Problem being solved:** Recurring-service companies (industrial cleaning, HVAC/elevator maintenance, pest control, landscaping, fire-safety maintenance) currently manage work schedules in Excel and coordinate over Zalo. Result: missed visits → customer complaints/lost contracts; no proof of work when customers dispute; accountants spend 1.5–3 days each month-end reconciling manually; nobody tracks contracts nearing expiry → lost customers from missed renewals.
 
-**Đối tượng phục vụ:** Công ty dịch vụ định kỳ quy mô 10–80 nhân viên, 20–150 hợp đồng đang chạy.
+**Target users:** Recurring-service companies with 10–80 employees and 20–150 active contracts.
 
-**Mục tiêu kinh doanh:**
-- Giúp khách hàng không mất hợp đồng vì quên lịch.
-- Cung cấp bằng chứng thực hiện đầy đủ (ảnh, GPS, thời gian, chữ ký).
-- Rút ngắn thời gian chốt bảng kê cuối tháng từ 1,5–3 ngày xuống dưới 30 phút.
+**Business goals:**
+- Help customers stop losing contracts to missed visits.
+- Provide complete proof of work (photos, GPS, timestamp, signature).
+- Cut month-end statement closing time from 1.5–3 days to under 30 minutes.
 
-**Định vị sản phẩm:** LichHD là phần mềm quản lý hợp đồng dịch vụ định kỳ — lấy HỢP ĐỒNG ĐỊNH KỲ làm đơn vị trung tâm, khác với CMMS (xoay quanh thiết bị) và các phần mềm field service quốc tế như Jobber/MaintainX (thiết kế cho việc ad-hoc, không có tiếng Việt/Zalo/VietQR).
+**Product positioning:** LichHD is recurring service contract management software — the RECURRING CONTRACT is the central unit, unlike CMMS (asset-centric) and international field service software such as Jobber/MaintainX (built for ad-hoc jobs, no Vietnamese/Zalo/VietQR support).
 
-**Bối cảnh cạnh tranh:**
+**Competitive landscape:**
 
-| Loại phần mềm | Phục vụ ai | Vì sao không hợp với khách hàng mục tiêu |
+| Software category | Serves whom | Why it doesn't fit the target customer |
 |---|---|---|
-| CMMS (SpeedMaint, Vietsoft…) | Nhà máy tự bảo trì tài sản | Xoay quanh thiết bị, không xoay quanh hợp đồng khách hàng |
-| Field Service quốc tế (Jobber, Swept, MaintainX) | Nhà thầu dịch vụ | Đúng mô hình nhưng thiết kế cho việc ad-hoc, không mạnh ở hợp đồng cam kết tần suất dài hạn; không có tiếng Việt/Zalo/VietQR |
-| Sàn B2C (bTaskee, JupViec) | Người tiêu dùng cá nhân | Sai mô hình kinh doanh |
+| CMMS (SpeedMaint, Vietsoft…) | Factories self-maintaining assets | Asset-centric, not customer-contract-centric |
+| International field service (Jobber, Swept, MaintainX) | Service contractors | Right model but built for ad-hoc jobs, weak on long-term fixed-frequency contracts; no Vietnamese/Zalo/VietQR |
+| B2C marketplaces (bTaskee, JupViec) | Individual consumers | Wrong business model |
 
 ---
 
-## 2. Đối tượng mục tiêu & Chân dung người dùng
+## 2. Target Audience & User Personas
 
-| Vai trò | Người cụ thể | Đau hiện tại | Nhận được gì từ LichHD |
+| Role | Specific person | Current pain | What they get from LichHD |
 |---|---|---|---|
-| Người trả tiền | Giám đốc | Mất hợp đồng vì quên lịch; không biết hợp đồng nào lãi | Không mất hợp đồng; thấy lãi/lỗ từng hợp đồng |
-| Champion | Kế toán / hành chính | 3 ngày cuối tháng để đối chiếu | Xuất bảng kê trong 10 phút |
-| Người dùng hằng ngày | Tổ trưởng, nhân viên hiện trường | Bị hỏi "làm chưa", bị đổ lỗi khi không có bằng chứng | Có bằng chứng bảo vệ mình |
-| Người cản trở | Tổ trưởng lâu năm | Sợ lộ việc khai khống giờ, khai khống vật tư | Cần xử lý bằng truyền thông: không định vị hà khắc, không dùng từ "giám sát" |
+| Payer | Director | Loses contracts to missed visits; doesn't know which contracts are profitable | Stops losing contracts; sees profit/loss per contract |
+| Champion | Accountant / admin | 3 days at month-end to reconcile | Export a statement in 10 minutes |
+| Daily user | Team lead, field staff | Asked "did you do it yet", blamed when there's no proof | Has proof to protect themselves |
+| Blocker | Long-tenured team lead | Afraid of exposing inflated hours/materials claims | Needs careful internal communication: not positioned as surveillance, avoid the word "monitoring" |
 
 ---
 
-## 3. Tính năng & Chức năng 
+## 3. Features & Functionality
 
 ### Must-have (MVP)
 
-| Module | Chức năng chính |
+| Module | Core functionality |
 |---|---|
-| Hợp đồng | Tạo hợp đồng (khách, thời hạn) → thêm 1 hoặc nhiều địa điểm thực hiện, mỗi địa điểm gồm hạng mục dịch vụ (tần suất, đơn giá), yêu cầu công việc, lưu ý → tự sinh lịch theo từng hạng mục; cảnh báo hợp đồng sắp hết hạn (30 ngày) |
-| Lịch & Phân công | Lịch tuần/tháng theo tổ/nhân viên; tự đẩy việc tuần cho tổ trưởng; đổi lịch khi có phát sinh |
-| Thực hiện hiện trường | Link mở trên điện thoại (không cần cài app); chụp ảnh trước/sau; khách ký biên lai giấy, nhân viên chụp lại biên lai đã ký làm bằng chứng, mang bản gốc về lưu hồ sơ sau; đóng dấu GPS + thời gian, không sửa được |
-| Cảnh báo & Nhắc việc | Nhắc hợp đồng chưa thực hiện đúng tần suất; nhắc hợp đồng sắp hết hạn; nhắc qua Zalo/SMS |
-| Bảng kê & Xuất hóa đơn | 1 nút xuất bảng kê tháng (kèm ảnh + chữ ký) dạng PDF gửi khách; đối chiếu tự động |
-
-*User story mẫu:* "Là kế toán, tôi muốn xuất bảng kê tháng (kèm ảnh minh chứng và chữ ký khách) thành PDF chỉ bằng một nút bấm, thay vì mất 1,5–3 ngày đối chiếu thủ công."
+| Contracts | Create contract (customer, term) → add one or more service sites, each site has service items (frequency, unit price), work requirements, notes → auto-generate schedule per item; alert on contracts expiring soon (30 days) |
+| Scheduling & Dispatch | Weekly/monthly schedule by team/employee; auto-push weekly work to team leads; reschedule on ad-hoc changes |
+| Field execution | Link opens on phone (no app install); before/after photos; customer signs a paper receipt, employee photographs the signed receipt as evidence, brings the original back to file later; GPS + timestamp stamped automatically, non-editable |
+| Alerts & Reminders | Remind on visits not completed at the required frequency; remind on contracts expiring soon; remind via Zalo/SMS |
+| Statements & Invoicing | One button to export the monthly statement (with photos + signature) as PDF to send the customer; automatic reconciliation |
 
 ### Should-have
 
-| Module | Chức năng chính |
+| Module | Core functionality |
 |---|---|
-| Lãi/lỗ theo hợp đồng | Ghi nhận chi phí (nhân công, vật tư) theo hợp đồng → hiển thị lãi/lỗ từng hợp đồng |
-| Tái ký & CRM nhẹ | Nhắc tái ký tự động kèm mẫu hợp đồng; lịch sử khách hàng, log liên hệ |
+| Profit/loss per contract | Record costs (labor, materials) per contract → show profit/loss per contract |
+| Renewal & light CRM | Automatic renewal reminders with contract templates; customer history, contact log |
 
 ### Could-have
 
-| Module | Chức năng chính |
+| Module | Core functionality |
 |---|---|
-| Quản lý nhân sự hiện trường | Chấm công theo GPS; hiệu suất tổ/nhân viên; lịch sử công việc cá nhân |
-| Thanh toán | Tích hợp VietQR để khách thanh toán trực tiếp từ bảng kê PDF |
-| Báo cáo cho giám đốc | Dashboard tổng: số hợp đồng đang chạy, hợp đồng sắp hết hạn, hợp đồng có sự cố, doanh thu dự kiến |
+| Field workforce management | GPS-based time tracking; team/employee performance; individual work history |
+| Payment | VietQR integration for customers to pay directly from the PDF statement |
+| Director reporting | Overview dashboard: active contracts, contracts expiring soon, contracts with issues, projected revenue |
 
-### Won't-have (giai đoạn này)
+### Won't-have (this phase)
 
-- Tích hợp sâu với phần mềm kế toán/ERP (MISA, Fast…).
-- Ứng dụng di động native (chỉ dùng web link trên điện thoại).
-- Đa ngôn ngữ/đa thị trường ngoài Việt Nam.
-
----
-
-## 4. Luồng người dùng & Thiết kế
-
-**Quy trình hiện tại (AS-IS):**
-
-1. Ký hợp đồng (VD: tòa nhà X, vệ sinh kính 2 lần/tháng, 12 tháng).
-2. Kế toán mở Excel "Lịch 2025.xlsx" → gõ tay 24 dòng cho 12 tháng.
-3. Đầu tuần: quản lý mở Excel dò lịch → copy vào nhóm Zalo.
-4. Tổ trưởng đọc Zalo → phân người → đi làm.
-5. Làm xong: chụp ảnh gửi Zalo nhóm (ảnh trôi sau 2 tuần).
-6. Khách ký giấy xác nhận → tổ trưởng giữ → 3 ngày sau mới đưa văn phòng (có khi mất).
-7. Cuối tháng: kế toán lục Zalo + giấy → đối chiếu Excel → lập bảng kê → xuất hóa đơn.
-8. Rủi ro: phát hiện quên 1 lần ở tòa nhà Y → khách đã phàn nàn → không dám xuất đủ tiền.
-
-**Quy trình mới (TO-BE) với LichHD:**
-
-1. Ký hợp đồng → nhập 1 lần (khách, địa điểm, hạng mục dịch vụ + tần suất + đơn giá theo từng địa điểm, thời hạn) → hệ thống tự sinh lịch.
-2. Sáng thứ 2: hệ thống tự đẩy danh sách việc tuần này cho từng tổ trưởng.
-3. Nhân viên mở link trên điện thoại → chụp trước/sau → khách ký biên lai giấy → nhân viên chụp lại biên lai đã ký.
-4. Ảnh hiện trường + ảnh biên lai đã ký + GPS + thời gian được đóng dấu, không sửa được. Nhân viên mang bản giấy gốc về lưu hồ sơ sau.
-5. Hệ thống cảnh báo: "Hợp đồng tòa nhà Y còn 3 ngày chưa thực hiện lần 2."
-6. Cuối tháng: 1 nút → bảng kê + ảnh minh chứng + chữ ký → PDF gửi khách.
-7. Cảnh báo: "5 hợp đồng hết hạn trong 30 ngày → cần tái ký."
-
-*Wireframe*
+- Deep integration with accounting/ERP software (MISA, Fast…).
+- Native mobile app (web link on phone only).
+- Multi-language/multi-market support beyond Vietnam.
 
 ---
 
-## 5. Yêu cầu hệ thống & kỹ thuật
+## 4. User Flows & Design
 
-| Hạng mục | Yêu cầu |
+**Current process (AS-IS):**
+
+1. Sign contract (e.g., building X, window cleaning twice a month, 12 months).
+2. Accountant opens "Schedule 2025.xlsx" → manually types 24 rows for 12 months.
+3. Start of week: manager scans the Excel schedule → copies into a Zalo group.
+4. Team lead reads Zalo → assigns people → they go do the work.
+5. Work done: photos sent to Zalo group (photos scroll away after 2 weeks).
+6. Customer signs a paper confirmation → team lead holds it → brought to the office 3 days later (sometimes lost).
+7. Month-end: accountant digs through Zalo + paper → reconciles against Excel → builds the statement → issues invoice.
+8. Risk: discover a missed visit at building Y → customer already complained → can't invoice the full amount.
+
+**New process (TO-BE) with LichHD:**
+
+1. Sign contract → enter once (customer, sites, service items + frequency + unit price per site, term) → system auto-generates the schedule.
+2. Monday morning: system auto-pushes this week's work list to each team lead.
+3. Employee opens the link on their phone → takes before/after photos → customer signs a paper receipt → employee photographs the signed receipt.
+4. Field photos + signed receipt photo + GPS + timestamp are stamped, non-editable. Employee brings the original paper back to file later.
+5. System alerts: "Building Y contract has 3 days left before the 2nd visit is due."
+6. Month-end: one button → statement + proof photos + signature → PDF sent to customer.
+7. Alert: "5 contracts expiring within 30 days → need renewal."
+
+---
+
+## 5. System & Technical Requirements
+
+| Category | Requirement |
 |---|---|
-| Nền tảng | Web app responsive, truy cập qua link trên điện thoại — không yêu cầu cài đặt app |
-| Bằng chứng hiện trường | Ảnh hiện trường, ảnh biên lai ghi nhận của khách hàng, GPS, timestamp |
-| Kênh nhắc việc | Tích hợp gửi thông báo qua Zalo (ZNS) và/hoặc SMS |
-| Thanh toán | Tích hợp VietQR cho luồng thanh toán (Could-have) |
-| Hiệu năng | Trang chụp ảnh hiện trường phải tải được trên mạng di động 3G/4G yếu (công trường, tầng hầm) |
-| Bảo mật & phân quyền | Phân quyền theo vai trò: giám đốc, kế toán, quản lý, tổ trưởng, nhân viên; log không thể xóa/sửa cho dữ liệu bằng chứng |
-| Khả năng mở rộng | Triển khai single-tenant |
-| Lưu trữ dữ liệu | Lưu trữ ảnh/chữ ký tối thiểu 12 tháng để phục vụ đối chiếu và tranh chấp hợp đồng |
-| Xuất dữ liệu | Xuất bảng kê/hóa đơn dạng PDF; có thể xuất dữ liệu thô (CSV/Excel) để đối chiếu với kế toán |
+| Platform | Responsive web app, accessed via a link on the phone — no app install required |
+| Field evidence | Field photos, customer signed-receipt photo, GPS, timestamp |
+| Reminder channels | Send notifications via Zalo (ZNS) and/or SMS |
+| Payment | VietQR integration for payment flow (Could-have) |
+| Performance | The field-photo page must load on weak 3G/4G mobile connections (job sites, basements) |
+| Security & access control | Role-based access: director, accountant, manager, team lead, employee; evidence data logs cannot be deleted or edited |
+| Scalability | Single-tenant deployment |
+| Data retention | Retain photos/signatures for at least 12 months for reconciliation and contract disputes |
+| Data export | Export statements/invoices as PDF; export raw data (CSV/Excel) for accounting reconciliation |
 
 ---
 
-## 6. Giả định và Ràng buộc
+## 6. Assumptions & Constraints
 
-**Giả định:**
-- Khách hàng mục tiêu và nhân viên hiện trường có điện thoại thông minh và kết nối 3G/4G tại nơi làm việc.
-- Zalo vẫn là kênh liên lạc phổ biến nhất trong nhóm khách hàng mục tiêu trong thời gian tới.
+**Assumptions:**
+- Target customers and field employees have smartphones and 3G/4G connectivity at the work site.
+- Zalo remains the most common communication channel among the target customer segment for the foreseeable future.
 
-**Ràng buộc:**
-- Ngân sách và đội ngũ phát triển giai đoạn đầu giới hạn ở phạm vi 5 module Must-have.
-- Không tích hợp ERP/kế toán trong giai đoạn MVP — dữ liệu tài chính chi tiết (Should/Could-have) phụ thuộc vào việc kế toán nhập tay chi phí.
-- Giá bán (khoảng 1,5 triệu/tháng theo kịch bản bán hàng) cần được kiểm chứng lại qua khảo sát/pilot trước khi chốt chính thức.
+**Constraints:**
+- Initial budget and development team are scoped to the 5 Must-have modules only.
+- No ERP/accounting integration in the MVP phase — detailed financial data (Should/Could-have) depends on the accountant manually entering costs.
+- Pricing (roughly 1.5 million VND/month per the sales scenario) needs to be validated through surveys/pilots before being finalized.
 
 ---
 
-## 7. Rủi ro & Phụ thuộc
+## 7. Risks & Dependencies
 
-| Rủi ro / Phụ thuộc | Mức độ | Ghi chú |
+| Risk / Dependency | Level | Notes |
 |---|---|---|
-| Tổ trưởng lâu năm phản đối vì sợ minh bạch hóa giờ công/vật tư | Cao | Cần truyền thông nội bộ đúng cách khi triển khai — không định vị là công cụ "giám sát" |
-| Phụ thuộc vào độ ổn định của kênh Zalo ZNS/SMS để gửi nhắc việc | Trung bình | Cần phương án dự phòng (nhắc trong app/email) nếu kênh bị gián đoạn |
-| Cạnh tranh: đối thủ quốc tế (Jobber, MaintainX) bản địa hóa nhanh hơn dự kiến | Thấp–Trung bình | Lợi thế đi trước bằng tiếng Việt/Zalo/VietQR cần được củng cố sớm |
-| Phụ thuộc dữ liệu chi phí đầu vào (nhân công, vật tư) để tính lãi/lỗ (Should-have) | Trung bình | Cần quy trình nhập liệu chi phí từ kế toán, nếu không module lãi/lỗ sẽ thiếu chính xác |
+| Long-tenured team leads resist due to fear of exposed hours/materials transparency | High | Requires careful internal communication during rollout — not positioned as a "surveillance" tool |
+| Dependency on the reliability of Zalo ZNS/SMS channels for reminders | Medium | Need a fallback (in-app/email reminders) if the channel is disrupted |
+| Competition: international players (Jobber, MaintainX) localize faster than expected | Low–Medium | The Vietnamese/Zalo/VietQR first-mover advantage needs to be reinforced early |
+| Dependency on input cost data (labor, materials) to compute profit/loss (Should-have) | Medium | Requires a cost-entry process from accounting, otherwise the profit/loss module will be inaccurate |
 
 ---
 
-## 8. Chỉ số thành công & Tiêu chí phát hành
+## 8. Success Metrics & Release Criteria
 
-| Chỉ số | Ý nghĩa | Mục tiêu |
+| Metric | Meaning | Target |
 |---|---|---|
-| Số lần thực hiện bị bỏ sót / hợp đồng / tháng | Đo trực tiếp giá trị cốt lõi "không quên lịch" | Giảm về gần 0 sau 1 tháng sử dụng |
-| Thời gian kế toán chốt bảng kê cuối tháng | Đo hiệu quả module Bảng kê & Xuất hóa đơn | Từ 1,5–3 ngày xuống dưới 30 phút |
-| Tỷ lệ tái ký hợp đồng đúng hạn | Đo hiệu quả module cảnh báo hết hạn | Tăng so với baseline trước khi dùng phần mềm |
-| Tỷ lệ nhân viên hiện trường dùng link chụp ảnh mỗi lần thực hiện | Đo mức độ áp dụng thực tế (adoption) | ≥ 90% lượt thực hiện có ảnh/chữ ký đầy đủ |
+| Missed visits per contract per month | Direct measure of the core "never miss a visit" value | Near zero after 1 month of use |
+| Time for accountant to close the month-end statement | Measures effectiveness of the Statements & Invoicing module | From 1.5–3 days to under 30 minutes |
+| On-time contract renewal rate | Measures effectiveness of the expiry-alert module | Increase vs. baseline before using the software |
+| Share of field employees using the photo-capture link on every visit | Measures real-world adoption | ≥ 90% of visits have complete photo/signature evidence |
 
-**Tiêu chí phát hành MVP (release criteria):**
-- Cả 5 module Must-have hoạt động ổn định trên di động (kể cả mạng yếu).
-- Ảnh/GPS/timestamp không thể chỉnh sửa sau khi gửi — kiểm thử bảo mật đạt yêu cầu.
-- Thử nghiệm với ít nhất 1 khách hàng pilot chạy trọn 1 chu kỳ tháng (từ ký hợp đồng đến xuất bảng kê) không lỗi nghiêm trọng.
+**MVP release criteria:**
+- All 5 Must-have modules run reliably on mobile (including on weak networks).
+- Photos/GPS/timestamp cannot be edited after submission — security testing passes.
+- Pilot tested with at least 1 customer through a full monthly cycle (from contract signing to statement export) with no critical bugs.
 
 ---
 
-## 9. Lộ trình & Kế hoạch phát hành
+## 9. Roadmap & Release Plan
 
-| Giai đoạn | Thời gian | Nội dung |
+| Phase | Timeline | Scope |
 |---|---|---|
-| MVP | 0–3 tháng | 5 module Must-have: Hợp đồng, Lịch & Phân công, Thực hiện hiện trường, Cảnh báo & Nhắc việc, Bảng kê & Xuất hóa đơn |
-| Pilot | Tháng 3–4 | Triển khai thử với 1–3 khách hàng mục tiêu, thu thập phản hồi |
-| Phase 2 | Tháng 4–9 | Module Should-have: Lãi/lỗ theo hợp đồng, Tái ký & CRM nhẹ |
-| Phase 3 | Tháng 9+ | Module Could-have: Quản lý nhân sự hiện trường, Thanh toán VietQR, Dashboard giám đốc |
+| MVP | 0–3 months | 5 Must-have modules: Contracts, Scheduling & Dispatch, Field Execution, Alerts & Reminders, Statements & Invoicing |
+| Pilot | Months 3–4 | Trial rollout with 1–3 target customers, collect feedback |
+| Phase 2 | Months 4–9 | Should-have modules: Profit/loss per contract, Renewal & light CRM |
+| Phase 3 | Month 9+ | Could-have modules: Field workforce management, VietQR payment, Director dashboard |
 
 ---
 
-## 10. Rà soát & Phê duyệt của các bên liên quan
+## 10. Stakeholder Review & Sign-off
 
-| Bên liên quan | Vai trò trong rà soát | Trạng thái phê duyệt |
+| Stakeholder | Role in review | Approval status |
 |---|---|---|
-| Founder / Người phụ trách sản phẩm | Phê duyệt phạm vi MVP và định vị | Chờ phê duyệt |
-| Đội phát triển (kỹ thuật) | Rà soát tính khả thi kỹ thuật của Mục 5 | Chờ rà soát |
-| Đội bán hàng / GTM | Rà soát thông điệp định vị và kịch bản bán hàng | Chờ rà soát |
-| Khách hàng pilot (đại diện) | Góp ý quy trình TO-BE trước khi triển khai chính thức | Chưa liên hệ |
+| Founder / Product owner | Approve MVP scope and positioning | Pending approval |
+| Development team (technical) | Review technical feasibility of Section 5 | Pending review |
+| Sales / GTM team | Review positioning messaging and sales scenario | Pending review |
+| Pilot customer (representative) | Give feedback on the TO-BE process before full rollout | Not yet contacted |
 
 ---

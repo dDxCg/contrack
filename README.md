@@ -1,24 +1,29 @@
 # LichHD
 
-Phần mềm quản lý hợp đồng dịch vụ định kỳ (vệ sinh công nghiệp, bảo trì điều hòa/thang máy, diệt côn trùng, chăm sóc cây xanh, PCCC...).
+Software for managing recurring service contracts (industrial cleaning, HVAC/elevator maintenance, pest control, landscaping, fire safety...).
 
-## Vấn đề
+*[Bản tiếng Việt](README.vi.md)*
 
-Công ty dịch vụ định kỳ hiện quản lý lịch bằng Excel, điều phối qua Zalo. Hệ quả: quên lịch làm mất hợp đồng, không có bằng chứng thực hiện khi khách khiếu nại, kế toán mất 2–3 ngày cuối tháng đối chiếu thủ công, không ai theo dõi hợp đồng sắp hết hạn.
+## Problem
 
-## Đối tượng
+Recurring-service companies currently manage schedules in Excel and coordinate over Zalo. Result: missed visits lose contracts, no proof of work when customers dispute, accountants spend 2–3 days each month-end reconciling manually, and nobody tracks contracts nearing expiry.
 
-Công ty dịch vụ định kỳ quy mô 10–80 nhân viên, 20–150 hợp đồng đang chạy.
+## Target users
 
-## Chức năng chính
+Recurring-service companies with 10–80 employees and 20–150 active contracts.
 
-- **Hợp đồng** — tạo hợp đồng, tự sinh lịch cả năm, cảnh báo sắp hết hạn
-- **Lịch & Phân công** — lịch tuần/tháng theo tổ, tự đẩy việc cho tổ trưởng
-- **Thực hiện hiện trường** — link mở trên điện thoại, chụp ảnh trước/sau, chụp biên lai đã ký khách
-- **Cảnh báo & Nhắc việc** — nhắc qua Zalo/SMS
-- **Bảng kê & Xuất hóa đơn** — xuất bảng kê tháng kèm ảnh + chữ ký, dạng PDF
+## Core features
 
-## Tài liệu
+- **Contracts** — create a contract, auto-generate the yearly schedule, alert on expiring contracts
+- **Scheduling & Dispatch** — weekly/monthly schedule by team, auto-push weekly work to team leads
+- **Field execution** — link opens on phone, before/after photos, photograph the customer-signed paper receipt
+- **Alerts & Reminders** — remind via Zalo/SMS
+- **Statements & Invoicing** — export monthly statement with photos + signature, as PDF
 
-- [docs/prd.md](docs/prd.md) 
+## Documentation
+
+- [docs/prd.md](docs/prd.md)
 - [docs/wireframe.html](docs/wireframe.html)
+- [docs/mindmap.pdf](docs/mindmap.pdf)
+- [db/erd.md](db/erd.md)
+- [db/schema.sql](db/schema.sql)
