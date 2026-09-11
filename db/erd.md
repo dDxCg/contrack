@@ -4,17 +4,53 @@
 erDiagram
     roles ||--o{ employees : "assigned to"
     employees ||--o{ employees : "manages"
+    employee_statuses ||--o{ employees : "status of"
+    customer_segments ||--o{ customers : "status of"
     customers ||--o{ contracts : "signs"
+    contract_statuses ||--o{ contracts : "status of"
     contracts ||--o{ contract_sites : "has"
     contract_sites ||--o{ contract_items : "has"
     contract_items ||--o{ shifts : "generates"
     employees ||--o{ shifts : "assigned"
+    shift_statuses ||--o{ shifts : "status of"
     shifts ||--o{ shift_photos : "has"
+    photo_types ||--o{ shift_photos : "type of"
     contracts ||--o{ statements : "has"
+    statement_statuses ||--o{ statements : "status of"
 
     roles {
         int id PK
         varchar name
+    }
+
+    customer_segments {
+        int id PK
+        varchar code
+    }
+
+    employee_statuses {
+        int id PK
+        varchar code
+    }
+
+    contract_statuses {
+        int id PK
+        varchar code
+    }
+
+    shift_statuses {
+        int id PK
+        varchar code
+    }
+
+    photo_types {
+        int id PK
+        varchar code
+    }
+
+    statement_statuses {
+        int id PK
+        varchar code
     }
 
     customers {
@@ -23,7 +59,7 @@ erDiagram
         varchar company_name
         varchar contact
         varchar address
-        customer_segment segment
+        int segment_id FK
         timestamp created_at
     }
 
@@ -35,7 +71,7 @@ erDiagram
         varchar password_hash
         int role_id FK
         int manager_id FK
-        employee_status status
+        int status_id FK
         timestamp created_at
     }
 
@@ -44,7 +80,7 @@ erDiagram
         int customer_id FK
         date signed_at
         date expires_at
-        contract_status status
+        int status_id FK
         timestamp created_at
     }
 
@@ -72,7 +108,7 @@ erDiagram
         int assignee_id FK
         date scheduled_date
         timestamp completed_at
-        shift_status status
+        int status_id FK
         varchar customer_signature
         numeric latitude
         numeric longitude
@@ -84,7 +120,7 @@ erDiagram
     shift_photos {
         int id PK
         int shift_id FK
-        photo_type type
+        int type_id FK
         varchar url
         timestamp captured_at
     }
@@ -94,7 +130,7 @@ erDiagram
         int contract_id FK
         date period
         numeric total_amount
-        statement_status status
+        int status_id FK
         varchar pdf_url
         timestamp created_at
     }

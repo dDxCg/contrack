@@ -1,11 +1,4 @@
--- LichHD — PostgreSQL schema (status dùng ENUM native)
-
-CREATE TYPE customer_segment AS ENUM ('regular', 'vip');
-CREATE TYPE employee_status AS ENUM ('active', 'terminated');
-CREATE TYPE contract_status AS ENUM ('active', 'expiring_soon', 'expired', 'cancelled', 'renewed');
-CREATE TYPE shift_status AS ENUM ('scheduled', 'late', 'completed', 'disputed');
-CREATE TYPE photo_type AS ENUM ('before', 'after');
-CREATE TYPE statement_status AS ENUM ('draft', 'issued', 'sent');
+-- LichHD — ANSI SQL
 
 -- Vai trò
 CREATE TABLE roles (
@@ -19,6 +12,66 @@ INSERT INTO roles (name) VALUES ('quan_ly');
 INSERT INTO roles (name) VALUES ('to_truong');
 INSERT INTO roles (name) VALUES ('nhan_vien');
 
+-- Phân khúc khách
+CREATE TABLE customer_segments (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(20) NOT NULL UNIQUE
+);
+
+INSERT INTO customer_segments (code) VALUES ('regular');
+INSERT INTO customer_segments (code) VALUES ('vip');
+
+-- Trạng thái nhân viên
+CREATE TABLE employee_statuses (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(20) NOT NULL UNIQUE
+);
+
+INSERT INTO employee_statuses (code) VALUES ('active');
+INSERT INTO employee_statuses (code) VALUES ('terminated');
+
+-- Trạng thái hợp đồng
+CREATE TABLE contract_statuses (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(20) NOT NULL UNIQUE
+);
+
+INSERT INTO contract_statuses (code) VALUES ('active');
+INSERT INTO contract_statuses (code) VALUES ('expiring_soon');
+INSERT INTO contract_statuses (code) VALUES ('expired');
+INSERT INTO contract_statuses (code) VALUES ('cancelled');
+INSERT INTO contract_statuses (code) VALUES ('renewed');
+
+-- Trạng thái ca làm
+CREATE TABLE shift_statuses (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(20) NOT NULL UNIQUE
+);
+
+INSERT INTO shift_statuses (code) VALUES ('scheduled');
+INSERT INTO shift_statuses (code) VALUES ('late');
+INSERT INTO shift_statuses (code) VALUES ('completed');
+INSERT INTO shift_statuses (code) VALUES ('disputed');
+
+-- Loại ảnh ca làm
+CREATE TABLE photo_types (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(20) NOT NULL UNIQUE
+);
+
+INSERT INTO photo_types (code) VALUES ('before');
+INSERT INTO photo_types (code) VALUES ('after');
+
+-- Trạng thái bảng kê
+CREATE TABLE statement_statuses (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(20) NOT NULL UNIQUE
+);
+
+INSERT INTO statement_statuses (code) VALUES ('draft');
+INSERT INTO statement_statuses (code) VALUES ('issued');
+INSERT INTO statement_statuses (code) VALUES ('sent');
+
 -- Khách
 CREATE TABLE customers (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -26,9 +79,12 @@ CREATE TABLE customers (
     company_name    VARCHAR(255),
     contact         VARCHAR(255),
     address         VARCHAR(500),
-    segment         customer_segment NOT NULL DEFAULT 'regular',
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    segment_id      INTEGER NOT NULL DEFAULT 1,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_customers_segment FOREIGN KEY (segment_id) REFERENCES customer_segments(id)
 );
+
+CREATE INDEX idx_customers_segment ON customers(segment_id);
 
 -- Nhân viên
 CREATE TABLE employees (
@@ -39,13 +95,15 @@ CREATE TABLE employees (
     password_hash   VARCHAR(255) NOT NULL,
     role_id         INTEGER NOT NULL,
     manager_id      INTEGER,
-    status          employee_status NOT NULL DEFAULT 'active',
+    status_id       INTEGER NOT NULL DEFAULT 1,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_employees_role FOREIGN KEY (role_id) REFERENCES roles(id),
-    CONSTRAINT fk_employees_manager FOREIGN KEY (manager_id) REFERENCES employees(id)
+    CONSTRAINT fk_employees_manager FOREIGN KEY (manager_id) REFERENCES employees(id),
+    CONSTRAINT fk_employees_status FOREIGN KEY (status_id) REFERENCES employee_statuses(id)
 );
 
 CREATE INDEX idx_employees_manager ON employees(manager_id);
+CREATE INDEX idx_employees_status ON employees(status_id);
 
 -- Hợp đồng
 CREATE TABLE contracts (
@@ -53,12 +111,14 @@ CREATE TABLE contracts (
     customer_id INTEGER NOT NULL,
     signed_at   DATE NOT NULL,
     expires_at  DATE NOT NULL,
-    status      contract_status NOT NULL DEFAULT 'active',
+    status_id   INTEGER NOT NULL DEFAULT 1,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_contracts_customer FOREIGN KEY (customer_id) REFERENCES customers(id)
+    CONSTRAINT fk_contracts_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
+    CONSTRAINT fk_contracts_status FOREIGN KEY (status_id) REFERENCES contract_statuses(id)
 );
 
 CREATE INDEX idx_contracts_customer ON contracts(customer_id);
+CREATE INDEX idx_contracts_status ON contracts(status_id);
 CREATE INDEX idx_contracts_expires_at ON contracts(expires_at);
 
 -- Địa điểm hợp đồng
@@ -94,7 +154,7 @@ CREATE TABLE shifts (
     assignee_id             INTEGER NOT NULL,
     scheduled_date          DATE NOT NULL,
     completed_at            TIMESTAMP,
-    status                  shift_status NOT NULL DEFAULT 'scheduled',
+    status_id               INTEGER NOT NULL DEFAULT 1,
     customer_signature      VARCHAR(2000),
     latitude                NUMERIC(9, 6),
     longitude               NUMERIC(9, 6),
@@ -102,24 +162,28 @@ CREATE TABLE shifts (
     confirmation_doc_url    VARCHAR(500),
     created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_shifts_contract_item FOREIGN KEY (contract_item_id) REFERENCES contract_items(id) ON DELETE CASCADE,
-    CONSTRAINT fk_shifts_assignee FOREIGN KEY (assignee_id) REFERENCES employees(id)
+    CONSTRAINT fk_shifts_assignee FOREIGN KEY (assignee_id) REFERENCES employees(id),
+    CONSTRAINT fk_shifts_status FOREIGN KEY (status_id) REFERENCES shift_statuses(id)
 );
 
 CREATE INDEX idx_shifts_contract_item ON shifts(contract_item_id);
 CREATE INDEX idx_shifts_assignee ON shifts(assignee_id);
+CREATE INDEX idx_shifts_status ON shifts(status_id);
 CREATE INDEX idx_shifts_scheduled_date ON shifts(scheduled_date);
 
 -- Ảnh ca làm
 CREATE TABLE shift_photos (
     id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     shift_id    INTEGER NOT NULL,
-    type        photo_type NOT NULL,
+    type_id     INTEGER NOT NULL,
     url         VARCHAR(500) NOT NULL,
     captured_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_shift_photos_shift FOREIGN KEY (shift_id) REFERENCES shifts(id) ON DELETE CASCADE
+    CONSTRAINT fk_shift_photos_shift FOREIGN KEY (shift_id) REFERENCES shifts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shift_photos_type FOREIGN KEY (type_id) REFERENCES photo_types(id)
 );
 
 CREATE INDEX idx_shift_photos_shift ON shift_photos(shift_id);
+CREATE INDEX idx_shift_photos_type ON shift_photos(type_id);
 
 -- Bảng kê
 CREATE TABLE statements (
@@ -127,11 +191,13 @@ CREATE TABLE statements (
     contract_id     INTEGER NOT NULL,
     period          DATE NOT NULL,
     total_amount    NUMERIC(14, 2) NOT NULL DEFAULT 0,
-    status          statement_status NOT NULL DEFAULT 'draft',
+    status_id       INTEGER NOT NULL DEFAULT 1,
     pdf_url         VARCHAR(500),
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_statements_contract FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_statements_status FOREIGN KEY (status_id) REFERENCES statement_statuses(id),
     CONSTRAINT uq_statements_contract_period UNIQUE (contract_id, period)
 );
 
 CREATE INDEX idx_statements_contract ON statements(contract_id);
+CREATE INDEX idx_statements_status ON statements(status_id);
