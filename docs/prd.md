@@ -91,8 +91,8 @@
 
 1. Ký hợp đồng → nhập 1 lần (khách, tần suất, thời hạn, đơn giá) → hệ thống tự sinh lịch.
 2. Sáng thứ 2: hệ thống tự đẩy danh sách việc tuần này cho từng tổ trưởng.
-3. Nhân viên mở link trên điện thoại (không cài app) → chụp trước/sau → khách ký lên màn hình.
-4. Ảnh + GPS + thời gian được đóng dấu, không sửa được.
+3. Nhân viên mở link trên điện thoại → chụp trước/sau → khách ký biên bản xác nhận.
+4. Ảnh xác minh.
 5. Hệ thống cảnh báo: "Hợp đồng tòa nhà Y còn 3 ngày chưa thực hiện lần 2."
 6. Cuối tháng: 1 nút → bảng kê + ảnh minh chứng + chữ ký → PDF gửi khách.
 7. Cảnh báo: "5 hợp đồng hết hạn trong 30 ngày → cần tái ký."
@@ -106,7 +106,7 @@
 | Hạng mục | Yêu cầu |
 |---|---|
 | Nền tảng | Web app responsive, truy cập qua link trên điện thoại — không yêu cầu cài đặt app |
-| Bằng chứng hiện trường | Ảnh, GPS, timestamp phải được đóng dấu (watermark) và không thể chỉnh sửa sau khi gửi |
+| Bằng chứng hiện trường | Ảnh, GPS, timestamp|
 | Kênh nhắc việc | Tích hợp gửi thông báo qua Zalo (ZNS) và/hoặc SMS |
 | Thanh toán | Tích hợp VietQR cho luồng thanh toán (Could-have) |
 | Hiệu năng | Trang chụp ảnh/ký tên hiện trường phải tải được trên mạng di động 3G/4G yếu (công trường, tầng hầm) |
@@ -121,7 +121,6 @@
 
 **Giả định:**
 - Khách hàng mục tiêu và nhân viên hiện trường có điện thoại thông minh và kết nối 3G/4G tại nơi làm việc.
-- Khách hàng cuối (bên thuê dịch vụ) chấp nhận ký xác nhận trên màn hình điện thoại thay vì giấy.
 - Zalo vẫn là kênh liên lạc phổ biến nhất trong nhóm khách hàng mục tiêu trong thời gian tới.
 
 **Ràng buộc:**
@@ -136,7 +135,6 @@
 | Rủi ro / Phụ thuộc | Mức độ | Ghi chú |
 |---|---|---|
 | Tổ trưởng lâu năm phản đối vì sợ minh bạch hóa giờ công/vật tư | Cao | Cần truyền thông nội bộ đúng cách khi triển khai — không định vị là công cụ "giám sát" |
-| Khách hàng cuối (bên thuê dịch vụ) không quen ký xác nhận trên điện thoại | Trung bình | Cần hướng dẫn/đào tạo trong giai đoạn onboarding |
 | Phụ thuộc vào độ ổn định của kênh Zalo ZNS/SMS để gửi nhắc việc | Trung bình | Cần phương án dự phòng (nhắc trong app/email) nếu kênh bị gián đoạn |
 | Cạnh tranh: đối thủ quốc tế (Jobber, MaintainX) bản địa hóa nhanh hơn dự kiến | Thấp–Trung bình | Lợi thế đi trước bằng tiếng Việt/Zalo/VietQR cần được củng cố sớm |
 | Phụ thuộc dữ liệu chi phí đầu vào (nhân công, vật tư) để tính lãi/lỗ (Should-have) | Trung bình | Cần quy trình nhập liệu chi phí từ kế toán, nếu không module lãi/lỗ sẽ thiếu chính xác |
