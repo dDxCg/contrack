@@ -82,7 +82,7 @@ Specification: [docs/prd.md](docs/prd.md) · [Bản tiếng Việt](docs/prd.vi.
 
 ## The screens
 
-[`docs/wireframe.html`](docs/wireframe.html) — 14 screens, 5 roles, single
+[`docs/wireframe.html`](docs/wireframe.html) — 17 screens, 5 roles, single
 self-contained HTML file, no build step. Role is selected from the top bar;
 navigation, identity and reachable screens follow the role. Deep link:
 `wireframe.html#<role>/<screen>`. Captures below produced by
@@ -110,16 +110,20 @@ listed nor reachable.
 
 | Role | Screens |
 |---|---|
-| Director | [dashboard](docs/screenshots/wireframe/director/dashboard.png) · [contracts](docs/screenshots/wireframe/director/contracts.png) · [new contract](docs/screenshots/wireframe/director/new-contract.png) · [schedule](docs/screenshots/wireframe/director/schedule.png) · [dispute](docs/screenshots/wireframe/director/dispute.png) · [billing](docs/screenshots/wireframe/director/billing.png) · [alerts](docs/screenshots/wireframe/director/alerts.png) · [customers](docs/screenshots/wireframe/director/customers.png) · [employees](docs/screenshots/wireframe/director/employees.png) |
-| Manager | [contracts](docs/screenshots/wireframe/manager/contracts.png) · [schedule](docs/screenshots/wireframe/manager/schedule.png) · [new contract](docs/screenshots/wireframe/manager/new-contract.png) · [dispute](docs/screenshots/wireframe/manager/dispute.png) · [alerts](docs/screenshots/wireframe/manager/alerts.png) · [customers](docs/screenshots/wireframe/manager/customers.png) |
-| Accountant | [billing](docs/screenshots/wireframe/accountant/billing.png) · [reconcile](docs/screenshots/wireframe/accountant/reconcile.png) · [contracts](docs/screenshots/wireframe/accountant/contracts.png) · [customers](docs/screenshots/wireframe/accountant/customers.png) |
-| Team lead | [team shifts](docs/screenshots/wireframe/team_lead/team-shifts.png) · [field execution](docs/screenshots/wireframe/team_lead/field.png) · [alerts](docs/screenshots/wireframe/team_lead/alerts.png) |
+| Director | [dashboard](docs/screenshots/wireframe/director/dashboard.png) · [contracts](docs/screenshots/wireframe/director/contracts.png) · [contract detail](docs/screenshots/wireframe/director/contract-detail.png) · [new contract](docs/screenshots/wireframe/director/new-contract.png) · [schedule](docs/screenshots/wireframe/director/schedule.png) · [shift detail](docs/screenshots/wireframe/director/shift-detail.png) · [dispute](docs/screenshots/wireframe/director/dispute.png) · [billing](docs/screenshots/wireframe/director/billing.png) · [statement](docs/screenshots/wireframe/director/statement-preview.png) · [reconcile](docs/screenshots/wireframe/director/reconcile.png) · [alerts](docs/screenshots/wireframe/director/alerts.png) · [customers](docs/screenshots/wireframe/director/customers.png) · [employees](docs/screenshots/wireframe/director/employees.png) |
+| Manager | [contracts](docs/screenshots/wireframe/manager/contracts.png) · [contract detail](docs/screenshots/wireframe/manager/contract-detail.png) · [schedule](docs/screenshots/wireframe/manager/schedule.png) · [shift detail](docs/screenshots/wireframe/manager/shift-detail.png) · [new contract](docs/screenshots/wireframe/manager/new-contract.png) · [dispute](docs/screenshots/wireframe/manager/dispute.png) · [alerts](docs/screenshots/wireframe/manager/alerts.png) · [customers](docs/screenshots/wireframe/manager/customers.png) |
+| Accountant | [billing](docs/screenshots/wireframe/accountant/billing.png) · [statement](docs/screenshots/wireframe/accountant/statement-preview.png) · [reconcile](docs/screenshots/wireframe/accountant/reconcile.png) · [contracts](docs/screenshots/wireframe/accountant/contracts.png) · [contract detail](docs/screenshots/wireframe/accountant/contract-detail.png) · [shift detail](docs/screenshots/wireframe/accountant/shift-detail.png) · [customers](docs/screenshots/wireframe/accountant/customers.png) |
+| Team lead | [team shifts](docs/screenshots/wireframe/team_lead/team-shifts.png) · [shift detail](docs/screenshots/wireframe/team_lead/shift-detail.png) · [field execution](docs/screenshots/wireframe/team_lead/field.png) · [alerts](docs/screenshots/wireframe/team_lead/alerts.png) |
 | Employee | [my shifts](docs/screenshots/wireframe/employee/my-shifts.png) · [field execution](docs/screenshots/wireframe/employee/field.png) |
 
 ---
 
 ## Architecture
-Source: [docs/design-analysis.md](docs/design-analysis.md)
+
+Four views for orientation. Mechanisms, decisions and open questions:
+[docs/architecture.md](docs/architecture.md) · endpoint and access-control contract:
+[docs/api.md](docs/api.md).
+
 ### View 1 — who touches the system
 
 ```mermaid
@@ -134,7 +138,8 @@ flowchart TB
     zalo["Zalo ZNS / SMS<br/><i>external</i><br/>reminders"]
     vietqr["VietQR<br/><i>external, planned</i><br/>payment"]
 
-    customer -.->|"signs contract offline,<br/>signs paper receipt in person"| employee
+    customer -.->|"signs contract in person"| director
+    customer -.->|"signs paper receipt in person"| employee
     employee -->|"opens shift link,<br/>submits photos"| lichhd
     accountant -->|"creates contracts,<br/>exports statements"| lichhd
     director -->|"views dashboard"| lichhd
@@ -221,9 +226,11 @@ Source: [PRD §1](docs/prd.md#1-introduction--purpose).
 |---|---|---|
 | 1 | [PRD](docs/prd.md) · [tiếng Việt](docs/prd.vi.md) | Problem statement, personas, MVP scope, roadmap, release criteria |
 | 2 | [Design Analysis](docs/design-analysis.md) · [tiếng Việt](docs/design-analysis.vi.md) | FR/NFR, use cases per role, sequence diagrams |
-| 3 | [Wireframe](docs/wireframe.html) | 14 screens, 5 roles, single self-contained HTML file |
-| 4 | [ERD](db/erd.md) | Entity-relationship diagram |
-| 5 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, lookup tables in place of ENUM |
+| 3 | [Architecture](docs/architecture.md) | Component breakdown and technology criteria, key decisions, cross-cutting concerns, open questions |
+| 4 | [API Specification](docs/api.md) | Endpoint contract, field-token submission path, access-control matrix |
+| 5 | [Wireframe](docs/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
+| 6 | [ERD](db/erd.md) | Entity-relationship diagram |
+| 7 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, lookup tables in place of ENUM |
 
 ---
 
@@ -235,11 +242,13 @@ docs/                        # → docs/README.md
 ├── prd.vi.md                # PRD — Vietnamese
 ├── design-analysis.md       # FR/NFR, use cases, sequence diagrams
 ├── design-analysis.vi.md    # same, Vietnamese
-├── wireframe.html           # single-file HTML wireframe, 14 screens, 5 roles
+├── architecture.md          # components, decisions, open questions
+├── api.md                   # endpoint contract, access-control matrix
+├── wireframe.html           # single-file HTML wireframe, 17 screens, 5 roles
 ├── screenshots/wireframe/   # captures, one folder per role → screenshots/README.md
 └── mindmap.pdf
 db/                          # → db/README.md
-├── schema.sql               # ANSI SQL schema, 15 tables
+├── schema.sql               # ANSI SQL schema, 16 tables
 └── erd.md                   # mermaid ERD
 scripts/
 └── capture-wireframe.sh     # headless Chrome capture of every screen

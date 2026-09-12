@@ -4,6 +4,7 @@
 erDiagram
     roles ||--o{ employees : "assigned to"
     employees ||--o{ employees : "manages"
+    teams ||--o{ employees : "members"
     employee_statuses ||--o{ employees : "status of"
     customer_segments ||--o{ customers : "status of"
     customers ||--o{ contracts : "signs"
@@ -63,6 +64,13 @@ erDiagram
         timestamp created_at
     }
 
+    teams {
+        int id PK
+        varchar name
+        varchar code
+        timestamp created_at
+    }
+
     employees {
         int id PK
         varchar name
@@ -71,6 +79,7 @@ erDiagram
         varchar password_hash
         int role_id FK
         int manager_id FK
+        int team_id FK
         int status_id FK
         timestamp created_at
     }

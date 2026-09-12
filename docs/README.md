@@ -7,7 +7,9 @@ Specification and design documents for LichHD. English is the primary language;
 |---|---|
 | [`prd.md`](prd.md) · [`prd.vi.md`](prd.vi.md) | Problem statement, personas, MVP scope (Must/Should/Could/Won't), AS-IS and TO-BE flows, technical requirements, risks, roadmap, release criteria |
 | [`design-analysis.md`](design-analysis.md) · [`design-analysis.vi.md`](design-analysis.vi.md) | FR1–FR18, NFR1–NFR7, use-case diagrams per role, use-case descriptions, sequence diagrams, system design |
-| [`wireframe.html`](wireframe.html) | 14 screens across 5 roles, single self-contained HTML file |
+| [`architecture.md`](architecture.md) | Context, component breakdown and technology criteria, key decisions, cross-cutting concerns, open questions |
+| [`api.md`](api.md) | Endpoint contract per requirement, field-token submission path, role × resource × row-scope access-control matrix, status and error-code catalogue |
+| [`wireframe.html`](wireframe.html) | 17 screens across 5 roles, single self-contained HTML file |
 | [`screenshots/`](screenshots/) | Captures of every wireframe screen, by role |
 | `mindmap.pdf` | Scope mindmap |
 
@@ -15,9 +17,14 @@ Specification and design documents for LichHD. English is the primary language;
 
 The PRD defines scope. The design analysis derives requirements and use cases from
 it, and is the source for the architecture views in the top-level
-[README](../README.md) and for the data model in [`db/`](../db). The wireframe
-realises the use cases; each screen maps to use cases in
-[design-analysis §II](design-analysis.md#ii-use-cases).
+[README](../README.md) and for the data model in [`db/`](../db). The architecture
+document takes those requirements and decides the mechanisms; the API specification
+turns them into an endpoint contract. The wireframe realises the use cases; each
+screen maps to use cases in [design-analysis §II](design-analysis.md#ii-use-cases).
+
+New documents carry a three-line status banner — `Status:` / `Audience:` /
+`Answers:` — so a reader knows what is settled and what is still open before
+reading further.
 
 ## Wireframe
 

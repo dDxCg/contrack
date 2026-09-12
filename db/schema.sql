@@ -86,6 +86,13 @@ CREATE TABLE customers (
 
 CREATE INDEX idx_customers_segment ON customers(segment_id);
 
+CREATE TABLE teams (
+    id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name            VARCHAR(100) NOT NULL,
+    code            VARCHAR(20) NOT NULL UNIQUE,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Nhân viên
 CREATE TABLE employees (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -95,13 +102,16 @@ CREATE TABLE employees (
     password_hash   VARCHAR(255) NOT NULL,
     role_id         INTEGER NOT NULL,
     manager_id      INTEGER,
+    team_id         INTEGER,  -- NULL với khối văn phòng: không thuộc tổ nào
     status_id       INTEGER NOT NULL DEFAULT 1,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_employees_role FOREIGN KEY (role_id) REFERENCES roles(id),
     CONSTRAINT fk_employees_manager FOREIGN KEY (manager_id) REFERENCES employees(id),
+    CONSTRAINT fk_employees_team FOREIGN KEY (team_id) REFERENCES teams(id),
     CONSTRAINT fk_employees_status FOREIGN KEY (status_id) REFERENCES employee_statuses(id)
 );
 
+CREATE INDEX idx_employees_team ON employees(team_id);
 CREATE INDEX idx_employees_manager ON employees(manager_id);
 CREATE INDEX idx_employees_status ON employees(status_id);
 

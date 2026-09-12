@@ -95,7 +95,7 @@ tailwind.config = {
               </tr>
             </thead>
             <tbody class="divide-y divide-zinc-100">
-              <tr>
+              <tr class="cursor-pointer hover:bg-zinc-50" onclick="wfShow('contract-detail')">
                 <td class="px-4 py-3" data-label="Hợp đồng">
                   <div class="font-medium">Keangnam Landmark 72</div>
                   <div class="font-mono text-xs text-zinc-500">HĐ-2024-089</div>
@@ -109,7 +109,7 @@ tailwind.config = {
                 </td>
                 <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Giá trị / tháng">42.000.000đ</td>
               </tr>
-              <tr>
+              <tr class="cursor-pointer hover:bg-zinc-50" onclick="wfShow('contract-detail')">
                 <td class="px-4 py-3" data-label="Hợp đồng">
                   <div class="font-medium">BV ĐKQT Thu Cúc</div>
                   <div class="font-mono text-xs text-zinc-500">HĐ-2024-042</div>
@@ -121,7 +121,7 @@ tailwind.config = {
                 <td class="hidden px-4 py-3 text-zinc-600 sm:table-cell" data-label="Hạn hợp đồng">Còn 140 ngày</td>
                 <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Giá trị / tháng">36.500.000đ</td>
               </tr>
-              <tr>
+              <tr class="cursor-pointer hover:bg-zinc-50" onclick="wfShow('contract-detail')">
                 <td class="px-4 py-3" data-label="Hợp đồng">
                   <div class="font-medium">Chung cư Golden Park</div>
                   <div class="font-mono text-xs text-zinc-500">HĐ-2024-115</div>
@@ -133,7 +133,7 @@ tailwind.config = {
                 <td class="hidden px-4 py-3 text-zinc-600 sm:table-cell" data-label="Hạn hợp đồng">Còn 85 ngày</td>
                 <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Giá trị / tháng">18.000.000đ</td>
               </tr>
-              <tr>
+              <tr class="cursor-pointer hover:bg-zinc-50" onclick="wfShow('contract-detail')">
                 <td class="px-4 py-3" data-label="Hợp đồng">
                   <div class="font-medium">Vinhomes Skylake</div>
                   <div class="font-mono text-xs text-zinc-500">HĐ-2024-071</div>
@@ -153,8 +153,8 @@ tailwind.config = {
           <span>4 / 48 hợp đồng</span>
           <div class="flex gap-1">
             <button class="rounded-md bg-zinc-900 px-2.5 py-1 font-mono text-xs text-white">1</button>
-            <button class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs">2</button>
-            <button class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs">3</button>
+            <button onclick="wfToast('Trang 2 · wireframe giữ nguyên dữ liệu mẫu')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs">2</button>
+            <button onclick="wfToast('Trang 3 · wireframe giữ nguyên dữ liệu mẫu')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 font-mono text-xs">3</button>
           </div>
         </div>
       </div>
@@ -174,9 +174,9 @@ tailwind.config = {
           <p class="mt-1 font-mono text-sm text-zinc-500">21/10 – 27/10/2024</p>
         </div>
         <div class="flex gap-2">
-          <button class="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm">Tuần trước</button>
-          <button class="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm">Tuần sau</button>
-          <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Đẩy lịch cho tổ trưởng</button>
+          <button onclick="wfToast('Tuần 42 · 21/10 – 27/10')" class="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm">Tuần trước</button>
+          <button onclick="wfToast('Tuần 44 · 28/10 – 03/11')" class="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm">Tuần sau</button>
+          <button onclick="wfToast('Đã đẩy lịch tuần 43 cho 4 tổ trưởng')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Đẩy lịch cho tổ trưởng</button>
         </div>
       </div>
 
@@ -211,19 +211,19 @@ tailwind.config = {
               <div class="font-medium">Tổ 1 — HVAC</div>
               <div class="text-xs text-zinc-500">Nguyễn Văn Hùng</div>
             </div>
-            <div class="rounded-lg border border-zinc-200 p-2.5">
+            <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Keangnam</div>
               <div class="font-mono text-xs text-zinc-500">08:30</div>
               <div class="mt-1.5 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">Đã xong</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
-            <div class="rounded-lg border border-red-200 bg-red-50/40 p-2.5">
+            <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-red-200 bg-red-50/40 p-2.5 hover:border-red-400">
               <div class="font-medium">Golden Park</div>
               <div class="font-mono text-xs text-zinc-500">09:00</div>
               <div class="mt-1.5 inline-block rounded bg-red-50 px-1.5 py-0.5 text-xs text-red-700">Trùng ca</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
-            <div class="rounded-lg border border-zinc-200 p-2.5">
+            <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Skylake</div>
               <div class="font-mono text-xs text-zinc-500">14:00</div>
               <div class="mt-1.5 inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600">Chờ chạy</div>
@@ -235,18 +235,18 @@ tailwind.config = {
               <div class="font-medium">Tổ 2 — Vệ sinh</div>
               <div class="text-xs text-zinc-500">Trần Đình Trọng</div>
             </div>
-            <div class="rounded-lg border border-zinc-200 p-2.5">
+            <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Thu Cúc</div>
               <div class="font-mono text-xs text-zinc-500">07:00</div>
               <div class="mt-1.5 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">Đã xong</div>
             </div>
-            <div class="rounded-lg border border-zinc-200 p-2.5">
+            <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Thu Cúc</div>
               <div class="font-mono text-xs text-zinc-500">07:00</div>
               <div class="mt-1.5 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">Đã xong</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
-            <div class="rounded-lg border border-zinc-200 p-2.5">
+            <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Discovery</div>
               <div class="font-mono text-xs text-zinc-500">13:30</div>
               <div class="mt-1.5 inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600">Chờ chạy</div>
@@ -260,13 +260,13 @@ tailwind.config = {
               <div class="text-xs text-zinc-500">Lê Quang Vinh</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
-            <div class="rounded-lg border border-zinc-200 p-2.5">
+            <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Golden Park</div>
               <div class="font-mono text-xs text-zinc-500">08:00</div>
               <div class="mt-1.5 inline-block rounded bg-red-50 px-1.5 py-0.5 text-xs text-red-700">Quá hạn</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
-            <div class="rounded-lg border border-zinc-200 p-2.5">
+            <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Keangnam</div>
               <div class="font-mono text-xs text-zinc-500">15:00</div>
               <div class="mt-1.5 inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600">Chờ chạy</div>
@@ -299,7 +299,7 @@ tailwind.config = {
           <div class="mt-3 grid grid-cols-3 gap-2">
             <div class="aspect-square rounded-lg bg-zinc-100"></div>
             <div class="aspect-square rounded-lg bg-zinc-100"></div>
-            <button class="flex aspect-square items-center justify-center rounded-lg border border-dashed border-zinc-300 text-xs text-zinc-500">+ Thêm</button>
+            <button onclick="wfToast('Mở camera điện thoại')" class="flex aspect-square items-center justify-center rounded-lg border border-dashed border-zinc-300 text-xs text-zinc-500">+ Thêm</button>
           </div>
         </div>
 
@@ -308,7 +308,7 @@ tailwind.config = {
             <span class="text-sm font-medium">2. Ảnh sau khi làm</span>
             <span class="rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">Chưa có</span>
           </div>
-          <button class="mt-3 w-full rounded-lg border border-dashed border-zinc-300 py-6 text-sm text-zinc-500">Chụp ảnh</button>
+          <button onclick="wfToast('Mở camera điện thoại')" class="mt-3 w-full rounded-lg border border-dashed border-zinc-300 py-6 text-sm text-zinc-500">Chụp ảnh</button>
         </div>
 
         <div class="rounded-xl border border-zinc-200 p-3">
@@ -317,7 +317,7 @@ tailwind.config = {
             <span class="rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">Chưa có</span>
           </div>
           <p class="mt-1 text-xs text-zinc-500">Khách ký giấy, chụp lại tờ đã ký.</p>
-          <button class="mt-3 w-full rounded-lg border border-dashed border-zinc-300 py-6 text-sm text-zinc-500">Chụp biên lai</button>
+          <button onclick="wfToast('Mở camera điện thoại')" class="mt-3 w-full rounded-lg border border-dashed border-zinc-300 py-6 text-sm text-zinc-500">Chụp biên lai</button>
         </div>
 
         <div class="rounded-xl bg-zinc-50 p-3 text-xs text-zinc-600">
@@ -334,7 +334,7 @@ tailwind.config = {
       </div>
 
       <div class="border-t border-zinc-200 p-4">
-        <button class="w-full rounded-lg bg-indigo-600 py-3 text-sm font-medium text-white">Gửi &amp; hoàn thành ca</button>
+        <button onclick="wfSubmitShift()" class="w-full rounded-lg bg-indigo-600 py-3 text-sm font-medium text-white">Gửi &amp; hoàn thành ca</button>
       </div>
 
     </div>
@@ -351,7 +351,7 @@ tailwind.config = {
           <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Bảng kê tháng 10/2024</h1>
           <p class="mt-1 text-sm text-zinc-500">Chốt kỳ trước ngày 05/11</p>
         </div>
-        <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Xuất PDF hàng loạt</button>
+        <button onclick="wfToast('Đã xuất 41 bảng kê đủ bằng chứng')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Xuất PDF hàng loạt</button>
       </div>
 
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -392,7 +392,7 @@ tailwind.config = {
               </td>
               <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Thành tiền">36.500.000đ</td>
               <td class="px-4 py-3 text-right" data-label="Thao tác">
-                <button class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Tải lại</button>
+                <button onclick="wfShow('statement-preview')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Tải lại</button>
               </td>
             </tr>
             <tr>
@@ -406,7 +406,7 @@ tailwind.config = {
               </td>
               <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Thành tiền">21.000.000đ</td>
               <td class="px-4 py-3 text-right" data-label="Thao tác">
-                <button class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xem ca</button>
+                <button onclick="wfShow('statement-preview')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xem ca</button>
               </td>
             </tr>
             <tr>
@@ -420,7 +420,7 @@ tailwind.config = {
               </td>
               <td class="px-4 py-3 text-right font-mono text-zinc-400 md:whitespace-nowrap" data-label="Thành tiền">—</td>
               <td class="px-4 py-3 text-right" data-label="Thao tác">
-                <button class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xử lý</button>
+                <button onclick="wfShow('shift-detail')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xử lý</button>
               </td>
             </tr>
           </tbody>
@@ -467,7 +467,7 @@ tailwind.config = {
       <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
         <div class="flex items-center justify-between">
           <span class="text-sm font-medium">Địa điểm &amp; hạng mục dịch vụ</span>
-          <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs">Thêm địa điểm</button>
+          <button onclick="wfToast('Đã thêm địa điểm mới')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs">Thêm địa điểm</button>
         </div>
 
         <div class="rounded-lg border border-zinc-200 p-3">
@@ -482,7 +482,7 @@ tailwind.config = {
               </select>
               <input class="rounded-lg border border-zinc-200 px-3 py-2 text-right font-mono text-sm focus:border-indigo-500 focus:outline-none" value="42.000.000">
             </div>
-            <button class="self-start rounded-lg border border-dashed border-zinc-300 px-3 py-1.5 text-xs text-zinc-500">Thêm hạng mục</button>
+            <button onclick="wfToast('Đã thêm hạng mục dịch vụ')" class="self-start rounded-lg border border-dashed border-zinc-300 px-3 py-1.5 text-xs text-zinc-500">Thêm hạng mục</button>
           </div>
         </div>
       </div>
@@ -523,8 +523,8 @@ tailwind.config = {
           <span class="text-sm text-zinc-600">Mật khẩu</span>
           <input type="password" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="••••••••">
         </label>
-        <button class="mt-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">Đăng nhập</button>
-        <button class="text-sm text-zinc-500 hover:text-zinc-900">Quên mật khẩu</button>
+        <button onclick="wfRole(ROLE)" class="mt-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">Đăng nhập</button>
+        <button onclick="wfToast('Đã gửi link đặt lại mật khẩu')" class="text-sm text-zinc-500 hover:text-zinc-900">Quên mật khẩu</button>
       </div>
     </div>
   </div>
@@ -566,8 +566,8 @@ tailwind.config = {
             <textarea rows="4" class="mt-3 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Ghi lý do kết luận"></textarea>
           </div>
           <div class="flex flex-col gap-2 sm:flex-row">
-            <button class="flex-1 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium">Bằng chứng hợp lệ — bỏ khiếu nại</button>
-            <button class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700">Đánh dấu khiếu nại</button>
+            <button onclick="wfResolveDispute()" class="flex-1 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium">Bằng chứng hợp lệ — bỏ khiếu nại</button>
+            <button onclick="wfToast('Đã đánh dấu khiếu nại · loại khỏi bảng kê kỳ này')" class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700">Đánh dấu khiếu nại</button>
           </div>
           <p class="text-xs text-zinc-500">Ca bị đánh dấu sẽ không vào bảng kê cho tới khi xử lý xong.</p>
         </div>
@@ -597,7 +597,7 @@ tailwind.config = {
           </div>
           <div class="flex items-center gap-2">
             <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Đã gửi Zalo</span>
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Tái ký</button>
+            <button onclick="wfShow('contract-detail')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Tái ký</button>
           </div>
         </div>
 
@@ -608,7 +608,7 @@ tailwind.config = {
           </div>
           <div class="flex items-center gap-2">
             <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">Chưa gửi</span>
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Gửi nhắc</button>
+            <button onclick="wfToast('Đã gửi nhắc tái ký qua Zalo')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Gửi nhắc</button>
           </div>
         </div>
       </div>
@@ -623,7 +623,7 @@ tailwind.config = {
           </div>
           <div class="flex items-center gap-2">
             <span class="rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">Quá hạn</span>
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Điều phối</button>
+            <button onclick="wfShow('schedule')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Điều phối</button>
           </div>
         </div>
 
@@ -634,7 +634,7 @@ tailwind.config = {
           </div>
           <div class="flex items-center gap-2">
             <span class="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Sắp tới hạn</span>
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Xem ca</button>
+            <button onclick="wfShow('shift-detail')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Xem ca</button>
           </div>
         </div>
       </div>
@@ -653,7 +653,7 @@ tailwind.config = {
           <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Khách hàng</h1>
           <p class="mt-1 text-sm text-zinc-500">32 khách đang có hợp đồng</p>
         </div>
-        <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Thêm khách hàng</button>
+        <button onclick="wfToast('Mở biểu mẫu thêm khách hàng')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Thêm khách hàng</button>
       </div>
 
       <input type="text" placeholder="Tìm khách hàng"
@@ -715,7 +715,7 @@ tailwind.config = {
           <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Nhân viên &amp; Tổ</h1>
           <p class="mt-1 text-sm text-zinc-500">24 nhân viên · 4 tổ</p>
         </div>
-        <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Thêm tài khoản</button>
+        <button onclick="wfToast('Mở biểu mẫu thêm tài khoản')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Thêm tài khoản</button>
       </div>
 
       <div class="overflow-x-auto md:rounded-xl md:border md:border-zinc-200 md:bg-white">
@@ -798,7 +798,7 @@ tailwind.config = {
       <div class="flex flex-col gap-2">
         <div class="text-sm font-medium text-zinc-500">Cần chú ý</div>
 
-        <div class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div onclick="wfShow('contract-detail')" class="flex cursor-pointer flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 hover:border-zinc-300 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div class="font-medium">Keangnam Landmark 72</div>
             <div class="mt-0.5 text-sm text-zinc-500">Hết hạn 15/11 · 42.000.000đ / tháng</div>
@@ -806,7 +806,7 @@ tailwind.config = {
           <span class="self-start rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 sm:self-auto">Còn 18 ngày</span>
         </div>
 
-        <div class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div onclick="wfShow('shift-detail')" class="flex cursor-pointer flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 hover:border-zinc-300 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div class="font-medium">Chung cư Golden Park</div>
             <div class="mt-0.5 text-sm text-zinc-500">Ca 14/10 bị khiếu nại · chưa xử lý</div>
@@ -922,8 +922,8 @@ tailwind.config = {
             <div class="mt-0.5 text-sm text-zinc-500">T4 23/10 · 09:00 · <span class="text-amber-700">chưa phân người</span></div>
           </div>
           <div class="flex gap-2">
-            <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">Phân người</button>
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
+            <button onclick="wfToast('Đã phân Lê Văn Nam vào ca 23/10')" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">Phân người</button>
+            <button onclick="wfToast('Đã dời ca sang ngày khác')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
           </div>
         </div>
 
@@ -934,7 +934,7 @@ tailwind.config = {
           </div>
           <div class="flex items-center gap-2">
             <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Đã xong</span>
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Xem bằng chứng</button>
+            <button onclick="wfShow('shift-detail')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Xem bằng chứng</button>
           </div>
         </div>
 
@@ -944,8 +944,8 @@ tailwind.config = {
             <div class="mt-0.5 text-sm text-zinc-500">T6 25/10 · 14:00 · Nguyễn Văn Toàn</div>
           </div>
           <div class="flex gap-2">
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi người</button>
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
+            <button onclick="wfToast('Đã đổi người thực hiện')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi người</button>
+            <button onclick="wfToast('Đã dời ca sang ngày khác')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
           </div>
         </div>
 
@@ -955,8 +955,8 @@ tailwind.config = {
             <div class="mt-0.5 text-sm text-zinc-500">T7 26/10 · 08:00 · Lê Văn Nam</div>
           </div>
           <div class="flex gap-2">
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi người</button>
-            <button class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
+            <button onclick="wfToast('Đã đổi người thực hiện')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi người</button>
+            <button onclick="wfToast('Đã dời ca sang ngày khác')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
           </div>
         </div>
       </div>
@@ -1045,7 +1045,7 @@ tailwind.config = {
       </div>
 
       <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <button class="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">Xuất CSV</button>
+        <button onclick="wfToast('Đã xuất đối soát kỳ T10 ra CSV')" class="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">Xuất CSV</button>
         <button onclick="wfShow('billing')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Sang bảng kê</button>
       </div>
 
@@ -1053,7 +1053,228 @@ tailwind.config = {
   </div>
 </section>
 
+<!-- ================= 15. CHI TIẾT HỢP ĐỒNG ================= -->
+<section class="wf-screen" data-screen="contract-detail" data-title="Chi tiết hợp đồng" hidden>
+  <div class="app-shell" data-nav="contracts">
+    <div class="mx-auto flex max-w-5xl flex-col gap-6 p-4 sm:p-6">
+
+      <div>
+        <button onclick="wfShow('contracts')" class="text-sm text-zinc-500 hover:text-zinc-900">← Hợp đồng</button>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Keangnam Landmark 72</h1>
+            <p class="mt-1 font-mono text-sm text-zinc-500">HĐ-2024-089 · 15/01/2024 – 15/11/2024</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="wfToast('Đã gửi nhắc tái ký qua Zalo')" class="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm">Nhắc tái ký</button>
+            <button onclick="wfShow('new-contract')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Tạo phụ lục</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+          <div class="text-sm text-zinc-500">Hạn hợp đồng</div>
+          <div class="mt-2 font-mono text-2xl font-semibold text-amber-700">18</div>
+          <div class="mt-1 text-sm text-zinc-500">ngày còn lại</div>
+        </div>
+        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+          <div class="text-sm text-zinc-500">Giá trị / tháng</div>
+          <div class="mt-2 font-mono text-2xl font-semibold">42tr</div>
+        </div>
+        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+          <div class="text-sm text-zinc-500">Ca đã sinh</div>
+          <div class="mt-2 font-mono text-2xl font-semibold">20</div>
+          <div class="mt-1 text-sm text-zinc-500">cả kỳ hợp đồng</div>
+        </div>
+        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+          <div class="text-sm text-zinc-500">Kỳ này</div>
+          <div class="mt-2 font-mono text-2xl font-semibold">1 / 2</div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <div class="text-sm font-medium text-zinc-500">Địa điểm &amp; hạng mục dịch vụ</div>
+        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+          <div class="font-medium">Tòa A — Phạm Hùng, Nam Từ Liêm</div>
+          <table class="stack mt-3 w-full text-left text-sm">
+            <thead class="border-b border-zinc-200 text-xs font-medium text-zinc-500">
+              <tr>
+                <th class="py-2">Hạng mục</th>
+                <th class="py-2">Tần suất</th>
+                <th class="py-2 text-right">Đơn giá</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-100">
+              <tr>
+                <td class="py-2.5" data-label="Hạng mục">Bảo trì VRV &amp; Chiller</td>
+                <td class="py-2.5 text-zinc-600" data-label="Tần suất">2 lần / tháng</td>
+                <td class="py-2.5 text-right font-mono" data-label="Đơn giá">42.000.000đ</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <div class="text-sm font-medium text-zinc-500">Ca đã sinh từ tần suất</div>
+
+        <button onclick="wfShow('shift-detail')" class="flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 text-left hover:border-zinc-300">
+          <div>
+            <div class="font-medium">Ca #22 — Bảo trì VRV đợt 1</div>
+            <div class="mt-0.5 text-sm text-zinc-500">14/10/2024 · Nguyễn Văn Toàn</div>
+          </div>
+          <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Đã xong</span>
+        </button>
+
+        <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
+          <div>
+            <div class="font-medium">Ca #23 — Bảo trì VRV đợt 2</div>
+            <div class="mt-0.5 text-sm text-zinc-500">28/10/2024 · Nguyễn Văn Toàn</div>
+          </div>
+          <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">Chờ chạy</span>
+        </div>
+
+        <div class="rounded-xl border border-dashed border-zinc-200 p-3 text-center text-sm text-zinc-500">
+          18 ca còn lại tới 15/11/2024
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <div class="text-sm font-medium text-zinc-500">Bảng kê</div>
+        <button onclick="wfShow('statement-preview')" class="flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 text-left hover:border-zinc-300">
+          <div>
+            <div class="font-medium">Kỳ T10/2024</div>
+            <div class="mt-0.5 text-sm text-zinc-500">1/2 ca có bằng chứng · 21.000.000đ</div>
+          </div>
+          <span class="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Thiếu 1 ca</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= 16. CHI TIẾT CA ================= -->
+<section class="wf-screen" data-screen="shift-detail" data-title="Chi tiết ca" hidden>
+  <div class="app-shell" data-nav="schedule">
+    <div class="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-6">
+
+      <div>
+        <button onclick="wfBack()" class="text-sm text-zinc-500 hover:text-zinc-900">← Quay lại</button>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Ca #22 — Keangnam Landmark 72</h1>
+            <p class="mt-1 font-mono text-sm text-zinc-500">HĐ-2024-089 · 14/10/2024 · Tòa A</p>
+          </div>
+          <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Đã hoàn thành</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+          <div class="text-sm font-medium">Bằng chứng</div>
+          <div class="mt-3 grid grid-cols-3 gap-2">
+            <div class="aspect-square rounded-lg bg-zinc-100"></div>
+            <div class="aspect-square rounded-lg bg-zinc-100"></div>
+            <div class="aspect-square rounded-lg bg-zinc-100"></div>
+          </div>
+          <div class="mt-3 flex flex-col gap-1 text-sm text-zinc-600">
+            <div class="flex justify-between"><span>Ảnh trước / sau</span><span class="font-mono">2 / 1</span></div>
+            <div class="flex justify-between"><span>Biên lai khách ký</span><span class="text-emerald-700">Có</span></div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div class="rounded-xl border border-zinc-200 bg-white p-4">
+            <div class="text-sm font-medium">Ghi nhận tự động</div>
+            <div class="mt-3 flex flex-col gap-1 text-sm text-zinc-600">
+              <div class="flex justify-between"><span>Vị trí GPS</span><span class="font-mono">21.0176, 105.7833</span></div>
+              <div class="flex justify-between"><span>Thời gian gửi</span><span class="font-mono">14/10 10:41</span></div>
+              <div class="flex justify-between"><span>Người thực hiện</span><span>Nguyễn Văn Toàn</span></div>
+            </div>
+            <p class="mt-3 text-xs text-zinc-500">Ghi khi gửi, không sửa được.</p>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <button onclick="wfToast('Đã xác nhận bằng chứng hợp lệ')" class="rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium">Xác nhận bằng chứng hợp lệ</button>
+            <button onclick="wfShow('dispute')" class="rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50">Đánh dấu khiếu nại</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= 17. BẢNG KÊ CHI TIẾT ================= -->
+<section class="wf-screen" data-screen="statement-preview" data-title="Bảng kê chi tiết" hidden>
+  <div class="app-shell" data-nav="billing">
+    <div class="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-6">
+
+      <div>
+        <button onclick="wfShow('billing')" class="text-sm text-zinc-500 hover:text-zinc-900">← Bảng kê</button>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Bảng kê T10/2024</h1>
+            <p class="mt-1 font-mono text-sm text-zinc-500">Keangnam Landmark 72 · HĐ-2024-089</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="wfToast('Đã xuất PDF kèm ảnh và biên lai')" class="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm">Xuất PDF</button>
+            <button onclick="wfToast('Đã gửi bảng kê cho khách hàng')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Gửi khách hàng</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        Kỳ chưa chốt được: ca 28/10 chưa có bằng chứng. Bảng kê tạm tính theo ca đã hoàn thành.
+      </div>
+
+      <div class="overflow-x-auto md:rounded-xl md:border md:border-zinc-200 md:bg-white">
+        <table class="stack w-full text-left text-sm">
+          <thead class="border-b border-zinc-200 text-xs font-medium text-zinc-500">
+            <tr>
+              <th class="px-4 py-3">Ca</th>
+              <th class="px-4 py-3">Ngày</th>
+              <th class="px-4 py-3">Bằng chứng</th>
+              <th class="px-4 py-3 text-right">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100">
+            <tr class="cursor-pointer hover:bg-zinc-50" onclick="wfShow('shift-detail')">
+              <td class="px-4 py-3 font-medium" data-label="Ca">Ca #22 — Bảo trì VRV đợt 1</td>
+              <td class="px-4 py-3 font-mono text-zinc-600" data-label="Ngày">14/10/2024</td>
+              <td class="px-4 py-3" data-label="Bằng chứng"><span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Đủ</span></td>
+              <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Thành tiền">21.000.000đ</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3 font-medium" data-label="Ca">Ca #23 — Bảo trì VRV đợt 2</td>
+              <td class="px-4 py-3 font-mono text-zinc-600" data-label="Ngày">28/10/2024</td>
+              <td class="px-4 py-3" data-label="Bằng chứng"><span class="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Chưa có</span></td>
+              <td class="px-4 py-3 text-right font-mono text-zinc-400 md:whitespace-nowrap" data-label="Thành tiền">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex justify-end">
+        <div class="w-full rounded-xl border border-zinc-200 bg-white p-4 sm:w-64">
+          <div class="flex justify-between text-sm text-zinc-600"><span>Ca tính tiền</span><span class="font-mono">1 / 2</span></div>
+          <div class="mt-2 flex items-baseline justify-between border-t border-zinc-100 pt-2">
+            <span class="text-sm font-medium">Tạm tính</span>
+            <span class="font-mono text-lg font-semibold">21.000.000đ</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 </div>
+
+<!-- Thông báo ngắn sau thao tác -->
+<div id="wf-toast" class="pointer-events-none fixed bottom-6 left-1/2 z-[1000] -translate-x-1/2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm text-white opacity-0 transition-opacity" hidden></div>
 
 <script>
 // Một nguồn duy nhất cho sidebar: mọi màn hình dùng chung, không copy markup.
@@ -1091,20 +1312,23 @@ var ROLES = {
 
 // Màn hình nào vai trò nào được mở — gồm cả màn không nằm trên sidebar (tạo hợp đồng, khiếu nại, hiện trường)
 var SCREEN_ROLES = {
-  dashboard:      ['director'],
-  contracts:      ['director', 'manager', 'accountant'],
-  'new-contract': ['director', 'manager'],
-  schedule:       ['director', 'manager'],
-  dispute:        ['director', 'manager'],
-  'team-shifts':  ['team_lead'],
-  'my-shifts':    ['employee'],
-  field:          ['employee', 'team_lead'],
-  billing:        ['director', 'accountant'],
-  reconcile:      ['accountant'],
-  alerts:         ['director', 'manager', 'team_lead'],
-  customers:      ['director', 'manager', 'accountant'],
-  employees:      ['director'],
-  login:          ['director', 'manager', 'accountant', 'team_lead', 'employee']
+  dashboard:          ['director'],
+  contracts:          ['director', 'manager', 'accountant'],
+  'contract-detail':  ['director', 'manager', 'accountant'],
+  'new-contract':     ['director', 'manager'],
+  schedule:           ['director', 'manager'],
+  'shift-detail':     ['director', 'manager', 'accountant', 'team_lead'],
+  'statement-preview':['director', 'accountant'],
+  dispute:            ['director', 'manager'],
+  'team-shifts':      ['team_lead'],
+  'my-shifts':        ['employee'],
+  field:              ['employee', 'team_lead'],
+  billing:            ['director', 'accountant'],
+  reconcile:          ['director', 'accountant'],
+  alerts:             ['director', 'manager', 'team_lead'],
+  customers:          ['director', 'manager', 'accountant'],
+  employees:          ['director'],
+  login:              ['director', 'manager', 'accountant', 'team_lead', 'employee']
 };
 
 var SCREENS = [];
@@ -1163,9 +1387,48 @@ function buildShell(el) {
     + '<div class="lg:pl-60">' + content + '</div>';
 }
 
+var HISTORY = [];
+
+// Thông báo ngắn thay cho thao tác chưa có backend
+function wfToast(text) {
+  var el = document.getElementById('wf-toast');
+  el.textContent = text;
+  el.hidden = false;
+  requestAnimationFrame(function () { el.style.opacity = '1'; });
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function () {
+    el.style.opacity = '0';
+    setTimeout(function () { el.hidden = true; }, 200);
+  }, 2200);
+}
+
+// Nộp ca: xác nhận rồi trả về danh sách ca, theo sequence diagram 2
+function wfSubmitShift() {
+  wfToast('Đã gửi bằng chứng · GPS và thời gian đã ghi');
+  setTimeout(function () { wfShow(canSee('my-shifts') ? 'my-shifts' : 'team-shifts'); }, 900);
+}
+
+// Bỏ khiếu nại: ca quay lại trạng thái hoàn thành, vào lại được bảng kê
+function wfResolveDispute() {
+  wfToast('Bằng chứng hợp lệ · ca được tính lại vào bảng kê');
+  setTimeout(function () { wfShow('shift-detail'); }, 900);
+}
+
+// Quay lại màn trước đó trong phiên, không phải màn cố định
+function wfBack() {
+  HISTORY.pop();
+  var prev = HISTORY.pop();
+  wfShow(prev && canSee(prev) ? prev : ROLES[ROLE].home);
+}
+
+var SYNCING = false;
+
 function wfShow(id) {
   if (!canSee(id)) return;
+  if (HISTORY[HISTORY.length - 1] !== id) HISTORY.push(id);
+  SYNCING = true;
   location.hash = ROLE + '/' + id;
+  setTimeout(function () { SYNCING = false; }, 0);
   SCREENS.forEach(function (s) { s.hidden = s.getAttribute('data-screen') !== id; });
   document.querySelectorAll('#wf-switcher button').forEach(function (b) {
     var on = b.getAttribute('data-target') === id;
@@ -1215,6 +1478,7 @@ function buildSwitcher() {
 // Đổi vai trò: nav, danh tính và danh sách màn đổi theo quyền, mở màn mặc định của vai trò đó.
 function wfRole(id) {
   ROLE = id;
+  HISTORY = [];
   var picker = document.getElementById('wf-role');
   if (picker) picker.value = id;
   document.querySelectorAll('.app-shell').forEach(buildShell);
@@ -1250,6 +1514,14 @@ document.addEventListener('DOMContentLoaded', function () {
   picker.value = ROLE;
 
   wfShow(hash[1] && canSee(hash[1]) ? hash[1] : ROLES[ROLE].home);
+
+  // Deep link đổi sau khi trang đã tải (điều hướng bằng thanh địa chỉ, back/forward)
+  window.addEventListener('hashchange', function () {
+    if (SYNCING) return;
+    var h = location.hash.replace(/^#/, '').split('/');
+    if (h[0] && ROLES[h[0]] && h[0] !== ROLE) wfRole(h[0]);
+    if (h[1] && canSee(h[1])) wfShow(h[1]);
+  });
 });
 </script>
 

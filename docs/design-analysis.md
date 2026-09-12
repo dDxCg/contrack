@@ -308,10 +308,34 @@ sequenceDiagram
 
 ### Technical Architecture
 
-**Database:** [`db/schema.sql`](../db/schema.sql) and [`db/erd.md`](../db/erd.md).
+A browser-only client — no native app (NFR7) — against a server that owns contracts, schedule
+generation, evidence submission, alerting and statement rendering. Two storage systems: a relational
+database for the facts, and S3-compatible object storage for evidence photos, signed receipts and
+rendered statement PDFs. Two authorisation mechanisms: session credentials for the desk roles, and a
+per-shift signed token for field submission, so an employee opens a link at a job site with no install
+and no password (FR7, NFR7).
 
-**Frontend:** Prototyped in [`docs/wireframe.html`](wireframe.html).
+Full architecture — component breakdown, key decisions, cross-cutting concerns and open
+questions: [`architecture.md`](architecture.md).
 
-**Integrations:** Zalo (ZNS) and/or SMS for reminders; VietQR for payment (planned, Could-have).
+### Interfaces
+
+Endpoint contract per requirement, plus the role × resource × row-scope access-control matrix:
+[`api.md`](api.md).
+
+### Data
+
+[`db/schema.sql`](../db/schema.sql) — 16 tables, ANSI SQL, single-tenant, lookup tables in place of
+`ENUM`. Diagram: [`db/erd.md`](../db/erd.md). Conventions: [`db/README.md`](../db/README.md).
+
+### User interface
+
+[`wireframe.html`](wireframe.html) — screens per role, navigation scoped to the role's use cases in
+§II. Captures: [`screenshots/`](screenshots/).
+
+### Integrations
+
+Zalo (ZNS) and/or SMS for reminders (FR14), with an in-app fallback when the channel fails; VietQR for
+payment (Could-have, not in MVP).
 
 ---

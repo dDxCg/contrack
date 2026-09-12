@@ -310,10 +310,34 @@ sequenceDiagram
 
 ### Kiến trúc kỹ thuật
 
-**Cơ sở dữ liệu:** [`db/schema.sql`](../db/schema.sql) và [`db/erd.md`](../db/erd.md).
+Client chạy hoàn toàn trên trình duyệt — không có app native (NFR7) — làm việc với server quản lý hợp
+đồng, sinh lịch, tiếp nhận bằng chứng, cảnh báo và kết xuất bảng kê. Hai hệ lưu trữ: cơ sở dữ liệu
+quan hệ cho dữ liệu nghiệp vụ, và object storage tương thích S3 cho ảnh bằng chứng, biên lai đã ký và
+file PDF bảng kê. Hai cơ chế phân quyền: phiên đăng nhập cho nhóm vai trò làm việc tại văn phòng, và
+token ký số theo từng ca cho phần thực hiện hiện trường — nhân viên mở link tại công trường, không cài
+app, không cần mật khẩu (FR7, NFR7).
 
-**Frontend:** Dựng prototype tại [`docs/wireframe.html`](wireframe.html).
+Kiến trúc đầy đủ — phân rã thành phần, các quyết định thiết kế, vấn đề xuyên suốt và câu
+hỏi còn mở: [`architecture.md`](architecture.md) *(tiếng Anh)*.
 
-**Tích hợp:** Zalo (ZNS) và/hoặc SMS để nhắc việc; VietQR cho thanh toán (dự kiến, Could-have).
+### Giao diện lập trình
+
+Đặc tả endpoint theo từng yêu cầu, kèm ma trận phân quyền vai trò × tài nguyên × phạm vi dòng dữ liệu:
+[`api.md`](api.md) *(tiếng Anh)*.
+
+### Dữ liệu
+
+[`db/schema.sql`](../db/schema.sql) — 16 bảng, ANSI SQL, single-tenant, dùng bảng lookup thay `ENUM`.
+Sơ đồ: [`db/erd.md`](../db/erd.md). Quy ước: [`db/README.md`](../db/README.md).
+
+### Giao diện người dùng
+
+[`wireframe.html`](wireframe.html) — màn hình theo từng vai trò, điều hướng giới hạn theo use case của
+vai trò đó ở mục II. Ảnh chụp: [`screenshots/`](screenshots/).
+
+### Tích hợp
+
+Zalo (ZNS) và/hoặc SMS để nhắc việc (FR14), có phương án dự phòng thông báo trong ứng dụng khi kênh gửi
+lỗi; VietQR cho thanh toán (Could-have, không thuộc MVP).
 
 ---

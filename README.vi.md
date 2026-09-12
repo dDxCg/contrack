@@ -81,7 +81,7 @@ thành, xuất PDF kèm bằng chứng.
 
 ## Giao diện
 
-[`docs/wireframe.html`](docs/wireframe.html) — 14 màn hình, 5 vai trò, một file HTML
+[`docs/wireframe.html`](docs/wireframe.html) — 17 màn hình, 5 vai trò, một file HTML
 độc lập, không cần build. Vai trò chọn ở thanh trên cùng; menu, danh tính và danh
 sách màn được mở đổi theo vai trò. Deep link: `wireframe.html#<vai-trò>/<màn>`.
 Ảnh dưới đây do [`scripts/capture-wireframe.sh`](scripts/capture-wireframe.sh) chụp
@@ -108,16 +108,19 @@ thị và cũng không mở được.
 
 | Vai trò | Màn hình |
 |---|---|
-| Giám đốc | [tổng quan](docs/screenshots/wireframe/director/dashboard.png) · [hợp đồng](docs/screenshots/wireframe/director/contracts.png) · [tạo hợp đồng](docs/screenshots/wireframe/director/new-contract.png) · [lịch điều phối](docs/screenshots/wireframe/director/schedule.png) · [ca khiếu nại](docs/screenshots/wireframe/director/dispute.png) · [bảng kê](docs/screenshots/wireframe/director/billing.png) · [cảnh báo](docs/screenshots/wireframe/director/alerts.png) · [khách hàng](docs/screenshots/wireframe/director/customers.png) · [nhân viên](docs/screenshots/wireframe/director/employees.png) |
-| Quản lý | [hợp đồng](docs/screenshots/wireframe/manager/contracts.png) · [lịch điều phối](docs/screenshots/wireframe/manager/schedule.png) · [tạo hợp đồng](docs/screenshots/wireframe/manager/new-contract.png) · [ca khiếu nại](docs/screenshots/wireframe/manager/dispute.png) · [cảnh báo](docs/screenshots/wireframe/manager/alerts.png) · [khách hàng](docs/screenshots/wireframe/manager/customers.png) |
-| Kế toán | [bảng kê](docs/screenshots/wireframe/accountant/billing.png) · [đối soát](docs/screenshots/wireframe/accountant/reconcile.png) · [hợp đồng](docs/screenshots/wireframe/accountant/contracts.png) · [khách hàng](docs/screenshots/wireframe/accountant/customers.png) |
-| Tổ trưởng | [lịch tổ](docs/screenshots/wireframe/team_lead/team-shifts.png) · [thực hiện hiện trường](docs/screenshots/wireframe/team_lead/field.png) · [cảnh báo](docs/screenshots/wireframe/team_lead/alerts.png) |
+| Giám đốc | [tổng quan](docs/screenshots/wireframe/director/dashboard.png) · [hợp đồng](docs/screenshots/wireframe/director/contracts.png) · [chi tiết hợp đồng](docs/screenshots/wireframe/director/contract-detail.png) · [tạo hợp đồng](docs/screenshots/wireframe/director/new-contract.png) · [lịch điều phối](docs/screenshots/wireframe/director/schedule.png) · [chi tiết ca](docs/screenshots/wireframe/director/shift-detail.png) · [ca khiếu nại](docs/screenshots/wireframe/director/dispute.png) · [bảng kê](docs/screenshots/wireframe/director/billing.png) · [bảng kê chi tiết](docs/screenshots/wireframe/director/statement-preview.png) · [đối soát](docs/screenshots/wireframe/director/reconcile.png) · [cảnh báo](docs/screenshots/wireframe/director/alerts.png) · [khách hàng](docs/screenshots/wireframe/director/customers.png) · [nhân viên](docs/screenshots/wireframe/director/employees.png) |
+| Quản lý | [hợp đồng](docs/screenshots/wireframe/manager/contracts.png) · [chi tiết hợp đồng](docs/screenshots/wireframe/manager/contract-detail.png) · [lịch điều phối](docs/screenshots/wireframe/manager/schedule.png) · [chi tiết ca](docs/screenshots/wireframe/manager/shift-detail.png) · [tạo hợp đồng](docs/screenshots/wireframe/manager/new-contract.png) · [ca khiếu nại](docs/screenshots/wireframe/manager/dispute.png) · [cảnh báo](docs/screenshots/wireframe/manager/alerts.png) · [khách hàng](docs/screenshots/wireframe/manager/customers.png) |
+| Kế toán | [bảng kê](docs/screenshots/wireframe/accountant/billing.png) · [bảng kê chi tiết](docs/screenshots/wireframe/accountant/statement-preview.png) · [đối soát](docs/screenshots/wireframe/accountant/reconcile.png) · [hợp đồng](docs/screenshots/wireframe/accountant/contracts.png) · [chi tiết hợp đồng](docs/screenshots/wireframe/accountant/contract-detail.png) · [chi tiết ca](docs/screenshots/wireframe/accountant/shift-detail.png) · [khách hàng](docs/screenshots/wireframe/accountant/customers.png) |
+| Tổ trưởng | [lịch tổ](docs/screenshots/wireframe/team_lead/team-shifts.png) · [chi tiết ca](docs/screenshots/wireframe/team_lead/shift-detail.png) · [thực hiện hiện trường](docs/screenshots/wireframe/team_lead/field.png) · [cảnh báo](docs/screenshots/wireframe/team_lead/alerts.png) |
 | Nhân viên | [ca của tôi](docs/screenshots/wireframe/employee/my-shifts.png) · [thực hiện hiện trường](docs/screenshots/wireframe/employee/field.png) |
 
 ---
 
 ## Kiến trúc
-Nguồn: [docs/design-analysis.vi.md](docs/design-analysis.vi.md)
+Bốn góc nhìn để nắm tổng thể. Cơ chế, quyết định thiết kế và câu hỏi còn mở:
+[docs/architecture.md](docs/architecture.md) · đặc tả endpoint và phân quyền:
+[docs/api.md](docs/api.md).
+
 ### Góc nhìn 1 — ai chạm vào hệ thống
 
 ```mermaid
@@ -132,7 +135,8 @@ flowchart TB
     zalo["Zalo ZNS / SMS<br/><i>bên ngoài</i><br/>nhắc việc"]
     vietqr["VietQR<br/><i>bên ngoài, dự kiến</i><br/>thanh toán"]
 
-    customer -.->|"ký hợp đồng ngoài hệ thống,<br/>ký biên lai giấy trực tiếp"| employee
+    customer -.->|"ký hợp đồng trực tiếp"| director
+    customer -.->|"ký biên lai giấy trực tiếp"| employee
     employee -->|"mở link ca làm,<br/>gửi ảnh"| lichhd
     accountant -->|"tạo hợp đồng,<br/>xuất bảng kê"| lichhd
     director -->|"xem dashboard"| lichhd
@@ -219,9 +223,11 @@ Bảng đầy đủ: [PRD mục 1](docs/prd.vi.md#1-giới-thiệu--mục-đích
 |---|---|---|
 | 1 | [PRD](docs/prd.vi.md) · [English](docs/prd.md) | Bài toán, người dùng, phạm vi MVP, lộ trình, tiêu chí phát hành |
 | 2 | [Design Analysis](docs/design-analysis.vi.md) · [English](docs/design-analysis.md) | FR/NFR, use case theo vai trò, sequence diagram |
-| 3 | [Wireframe](docs/wireframe.html) | 14 màn hình, 5 vai trò, 1 file HTML độc lập |
-| 4 | [ERD](db/erd.md) | Sơ đồ quan hệ thực thể |
-| 5 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, bảng lookup thay ENUM |
+| 3 | [Architecture](docs/architecture.md) *(EN)* | Phân rã thành phần và tiêu chí công nghệ, quyết định thiết kế, vấn đề xuyên suốt, câu hỏi còn mở |
+| 4 | [API Specification](docs/api.md) *(EN)* | Đặc tả endpoint, luồng nộp bằng chứng bằng token, ma trận phân quyền |
+| 5 | [Wireframe](docs/wireframe.html) | 17 màn hình, 5 vai trò, 1 file HTML độc lập |
+| 6 | [ERD](db/erd.md) | Sơ đồ quan hệ thực thể |
+| 7 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, bảng lookup thay ENUM |
 
 ---
 
@@ -233,11 +239,13 @@ docs/                        # → docs/README.md
 ├── prd.vi.md                # PRD — tiếng Việt
 ├── design-analysis.md       # FR/NFR, use case, sequence diagram — tiếng Anh
 ├── design-analysis.vi.md    # FR/NFR, use case, sequence diagram — tiếng Việt
-├── wireframe.html           # wireframe 1 file HTML, 14 màn hình, 5 vai trò
+├── architecture.md          # thành phần, quyết định thiết kế, câu hỏi mở
+├── api.md                   # đặc tả endpoint, ma trận phân quyền
+├── wireframe.html           # wireframe 1 file HTML, 17 màn hình, 5 vai trò
 ├── screenshots/wireframe/   # ảnh chụp, mỗi vai trò một thư mục → screenshots/README.md
 └── mindmap.pdf
 db/                          # → db/README.md
-├── schema.sql               # ANSI SQL schema, 15 bảng
+├── schema.sql               # ANSI SQL schema, 16 bảng
 └── erd.md                   # ERD mermaid
 scripts/
 └── capture-wireframe.sh     # chụp toàn bộ màn bằng Chrome headless
