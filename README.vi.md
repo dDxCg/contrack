@@ -5,7 +5,6 @@
 **Quản lý Hợp đồng Dịch vụ Định kỳ**
 
 [![Trạng thái](https://img.shields.io/badge/tr%E1%BA%A1ng%20th%C3%A1i-ti%E1%BB%81n%20ph%C3%A1t%20tri%E1%BB%83n%20%C2%B7%20giai%20%C4%91o%E1%BA%A1n%20thi%E1%BA%BFt%20k%E1%BA%BF-orange)](#dự-án-đang-ở-đâu)
-[![Spec](https://img.shields.io/badge/spec-PRD%20%2B%20design--analysis-informational)](docs/design-analysis.vi.md)
 [![Docs](https://img.shields.io/badge/docs-EN%20%2B%20VI-blue)](README.md)
 
 </div>

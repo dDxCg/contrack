@@ -4,8 +4,7 @@
 
 **Recurring Service Contract Management**
 
-[![Status](https://img.shields.io/badge/status-pre--development%20%C2%B7%20design%20phase-orange)](#where-the-project-actually-is)
-[![Spec](https://img.shields.io/badge/spec-PRD%20%2B%20design--analysis-informational)](docs/design-analysis.md)
+[![Status](https://img.shields.io/badge/status-pre--development%20%C2%B7%20design%20phase-orange)](#architecture)
 [![Docs](https://img.shields.io/badge/docs-EN%20%2B%20VI-blue)](README.vi.md)
 
 </div>
@@ -30,13 +29,12 @@ flowchart LR
 ## Table of contents
 
 - [What LichHD is](#what-lichhd-is)
-- [The week, before and after](#the-week-before-and-after)
-- [Architecture, from simple to complex](#architecture-from-simple-to-complex)
+- [Before and after](#before-and-after)
+- [Architecture](#architecture)
 - [Success metrics](#success-metrics)
 - [Competitive landscape](#competitive-landscape)
 - [Documentation](#documentation)
 - [Repository layout](#repository-layout)
-- [Where the project actually is](#where-the-project-actually-is)
 
 ---
 
@@ -93,7 +91,7 @@ Source: [docs/design-analysis.md](docs/design-analysis.md)
 
 ```mermaid
 flowchart TB
-    customer["Customer<br/><i>person</i>"]
+    customer["Customer<br/><i>outside the system</i>"]
     employee["Field employee / team lead<br/><i>person</i>"]
     accountant["Accountant / manager<br/><i>person</i>"]
     director["Director<br/><i>person</i>"]
@@ -103,7 +101,7 @@ flowchart TB
     zalo["Zalo ZNS / SMS<br/><i>external</i><br/>reminders"]
     vietqr["VietQR<br/><i>external, planned</i><br/>payment"]
 
-    customer -->|"signs contract,<br/>signs paper receipt"| lichhd
+    customer -.->|"signs contract offline,<br/>signs paper receipt in person"| employee
     employee -->|"opens shift link,<br/>submits photos"| lichhd
     accountant -->|"creates contracts,<br/>exports statements"| lichhd
     director -->|"views dashboard"| lichhd
@@ -111,6 +109,8 @@ flowchart TB
     lichhd -->|"sends reminder"| zalo
     lichhd -->|"requests payment"| vietqr
 ```
+
+Customer never touches LichHD directly — signature and complaints happen offline, entered by staff.
 
 ### View 2 — one shift, end to end
 
