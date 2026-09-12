@@ -1,16 +1,16 @@
 -- LichHD — ANSI SQL
 
--- Vai trò
+-- Roles
 CREATE TABLE roles (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name    VARCHAR(50) NOT NULL UNIQUE
 );
 
-INSERT INTO roles (name) VALUES ('giam_doc');
-INSERT INTO roles (name) VALUES ('ke_toan');
-INSERT INTO roles (name) VALUES ('quan_ly');
-INSERT INTO roles (name) VALUES ('to_truong');
-INSERT INTO roles (name) VALUES ('nhan_vien');
+INSERT INTO roles (name) VALUES ('director');
+INSERT INTO roles (name) VALUES ('accountant');
+INSERT INTO roles (name) VALUES ('manager');
+INSERT INTO roles (name) VALUES ('team_lead');
+INSERT INTO roles (name) VALUES ('employee');
 
 -- Phân khúc khách
 CREATE TABLE customer_segments (

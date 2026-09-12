@@ -47,7 +47,7 @@
 |---|---|
 | Hợp đồng | Tạo hợp đồng (khách, thời hạn) → thêm 1 hoặc nhiều địa điểm thực hiện, mỗi địa điểm gồm hạng mục dịch vụ (tần suất, đơn giá), yêu cầu công việc, lưu ý → tự sinh lịch theo từng hạng mục; cảnh báo hợp đồng sắp hết hạn (30 ngày) |
 | Lịch & Phân công | Lịch tuần/tháng theo tổ/nhân viên; tự đẩy việc tuần cho tổ trưởng; đổi lịch khi có phát sinh |
-| Thực hiện hiện trường | Link mở trên điện thoại (không cần cài app); chụp ảnh trước/sau; khách ký biên lai giấy, nhân viên chụp lại biên lai đã ký làm bằng chứng, mang bản gốc về lưu hồ sơ sau; đóng dấu GPS + thời gian, không sửa được |
+| Thực hiện hiện trường | Link mở trên điện thoại (không cần cài app); chụp ảnh trước/sau; khách ký biên lai giấy, nhân viên chụp lại biên lai đã ký làm bằng chứng, mang bản gốc về lưu hồ sơ sau; đóng dấu GPS + thời gian |
 | Cảnh báo & Nhắc việc | Nhắc hợp đồng chưa thực hiện đúng tần suất; nhắc hợp đồng sắp hết hạn; nhắc qua Zalo/SMS |
 | Bảng kê & Xuất hóa đơn | 1 nút xuất bảng kê tháng (kèm ảnh + chữ ký) dạng PDF gửi khách; đối chiếu tự động |
 
@@ -92,7 +92,7 @@
 1. Ký hợp đồng → nhập 1 lần (khách, địa điểm, hạng mục dịch vụ + tần suất + đơn giá theo từng địa điểm, thời hạn) → hệ thống tự sinh lịch.
 2. Sáng thứ 2: hệ thống tự đẩy danh sách việc tuần này cho từng tổ trưởng.
 3. Nhân viên mở link trên điện thoại → chụp trước/sau → khách ký biên lai giấy → nhân viên chụp lại biên lai đã ký.
-4. Ảnh hiện trường + ảnh biên lai đã ký + GPS + thời gian được đóng dấu, không sửa được. Nhân viên mang bản giấy gốc về lưu hồ sơ sau.
+4. Ảnh hiện trường + ảnh biên lai đã ký + GPS + thời gian được đóng dấu. Nhân viên mang bản giấy gốc về lưu hồ sơ sau.
 5. Hệ thống cảnh báo: "Hợp đồng tòa nhà Y còn 3 ngày chưa thực hiện lần 2."
 6. Cuối tháng: 1 nút → bảng kê + ảnh minh chứng + chữ ký → PDF gửi khách.
 7. Cảnh báo: "5 hợp đồng hết hạn trong 30 ngày → cần tái ký."

@@ -47,7 +47,7 @@
 |---|---|
 | Contracts | Create contract (customer, term) → add one or more service sites, each site has service items (frequency, unit price), work requirements, notes → auto-generate schedule per item; alert on contracts expiring soon (30 days) |
 | Scheduling & Dispatch | Weekly/monthly schedule by team/employee; auto-push weekly work to team leads; reschedule on ad-hoc changes |
-| Field execution | Link opens on phone (no app install); before/after photos; customer signs a paper receipt, employee photographs the signed receipt as evidence, brings the original back to file later; GPS + timestamp stamped automatically, non-editable |
+| Field execution | Link opens on phone (no app install); before/after photos; customer signs a paper receipt, employee photographs the signed receipt as evidence, brings the original back to file later; GPS + timestamp stamped automatically |
 | Alerts & Reminders | Remind on visits not completed at the required frequency; remind on contracts expiring soon; remind via Zalo/SMS |
 | Statements & Invoicing | One button to export the monthly statement (with photos + signature) as PDF to send the customer; automatic reconciliation |
 
@@ -92,7 +92,7 @@
 1. Sign contract → enter once (customer, sites, service items + frequency + unit price per site, term) → system auto-generates the schedule.
 2. Monday morning: system auto-pushes this week's work list to each team lead.
 3. Employee opens the link on their phone → takes before/after photos → customer signs a paper receipt → employee photographs the signed receipt.
-4. Field photos + signed receipt photo + GPS + timestamp are stamped, non-editable. Employee brings the original paper back to file later.
+4. Field photos + signed receipt photo + GPS + timestamp are stamped. Employee brings the original paper back to file later.
 5. System alerts: "Building Y contract has 3 days left before the 2nd visit is due."
 6. Month-end: one button → statement + proof photos + signature → PDF sent to customer.
 7. Alert: "5 contracts expiring within 30 days → need renewal."
