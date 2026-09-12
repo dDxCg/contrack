@@ -15,13 +15,12 @@ rather than SQL `ENUM` types: portable across engines, and values are added with
 a schema migration.
 
 **Core** — `customers` → `contracts` → `contract_sites` → `contract_items` → `shifts`
-→ `shift_photos`, plus `teams` and `employees`, and `statements`
-(one per contract per period, unique on `(contract_id, period)`).
+→ `shift_photos`, plus `teams`, `employees` and `statements` (one per contract per
+period, unique on `(contract_id, period)`).
 
-**Teams.** `employees.team_id` is the only record of membership, and it is `NULL` for desk staff —
-they belong to no team. `manager_id` is the reporting line and is never read to decide which team
-someone is in. A team's lead is the member whose role is team lead; `teams` holds no `lead_id`, so
-there is no pair of columns that can disagree.
+**Teams.** `employees.team_id` is the only record of membership and is `NULL` for
+desk staff. `manager_id` is the reporting line and is not read to resolve a team.
+The lead is the member holding the team-lead role — `teams` carries no `lead_id`.
 
 ## Conventions
 

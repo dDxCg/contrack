@@ -87,6 +87,10 @@ sách màn được mở đổi theo vai trò. Deep link: `wireframe.html#<vai-t
 Ảnh dưới đây do [`scripts/capture-wireframe.sh`](scripts/capture-wireframe.sh) chụp
 — Chrome headless ở 1440×900, màn khung điện thoại ở 560px.
 
+[`docs/prototype.html`](docs/prototype.html) — cùng bộ màn nhưng nối thành ứng dụng:
+đăng nhập, điều hướng theo vai trò, và các biểu mẫu tạo/phân công mà bản wireframe
+chưa có chỗ chứa. 22 màn.
+
 **Lịch dẫn xuất từ hợp đồng.** Mỗi dòng mang tần suất dịch vụ và tiến độ kỳ hiện tại
 so với tần suất đó.
 
@@ -174,8 +178,12 @@ flowchart LR
     Shift --> Photo["Ảnh ca làm"]
     Contract --> Statement["Bảng kê"]
     Employee["Nhân viên"] -.->|được giao| Shift
-    Employee -.->|manager_id| Employee
+    Employee -.->|manager_id, đường báo cáo| Employee
+    Team["Tổ"] -.->|team_id, chỉ nhân sự hiện trường| Employee
 ```
+
+Tổ và đường báo cáo là hai cột tách biệt: `team_id` quyết định tổ trưởng thấy ca của
+ai và bằng `NULL` với khối văn phòng, `manager_id` là chuỗi báo cáo.
 
 ERD và SQL Schema đầy đủ: [db/erd.md](db/erd.md) · [db/schema.sql](db/schema.sql).
 
@@ -226,8 +234,9 @@ Bảng đầy đủ: [PRD mục 1](docs/prd.vi.md#1-giới-thiệu--mục-đích
 | 3 | [Architecture](docs/architecture.md) *(EN)* | Phân rã thành phần và tiêu chí công nghệ, quyết định thiết kế, vấn đề xuyên suốt, câu hỏi còn mở |
 | 4 | [API Specification](docs/api.md) *(EN)* | Đặc tả endpoint, luồng nộp bằng chứng bằng token, ma trận phân quyền |
 | 5 | [Wireframe](docs/wireframe.html) | 17 màn hình, 5 vai trò, 1 file HTML độc lập |
-| 6 | [ERD](db/erd.md) | Sơ đồ quan hệ thực thể |
-| 7 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, bảng lookup thay ENUM |
+| 6 | [Prototype](docs/prototype.html) | Bản bấm được: đăng nhập, điều hướng theo vai trò, 22 màn |
+| 7 | [ERD](db/erd.md) | Sơ đồ quan hệ thực thể |
+| 8 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, bảng lookup thay ENUM |
 
 ---
 
@@ -242,6 +251,7 @@ docs/                        # → docs/README.md
 ├── architecture.md          # thành phần, quyết định thiết kế, câu hỏi mở
 ├── api.md                   # đặc tả endpoint, ma trận phân quyền
 ├── wireframe.html           # wireframe 1 file HTML, 17 màn hình, 5 vai trò
+├── prototype.html           # prototype bấm được: đăng nhập, luồng theo vai trò, 22 màn
 ├── screenshots/wireframe/   # ảnh chụp, mỗi vai trò một thư mục → screenshots/README.md
 └── mindmap.pdf
 db/                          # → db/README.md

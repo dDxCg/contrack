@@ -89,6 +89,10 @@ navigation, identity and reachable screens follow the role. Deep link:
 [`scripts/capture-wireframe.sh`](scripts/capture-wireframe.sh) — headless Chrome at
 1440×900, phone-frame screens at 560px.
 
+[`docs/prototype.html`](docs/prototype.html) — the same screens wired as an
+application: login, role-scoped navigation, and the create and assign forms the
+inventory has no place for. 22 screens.
+
 **Contract-derived scheduling.** Each row carries its service frequency and
 current-period progress against it.
 
@@ -177,8 +181,12 @@ flowchart LR
     Shift --> Photo["Shift Photo"]
     Contract --> Statement
     Employee -.->|assigned to| Shift
-    Employee -.->|manager_id| Employee
+    Employee -.->|manager_id, reporting line| Employee
+    Team -.->|team_id, field staff only| Employee
 ```
+
+Team membership and reporting line are separate columns: `team_id` scopes what a
+team lead sees and is `NULL` for desk staff, `manager_id` is the reporting chain.
 
 Full ERD and SQL Schema: [db/erd.md](db/erd.md) · [db/schema.sql](db/schema.sql).
 
@@ -229,8 +237,9 @@ Source: [PRD §1](docs/prd.md#1-introduction--purpose).
 | 3 | [Architecture](docs/architecture.md) | Component breakdown and technology criteria, key decisions, cross-cutting concerns, open questions |
 | 4 | [API Specification](docs/api.md) | Endpoint contract, field-token submission path, access-control matrix |
 | 5 | [Wireframe](docs/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
-| 6 | [ERD](db/erd.md) | Entity-relationship diagram |
-| 7 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, lookup tables in place of ENUM |
+| 6 | [Prototype](docs/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
+| 7 | [ERD](db/erd.md) | Entity-relationship diagram |
+| 8 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, lookup tables in place of ENUM |
 
 ---
 
@@ -245,6 +254,7 @@ docs/                        # → docs/README.md
 ├── architecture.md          # components, decisions, open questions
 ├── api.md                   # endpoint contract, access-control matrix
 ├── wireframe.html           # single-file HTML wireframe, 17 screens, 5 roles
+├── prototype.html           # clickable prototype: login, role-scoped flows, 22 screens
 ├── screenshots/wireframe/   # captures, one folder per role → screenshots/README.md
 └── mindmap.pdf
 db/                          # → db/README.md

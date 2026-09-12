@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>LichHD — Wireframe</title>
+<title>LichHD — Prototype</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -36,11 +36,6 @@ tailwind.config = {
 </style>
 </head>
 <body class="bg-zinc-50 text-zinc-900 antialiased">
-
-<!-- Thanh chuyển màn hình — công cụ duyệt wireframe, không thuộc sản phẩm -->
-<nav id="wf-switcher" class="sticky top-0 z-[999] flex items-center gap-1 overflow-x-auto bg-zinc-950 px-3 py-1.5 text-[11px] text-zinc-400">
-  <span class="mr-2 shrink-0 font-mono text-zinc-500">wireframe</span>
-</nav>
 
 <div id="app-root">
 
@@ -516,16 +511,21 @@ tailwind.config = {
 
       <div class="mt-6 flex flex-col gap-3">
         <label class="flex flex-col gap-1.5">
-          <span class="text-sm text-zinc-600">Số điện thoại</span>
-          <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="09xx xxx xxx">
+          <span class="text-sm text-zinc-600">Tài khoản</span>
+          <select id="wf-login-user" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"></select>
         </label>
         <label class="flex flex-col gap-1.5">
           <span class="text-sm text-zinc-600">Mật khẩu</span>
-          <input type="password" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="••••••••">
+          <input id="wf-login-pass" type="password" value="12345678" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
         </label>
-        <button onclick="wfRole(ROLE)" class="mt-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">Đăng nhập</button>
+        <p id="wf-login-error" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" hidden>Sai tài khoản hoặc mật khẩu.</p>
+        <button onclick="wfLogin()" class="mt-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">Đăng nhập</button>
         <button onclick="wfToast('Đã gửi link đặt lại mật khẩu')" class="text-sm text-zinc-500 hover:text-zinc-900">Quên mật khẩu</button>
       </div>
+
+      <p class="mt-6 border-t border-zinc-100 pt-4 text-xs text-zinc-500">
+        Nhân viên hiện trường không đăng nhập: ca làm mở bằng link riêng gửi qua Zalo.
+      </p>
     </div>
   </div>
 </section>
@@ -567,7 +567,7 @@ tailwind.config = {
           </div>
           <div class="flex flex-col gap-2 sm:flex-row">
             <button onclick="wfResolveDispute()" class="flex-1 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium">Bằng chứng hợp lệ — bỏ khiếu nại</button>
-            <button onclick="wfToast('Đã đánh dấu khiếu nại · loại khỏi bảng kê kỳ này')" class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700">Đánh dấu khiếu nại</button>
+            <button onclick="wfShow('new-dispute')" class="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700">Đánh dấu khiếu nại</button>
           </div>
           <p class="text-xs text-zinc-500">Ca bị đánh dấu sẽ không vào bảng kê cho tới khi xử lý xong.</p>
         </div>
@@ -922,8 +922,8 @@ tailwind.config = {
             <div class="mt-0.5 text-sm text-zinc-500">T4 23/10 · 09:00 · <span class="text-amber-700">chưa phân người</span></div>
           </div>
           <div class="flex gap-2">
-            <button onclick="wfToast('Đã phân Lê Văn Nam vào ca 23/10')" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">Phân người</button>
-            <button onclick="wfToast('Đã dời ca sang ngày khác')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
+            <button onclick="wfShow('assign-shift')" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">Phân người</button>
+            <button onclick="wfShow('assign-shift')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
           </div>
         </div>
 
@@ -944,8 +944,8 @@ tailwind.config = {
             <div class="mt-0.5 text-sm text-zinc-500">T6 25/10 · 14:00 · Nguyễn Văn Toàn</div>
           </div>
           <div class="flex gap-2">
-            <button onclick="wfToast('Đã đổi người thực hiện')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi người</button>
-            <button onclick="wfToast('Đã dời ca sang ngày khác')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
+            <button onclick="wfShow('assign-shift')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi người</button>
+            <button onclick="wfShow('assign-shift')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
           </div>
         </div>
 
@@ -955,8 +955,8 @@ tailwind.config = {
             <div class="mt-0.5 text-sm text-zinc-500">T7 26/10 · 08:00 · Lê Văn Nam</div>
           </div>
           <div class="flex gap-2">
-            <button onclick="wfToast('Đã đổi người thực hiện')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi người</button>
-            <button onclick="wfToast('Đã dời ca sang ngày khác')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
+            <button onclick="wfShow('assign-shift')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi người</button>
+            <button onclick="wfShow('assign-shift')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm">Đổi ngày</button>
           </div>
         </div>
       </div>
@@ -1274,6 +1274,297 @@ tailwind.config = {
 </div>
 
 <!-- Thông báo ngắn sau thao tác -->
+
+<section class="wf-screen" data-screen="assign-shift" data-title="Phân công ca" hidden>
+  <div class="app-shell" data-nav="schedule">
+    <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <div>
+        <button onclick="wfShow('schedule')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Lịch &amp; Điều phối</button>
+        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Phân công ca</h1>
+        <p class="mt-1 text-sm text-zinc-500">Giao ca cho nhân viên trong tổ, hoặc dời sang ngày khác.</p>
+      </div>
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Ca làm</div>
+        <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+          <div class="flex justify-between gap-4 border-b border-zinc-100 py-1.5"><dt class="text-zinc-500">Khách hàng</dt><dd>Keangnam Landmark 72</dd></div>
+          <div class="flex justify-between gap-4 border-b border-zinc-100 py-1.5"><dt class="text-zinc-500">Địa điểm</dt><dd>Tòa A</dd></div>
+          <div class="flex justify-between gap-4 border-b border-zinc-100 py-1.5"><dt class="text-zinc-500">Hạng mục</dt><dd>Bảo trì VRV</dd></div>
+          <div class="flex justify-between gap-4 border-b border-zinc-100 py-1.5"><dt class="text-zinc-500">Trạng thái</dt><dd><span class="rounded bg-zinc-100 px-1.5 py-0.5 text-xs">Chưa phân công</span></dd></div>
+        </dl>
+      </div>
+
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Phân công</div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Tổ</span>
+            <select class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+              <option>Tổ 1 &mdash; HVAC</option>
+              <option>Tổ 2 &mdash; Vệ sinh</option>
+              <option>Tổ 3 &mdash; Diệt côn trùng</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Nhân viên</span>
+            <select class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+              <option>Nguyễn Văn Toàn</option>
+              <option>Trần Quốc Bảo</option>
+              <option>Lê Văn Dũng</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Ngày thực hiện</span>
+            <input type="date" value="2024-10-21" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Giờ bắt đầu</span>
+            <input type="time" value="08:30" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+          </label>
+        </div>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm text-zinc-600">Ghi chú cho nhân viên</span>
+          <textarea rows="2" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Yêu cầu riêng của khách, lưu ý ra vào tòa nhà"></textarea>
+        </label>
+        <p class="text-xs text-zinc-500">Chỉ nhân viên thuộc tổ được chọn mới nhận được ca này.</p>
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <button onclick="wfShow('schedule')" class="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">H&#7911;y</button>
+        <button onclick="wfSave('Đã phân công ca cho Nguyễn Văn Toàn','schedule')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Lưu phân công</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="wf-screen" data-screen="new-dispute" data-title="Ghi nhận khiếu nại" hidden>
+  <div class="app-shell" data-nav="schedule">
+    <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <div>
+        <button onclick="wfShow('shift-detail')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Chi tiết ca</button>
+        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Ghi nhận khiếu nại</h1>
+        <p class="mt-1 text-sm text-zinc-500">Khách báo qua điện thoại; nhân sự ghi nhận thay. Ca bị loại khỏi bảng kê cho tới khi xử lý xong.</p>
+      </div>
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Ca bị khiếu nại</div>
+        <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+          <div class="flex justify-between gap-4 border-b border-zinc-100 py-1.5"><dt class="text-zinc-500">Ca</dt><dd>#2418 &middot; 14/10/2024</dd></div>
+          <div class="flex justify-between gap-4 border-b border-zinc-100 py-1.5"><dt class="text-zinc-500">Nhân viên</dt><dd>Nguyễn Văn Toàn</dd></div>
+        </dl>
+      </div>
+
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Nội dung khiếu nại</div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Lý do</span>
+            <select class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+              <option>Không thấy nhân viên đến</option>
+              <option>Làm thiếu hạng mục</option>
+              <option>Chất lượng không đạt</option>
+              <option>Sai thời gian đã hẹn</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Khách báo qua</span>
+            <select class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+              <option>Điện thoại</option>
+              <option>Zalo</option>
+              <option>Email</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Người báo</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Tên &middot; chức vụ bên khách">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Thời điểm nhận</span>
+            <input type="datetime-local" value="2024-10-15T09:20" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+          </label>
+        </div>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm text-zinc-600">Mô tả</span>
+          <textarea rows="3" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Khách phản ánh cụ thể điều gì"></textarea>
+        </label>
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <button onclick="wfShow('shift-detail')" class="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">H&#7911;y</button>
+        <button onclick="wfSave('Đã ghi nhận khiếu nại · ca loại khỏi bảng kê','dispute')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Ghi nhận khiếu nại</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="wf-screen" data-screen="new-customer" data-title="Thêm khách hàng" hidden>
+  <div class="app-shell" data-nav="customers">
+    <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <div>
+        <button onclick="wfShow('customers')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Khách hàng</button>
+        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Thêm khách hàng</h1>
+        <p class="mt-1 text-sm text-zinc-500">Hồ sơ khách dùng chung cho mọi hợp đồng sau này.</p>
+      </div>
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Thông tin khách</div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Tên công ty</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Công ty TNHH ...">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Tên rút gọn</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Hiển thị trong danh sách và lịch">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Người liên hệ</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Tên &middot; chức vụ">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Số điện thoại</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="09xx xxx xxx">
+          </label>
+          <label class="flex flex-col gap-1.5 sm:col-span-2">
+            <span class="text-sm text-zinc-600">Địa chỉ</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Số nhà, đường, quận, thành phố">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Phân khúc</span>
+            <select class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"><option>Thường</option><option>VIP</option></select>
+          </label>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <button onclick="wfShow('customers')" class="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">H&#7911;y</button>
+        <button onclick="wfSave('Đã thêm khách hàng','customers')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Lưu khách hàng</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="wf-screen" data-screen="new-employee" data-title="Thêm nhân viên" hidden>
+  <div class="app-shell" data-nav="employees">
+    <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <div>
+        <button onclick="wfShow('employees')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Nhân viên &amp; Tổ</button>
+        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Thêm nhân viên</h1>
+        <p class="mt-1 text-sm text-zinc-500">Tài khoản đăng nhập cho khối văn phòng; nhân sự hiện trường nhận ca qua link, không cần đăng nhập.</p>
+      </div>
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Nhân sự</div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Họ tên</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Nguyễn Văn A">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Số điện thoại</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="09xx xxx xxx">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Vai trò</span>
+            <select class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+              <option>Nhân viên</option>
+              <option>Tổ trưởng</option>
+              <option>Quản lý</option>
+              <option>Kế toán</option>
+              <option>Giám đốc</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Quản lý trực tiếp</span>
+            <select class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+              <option>Lê Thị Mai &mdash; Quản lý</option>
+              <option>Trần Minh Hoàng &mdash; Giám đốc</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Tổ</div>
+        <label class="flex flex-col gap-1.5 sm:max-w-xs">
+          <span class="text-sm text-zinc-600">Thuộc tổ</span>
+          <select class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+            <option>&mdash; Khối văn phòng, không thuộc tổ &mdash;</option>
+            <option>Tổ 1 &mdash; HVAC</option>
+            <option>Tổ 2 &mdash; Vệ sinh</option>
+            <option>Tổ 3 &mdash; Diệt côn trùng</option>
+          </select>
+        </label>
+        <p class="text-xs text-zinc-500">Tổ quyết định nhân sự này thấy ca của ai. Quản lý trực tiếp là đường báo cáo, không quyết định tổ.</p>
+      </div>
+
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Tài khoản</div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Tên đăng nhập</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Bỏ trống nếu chỉ làm hiện trường">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Mật khẩu tạm</span>
+            <input type="password" value="12345678" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+          </label>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <button onclick="wfShow('employees')" class="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">H&#7911;y</button>
+        <button onclick="wfSave('Đã thêm nhân viên','employees')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Lưu nhân viên</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="wf-screen" data-screen="new-team" data-title="Tạo tổ" hidden>
+  <div class="app-shell" data-nav="employees">
+    <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <div>
+        <button onclick="wfShow('employees')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Nhân viên &amp; Tổ</button>
+        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Tạo tổ</h1>
+        <p class="mt-1 text-sm text-zinc-500">Tổ hiện trường. Tổ trưởng là thành viên giữ vai trò tổ trưởng.</p>
+      </div>
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Thông tin tổ</div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Tên tổ</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Tổ 4 &mdash; Phòng cháy">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Mã tổ</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="T04">
+          </label>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div class="text-sm font-medium">Thành viên</div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm">
+            <span>Nguyễn Văn Hùng <span class="text-zinc-500">&middot; Tổ trưởng</span></span>
+            <input type="checkbox" checked class="h-4 w-4">
+          </label>
+          <label class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm">
+            <span>Nguyễn Văn Toàn <span class="text-zinc-500">&middot; Nhân viên</span></span>
+            <input type="checkbox" class="h-4 w-4">
+          </label>
+          <label class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm">
+            <span>Trần Quốc Bảo <span class="text-zinc-500">&middot; Nhân viên</span></span>
+            <input type="checkbox" class="h-4 w-4">
+          </label>
+        </div>
+        <p class="text-xs text-zinc-500">Mỗi tổ chỉ một tổ trưởng.</p>
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <button onclick="wfShow('employees')" class="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">H&#7911;y</button>
+        <button onclick="wfSave('Đã tạo tổ','employees')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Tạo tổ</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <div id="wf-toast" class="pointer-events-none fixed bottom-6 left-1/2 z-[1000] -translate-x-1/2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm text-white opacity-0 transition-opacity" hidden></div>
 
 <script>
@@ -1293,19 +1584,19 @@ var NAV = {
 
 // Phạm vi truy cập theo vai trò — bám theo use case trong docs/design-analysis.md
 var ROLES = {
-  director:  { name: 'Trần Minh Hoàng', initials: 'TH', title: 'Giám đốc',
+  director:  { name: 'Trần Minh Hoàng', initials: 'TH', user: 'hoang.tm', title: 'Giám đốc',
                home: 'dashboard',
                nav: ['dashboard', 'contracts', 'schedule', 'billing', 'alerts', 'customers', 'employees'] },
-  manager:   { name: 'Lê Thị Mai', initials: 'LM', title: 'Quản lý',
+  manager:   { name: 'Lê Thị Mai', initials: 'LM', user: 'mai.lt', title: 'Quản lý',
                home: 'contracts',
                nav: ['contracts', 'schedule', 'alerts', 'customers'] },
-  accountant:{ name: 'Phạm Thu Trang', initials: 'PT', title: 'Kế toán',
+  accountant:{ name: 'Phạm Thu Trang', initials: 'PT', user: 'trang.pt', title: 'Kế toán',
                home: 'billing',
                nav: ['billing', 'reconcile', 'contracts', 'customers'] },
-  team_lead: { name: 'Nguyễn Văn Hùng', initials: 'NH', title: 'Tổ trưởng · Tổ 1',
+  team_lead: { name: 'Nguyễn Văn Hùng', initials: 'NH', user: 'hung.nv', title: 'Tổ trưởng · Tổ 1',
                home: 'team-shifts',
                nav: ['team-shifts', 'alerts'] },
-  employee:  { name: 'Nguyễn Văn Toàn', initials: 'NT', title: 'Nhân viên · Tổ 1',
+  employee:  { name: 'Nguyễn Văn Toàn', initials: 'NT', user: 'toan.nv', title: 'Nhân viên · Tổ 1',
                home: 'my-shifts',
                nav: ['my-shifts'] }
 };
@@ -1328,6 +1619,11 @@ var SCREEN_ROLES = {
   alerts:             ['director', 'manager', 'team_lead'],
   customers:          ['director', 'manager', 'accountant'],
   employees:          ['director'],
+  'assign-shift':     ['director', 'manager', 'team_lead'],
+  'new-dispute':      ['director', 'manager'],
+  'new-customer':     ['director', 'manager'],
+  'new-employee':     ['director'],
+  'new-team':         ['director'],
   login:              ['director', 'manager', 'accountant', 'team_lead', 'employee']
 };
 
@@ -1368,26 +1664,60 @@ function buildShell(el) {
   el.className = 'app-shell min-h-screen bg-zinc-50';
   el.innerHTML =
     // Sidebar — chỉ hiện từ lg trở lên
-    '<aside class="fixed bottom-0 left-0 top-[33px] z-40 hidden w-60 flex-col bg-zinc-950 p-3 lg:flex">'
+    '<aside class="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col bg-zinc-950 p-3 lg:flex">'
     + '<div class="flex items-center gap-2 px-2 py-3">'
     + '<div class="flex h-7 w-7 items-center justify-center rounded-md bg-white text-xs font-semibold text-zinc-900">L</div>'
     + '<span class="text-sm font-semibold text-white">LichHD</span></div>'
     + '<nav class="mt-2 flex flex-col gap-0.5">' + navMarkup(active, false) + '</nav>'
     + '<div class="mt-auto flex items-center gap-2 border-t border-zinc-800 px-2 py-3">'
     + '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs text-zinc-300">' + role.initials + '</div>'
-    + '<div class="min-w-0"><div class="truncate text-sm text-white">' + role.name + '</div>'
-    + '<div class="truncate text-xs text-zinc-500">' + role.title + '</div></div></div>'
+    + '<div class="min-w-0 flex-1"><div class="truncate text-sm text-white">' + role.name + '</div>'
+    + '<div class="truncate text-xs text-zinc-500">' + role.title + '</div></div>'
+    + '<button onclick="wfLogout()" title="Đăng xuất" class="shrink-0 rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-900 hover:text-white">'
+    + '<span class="material-symbols-outlined">logout</span></button></div>'
     + '</aside>'
 
     // Thanh điều hướng ngang — thay sidebar dưới lg
-    + '<div class="sticky top-[33px] z-30 flex items-center gap-2 overflow-x-auto bg-zinc-950 px-3 py-2 lg:hidden">'
+    + '<div class="sticky top-0 z-30 flex items-center gap-2 overflow-x-auto bg-zinc-950 px-3 py-2 lg:hidden">'
     + navMarkup(active, true)
+    + '<button onclick="wfLogout()" class="ml-auto shrink-0 rounded-lg px-2 py-1.5 text-zinc-500 hover:text-white">'
+    + '<span class="material-symbols-outlined">logout</span></button>'
     + '</div>'
 
     + '<div class="lg:pl-60">' + content + '</div>';
 }
 
 var HISTORY = [];
+var SIGNED_IN = false;
+
+// Đăng nhập: tài khoản quyết định vai trò, vai trò quyết định màn mặc định và menu.
+function wfLogin() {
+  var picker = document.getElementById('wf-login-user');
+  var pass = document.getElementById('wf-login-pass');
+  var error = document.getElementById('wf-login-error');
+  if (!pass.value) {
+    error.hidden = false;
+    pass.focus();
+    return;
+  }
+  error.hidden = true;
+  SIGNED_IN = true;
+  wfRole(picker.value);
+  wfToast('Xin chào ' + ROLES[picker.value].name);
+}
+
+function wfLogout() {
+  SIGNED_IN = false;
+  HISTORY = [];
+  wfShow('login');
+  wfToast('Đã đăng xuất');
+}
+
+// Lưu biểu mẫu: xác nhận rồi quay về danh sách, thay cho lệnh gọi API
+function wfSave(message, next) {
+  wfToast(message);
+  setTimeout(function () { wfShow(next); }, 700);
+}
 
 // Thông báo ngắn thay cho thao tác chưa có backend
 function wfToast(text) {
@@ -1424,16 +1754,13 @@ function wfBack() {
 var SYNCING = false;
 
 function wfShow(id) {
-  if (!canSee(id)) return;
+  if (!SIGNED_IN && id !== 'login') id = 'login';
+  if (id !== 'login' && !canSee(id)) return;
   if (HISTORY[HISTORY.length - 1] !== id) HISTORY.push(id);
   SYNCING = true;
   location.hash = ROLE + '/' + id;
   setTimeout(function () { SYNCING = false; }, 0);
   SCREENS.forEach(function (s) { s.hidden = s.getAttribute('data-screen') !== id; });
-  document.querySelectorAll('#wf-switcher button').forEach(function (b) {
-    var on = b.getAttribute('data-target') === id;
-    b.className = 'shrink-0 rounded px-2.5 py-1 ' + (on ? 'bg-zinc-700 text-white' : 'hover:text-white');
-  });
   window.scrollTo(0, 0);
 }
 
@@ -1448,78 +1775,47 @@ function bindChips() {
   });
 }
 
-// Thanh duyệt wireframe chỉ liệt kê màn vai trò hiện tại được mở.
-function buildSwitcher() {
-  var switcher = document.getElementById('wf-switcher');
-  switcher.querySelectorAll('button').forEach(function (b) { b.remove(); });
-
-  var home = ROLES[ROLE].home;
-  var list = SCREENS.filter(function (s) { return canSee(s.getAttribute('data-screen')); });
-
-  // Màn chính của vai trò lên đầu, màn đăng nhập (tiền đăng nhập) xuống cuối
-  list.sort(function (a, b) {
-    function rank(s) {
-      var id = s.getAttribute('data-screen');
-      return id === home ? 0 : (id === 'login' ? 2 : 1);
-    }
-    return rank(a) - rank(b);
-  });
-
-  list.forEach(function (s, i) {
-    var id = s.getAttribute('data-screen');
-    var btn = document.createElement('button');
-    btn.setAttribute('data-target', id);
-    btn.textContent = (i + 1) + '. ' + s.getAttribute('data-title');
-    btn.onclick = function () { wfShow(id); };
-    switcher.appendChild(btn);
-  });
-}
-
 // Đổi vai trò: nav, danh tính và danh sách màn đổi theo quyền, mở màn mặc định của vai trò đó.
 function wfRole(id) {
   ROLE = id;
+  SIGNED_IN = true;
   HISTORY = [];
-  var picker = document.getElementById('wf-role');
-  if (picker) picker.value = id;
   document.querySelectorAll('.app-shell').forEach(buildShell);
   bindChips();
-  buildSwitcher();
   wfShow(ROLES[id].home);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
   SCREENS = Array.prototype.slice.call(document.querySelectorAll('.wf-screen'));
 
-  var switcher = document.getElementById('wf-switcher');
+  // Deep link: #vai-trò/màn-hình — dùng cho việc chụp ảnh tự động
+  var hash = location.hash.replace(/^#/, '').split('/');
+  // Deep link #vai-trò/màn-hình vào thẳng, dùng cho chụp ảnh tự động và chia sẻ màn cụ thể
+  if (hash[0] && ROLES[hash[0]]) {
+    ROLE = hash[0];
+    SIGNED_IN = hash[1] !== 'login';
+  }
 
-  var picker = document.createElement('select');
-  picker.id = 'wf-role';
-  picker.className = 'mr-3 shrink-0 rounded bg-zinc-800 px-2 py-1 text-[11px] text-white';
+  var users = document.getElementById('wf-login-user');
   Object.keys(ROLES).forEach(function (id) {
     var opt = document.createElement('option');
     opt.value = id;
-    opt.textContent = 'Vai trò: ' + ROLES[id].title.split(' ·')[0];
-    picker.appendChild(opt);
+    opt.textContent = ROLES[id].user + ' — ' + ROLES[id].title;
+    users.appendChild(opt);
   });
-  picker.onchange = function () { wfRole(picker.value); };
-  switcher.appendChild(picker);
-
-  // Deep link: #vai-trò/màn-hình — dùng cho việc chụp ảnh tự động
-  var hash = location.hash.replace(/^#/, '').split('/');
-  if (hash[0] && ROLES[hash[0]]) ROLE = hash[0];
 
   document.querySelectorAll('.app-shell').forEach(buildShell);
   bindChips();
-  buildSwitcher();
-  picker.value = ROLE;
-
-  wfShow(hash[1] && canSee(hash[1]) ? hash[1] : ROLES[ROLE].home);
+  wfShow(!SIGNED_IN ? 'login' : (hash[1] && canSee(hash[1]) ? hash[1] : ROLES[ROLE].home));
 
   // Deep link đổi sau khi trang đã tải (điều hướng bằng thanh địa chỉ, back/forward)
   window.addEventListener('hashchange', function () {
     if (SYNCING) return;
     var h = location.hash.replace(/^#/, '').split('/');
-    if (h[0] && ROLES[h[0]] && h[0] !== ROLE) wfRole(h[0]);
+    if (h[0] && ROLES[h[0]] && h[0] !== ROLE) {
+      SIGNED_IN = true;
+      wfRole(h[0]);
+    }
     if (h[1] && canSee(h[1])) wfShow(h[1]);
   });
 });
