@@ -228,16 +228,16 @@ Bảng đầy đủ: [PRD mục 1](docs/prd.vi.md#1-giới-thiệu--mục-đích
 ## Cấu trúc repo
 
 ```
-docs/
+docs/                        # → docs/README.md
 ├── prd.md                   # PRD — tiếng Anh (chính)
 ├── prd.vi.md                # PRD — tiếng Việt
 ├── design-analysis.md       # FR/NFR, use case, sequence diagram — tiếng Anh
 ├── design-analysis.vi.md    # FR/NFR, use case, sequence diagram — tiếng Việt
 ├── wireframe.html           # wireframe 1 file HTML, 14 màn hình, 5 vai trò
-├── screenshots/wireframe/   # ảnh chụp, mỗi vai trò một thư mục
+├── screenshots/wireframe/   # ảnh chụp, mỗi vai trò một thư mục → screenshots/README.md
 └── mindmap.pdf
-db/
-├── schema.sql               # ANSI SQL schema
+db/                          # → db/README.md
+├── schema.sql               # ANSI SQL schema, 15 bảng
 └── erd.md                   # ERD mermaid
 scripts/
 └── capture-wireframe.sh     # chụp toàn bộ màn bằng Chrome headless

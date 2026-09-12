@@ -230,16 +230,16 @@ Source: [PRD §1](docs/prd.md#1-introduction--purpose).
 ## Repository layout
 
 ```
-docs/
+docs/                        # → docs/README.md
 ├── prd.md                   # PRD — English (primary)
 ├── prd.vi.md                # PRD — Vietnamese
 ├── design-analysis.md       # FR/NFR, use cases, sequence diagrams
 ├── design-analysis.vi.md    # same, Vietnamese
 ├── wireframe.html           # single-file HTML wireframe, 14 screens, 5 roles
-├── screenshots/wireframe/   # captures, one folder per role
+├── screenshots/wireframe/   # captures, one folder per role → screenshots/README.md
 └── mindmap.pdf
-db/
-├── schema.sql               # ANSI SQL schema
+db/                          # → db/README.md
+├── schema.sql               # ANSI SQL schema, 15 tables
 └── erd.md                   # mermaid ERD
 scripts/
 └── capture-wireframe.sh     # headless Chrome capture of every screen
