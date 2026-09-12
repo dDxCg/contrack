@@ -1165,6 +1165,7 @@ function buildShell(el) {
 
 function wfShow(id) {
   if (!canSee(id)) return;
+  location.hash = ROLE + '/' + id;
   SCREENS.forEach(function (s) { s.hidden = s.getAttribute('data-screen') !== id; });
   document.querySelectorAll('#wf-switcher button').forEach(function (b) {
     var on = b.getAttribute('data-target') === id;
@@ -1239,11 +1240,16 @@ document.addEventListener('DOMContentLoaded', function () {
   picker.onchange = function () { wfRole(picker.value); };
   switcher.appendChild(picker);
 
+  // Deep link: #vai-trò/màn-hình — dùng cho việc chụp ảnh tự động
+  var hash = location.hash.replace(/^#/, '').split('/');
+  if (hash[0] && ROLES[hash[0]]) ROLE = hash[0];
+
   document.querySelectorAll('.app-shell').forEach(buildShell);
   bindChips();
   buildSwitcher();
+  picker.value = ROLE;
 
-  wfShow(ROLES[ROLE].home);
+  wfShow(hash[1] && canSee(hash[1]) ? hash[1] : ROLES[ROLE].home);
 });
 </script>
 

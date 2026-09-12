@@ -9,6 +9,28 @@
 
 </div>
 
+---
+
+## Table of contents
+
+- [What LichHD is](#what-lichhd-is)
+- [Before and after](#before-and-after)
+- [The screens](#the-screens)
+- [Architecture](#architecture)
+- [Success metrics](#success-metrics)
+- [Competitive landscape](#competitive-landscape)
+- [Documentation](#documentation)
+- [Repository layout](#repository-layout)
+
+---
+
+## What LichHD is
+
+Contract management for companies delivering **the same service on a fixed frequency
+over a contract term** — industrial cleaning, HVAC/elevator maintenance, pest control,
+landscaping, fire-safety maintenance. The recurring contract is the primary entity;
+schedule, field evidence and statements derive from it.
+
 ```mermaid
 flowchart LR
     C["Contract<br/><small>customer · sites · service items</small>"]
@@ -24,64 +46,75 @@ flowchart LR
     class S,P,T ours
 ```
 
----
+One contract covers one or more sites; each site carries service items with a frequency
+and unit price. Shifts are generated from item frequency. Each completed shift records
+before/after photos, a photographed customer-signed receipt, GPS coordinates and a
+timestamp. Monthly statements are computed from completed shifts and exported as PDF
+with the evidence attached.
 
-## Table of contents
-
-- [What LichHD is](#what-lichhd-is)
-- [Before and after](#before-and-after)
-- [Architecture](#architecture)
-- [Success metrics](#success-metrics)
-- [Competitive landscape](#competitive-landscape)
-- [Documentation](#documentation)
-- [Repository layout](#repository-layout)
-
----
-
-## What LichHD is
-
-LichHD is contract management software for companies that sell **the same service, on a
-schedule, for months at a time** — industrial cleaning, HVAC/elevator maintenance, pest
-control, landscaping, fire-safety maintenance. Not a to-do list, not a CMMS for tracking
-your own equipment, not an ad-hoc job marketplace.
-
-### Overview
-
-```
-Recurring service = Contract + Schedule + Field Proof + Statement
-```
-
-A contract is signed once, against one or more sites, each with its own service items,
-frequency and price. The schedule is generated from that, not typed by hand. Every visit
-produces field proof — before/after photos and a photographed, customer-signed paper
-receipt, stamped with GPS and time. The statement is built from that proof, not
-reconstructed from memory and a Zalo scroll-back.
-
-Full detail: [docs/prd.md](docs/prd.md) · [Bản tiếng Việt](docs/prd.vi.md).
+Specification: [docs/prd.md](docs/prd.md) · [Bản tiếng Việt](docs/prd.vi.md).
 
 ---
 
 ## Before and after
 
-**AS-IS**, today, on Excel and Zalo ([PRD §4](docs/prd.md#4-user-flows--design)):
+**AS-IS** — Excel and Zalo ([PRD §4](docs/prd.md#4-user-flows--design)):
 
-1. Accountant hand-types 24 rows into `Schedule 2025.xlsx` for a 12-month contract.
-2. Manager copies this week's rows into a Zalo group every Monday.
-3. Team lead reads Zalo, assigns people, they go do the work.
-4. Photos land in the Zalo group and scroll away in two weeks.
-5. Customer signs a paper confirmation the team lead carries around for days — sometimes loses.
-6. Month-end: accountant digs through Zalo and paper to reconstruct a statement.
-7. A missed visit surfaces only after the customer has already complained.
+1. Accountant types 24 schedule rows per 12-month contract into a spreadsheet.
+2. Manager posts the week's rows to a Zalo group each Monday.
+3. Team lead assigns staff from the Zalo message.
+4. Evidence photos age out of the Zalo group.
+5. Signed paper receipts are held in the field until delivered to the office.
+6. Month-end statements are reconstructed from Zalo history and paper records.
+7. Missed visits surface on customer complaint.
 
-**TO-BE**, with LichHD:
+**TO-BE** — LichHD:
 
-1. Sign the contract once — sites, items, frequency, price. The schedule generates itself.
-2. Monday morning: this week's shifts are already pushed to each team lead.
-3. Employee opens a link on their phone, no app install: before/after photos, customer
-   signs the paper receipt, employee photographs it.
-4. GPS + timestamp are stamped automatically.
-5. One button at month-end: statement + photos + receipt → PDF, sent to the customer.
-6. The system flags "5 contracts expire in 30 days" before any of them lapse.
+1. Contract entered once — sites, items, frequency, unit price; shifts generated from frequency.
+2. Weekly shift list pushed to each team lead.
+3. Employee opens a shift link on a phone, no install; submits before/after photos and
+   the photographed signed receipt.
+4. GPS and timestamp recorded on submission, non-editable thereafter.
+5. Statement exported as PDF with attached evidence.
+6. Expiry alert at 30 days; missed-frequency alert on overdue shifts.
+
+---
+
+## The screens
+
+[`docs/wireframe.html`](docs/wireframe.html) — 14 screens, 5 roles, single
+self-contained HTML file, no build step. Role is selected from the top bar;
+navigation, identity and reachable screens follow the role. Deep link:
+`wireframe.html#<role>/<screen>`. Captures below produced by
+[`scripts/capture-wireframe.sh`](scripts/capture-wireframe.sh) — headless Chrome at
+1440×900, phone-frame screens at 560px.
+
+**Contract-derived scheduling.** Each row carries its service frequency and
+current-period progress against it.
+
+![The LichHD contracts screen. Three figures read 48 active contracts at 245 million VND a month, 5 expiring within 30 days, and 2 behind their required frequency. A table lists four contracts — Keangnam Landmark 72, BV ĐKQT Thu Cúc, Chung cư Golden Park and Vinhomes Skylake — each with its service and frequency, this period's progress as a badge, days remaining on the term, and monthly value.](docs/screenshots/wireframe/director/contracts.png)
+
+**Field evidence capture.** Before/after photos, photographed signed receipt, GPS and
+timestamp recorded by the system on submission.
+
+![The LichHD field execution screen on a phone. A header reads Keangnam Landmark 72, VRV maintenance, Tòa A, 08:30 on 21/10. Three numbered steps follow: before photos, marked two captured; after photos, marked not yet; and the customer-signed receipt, marked not yet, with a note to have the customer sign the paper and photograph it. A grey panel below shows GPS 21.0176, 105.7833 and the time 21/10/2024 09:12, noted as recorded automatically on submission and not editable. A single button reads "Gửi & hoàn thành ca".](docs/screenshots/wireframe/employee/field.png)
+
+**Role-scoped access**, per the use cases in
+[the design analysis](docs/design-analysis.md#ii-use-cases). Employee scope: assigned
+shifts and the field screen only; contracts, statements and dashboard are neither
+listed nor reachable.
+
+![The LichHD employee view. The sidebar holds exactly one item, "Ca của tôi", and identifies the user as Nguyễn Văn Toàn, nhân viên, Tổ 1. The page lists today's shift at Keangnam Landmark 72 with a "Bắt đầu ca" button, two upcoming shifts marked waiting, one finished shift at BV ĐKQT Thu Cúc marked done with 3 photos and a receipt, and a closing line: only shifts assigned to you are shown.](docs/screenshots/wireframe/employee/my-shifts.png)
+
+### Every screen
+
+| Role | Screens |
+|---|---|
+| Director | [dashboard](docs/screenshots/wireframe/director/dashboard.png) · [contracts](docs/screenshots/wireframe/director/contracts.png) · [new contract](docs/screenshots/wireframe/director/new-contract.png) · [schedule](docs/screenshots/wireframe/director/schedule.png) · [dispute](docs/screenshots/wireframe/director/dispute.png) · [billing](docs/screenshots/wireframe/director/billing.png) · [alerts](docs/screenshots/wireframe/director/alerts.png) · [customers](docs/screenshots/wireframe/director/customers.png) · [employees](docs/screenshots/wireframe/director/employees.png) |
+| Manager | [contracts](docs/screenshots/wireframe/manager/contracts.png) · [schedule](docs/screenshots/wireframe/manager/schedule.png) · [new contract](docs/screenshots/wireframe/manager/new-contract.png) · [dispute](docs/screenshots/wireframe/manager/dispute.png) · [alerts](docs/screenshots/wireframe/manager/alerts.png) · [customers](docs/screenshots/wireframe/manager/customers.png) |
+| Accountant | [billing](docs/screenshots/wireframe/accountant/billing.png) · [reconcile](docs/screenshots/wireframe/accountant/reconcile.png) · [contracts](docs/screenshots/wireframe/accountant/contracts.png) · [customers](docs/screenshots/wireframe/accountant/customers.png) |
+| Team lead | [team shifts](docs/screenshots/wireframe/team_lead/team-shifts.png) · [field execution](docs/screenshots/wireframe/team_lead/field.png) · [alerts](docs/screenshots/wireframe/team_lead/alerts.png) |
+| Employee | [my shifts](docs/screenshots/wireframe/employee/my-shifts.png) · [field execution](docs/screenshots/wireframe/employee/field.png) |
 
 ---
 
@@ -110,7 +143,7 @@ flowchart TB
     lichhd -->|"requests payment"| vietqr
 ```
 
-Customer never touches LichHD directly — signature and complaints happen offline, entered by staff.
+Customer sits outside the system boundary: signatures and complaints are recorded offline by staff.
 
 ### View 2 — one shift, end to end
 
@@ -160,10 +193,10 @@ stateDiagram-v2
 
 ## Success metrics
 
-| Metric | Today | With LichHD |
+| Metric | Baseline | Target |
 |---|---|---|
-| Time to close the month-end statement | 1.5–3 days | Under 30 minutes |
-| Visits with complete photo + signature evidence | Whatever Zalo didn't lose | ≥ 90% |
+| Month-end statement closing time | 1.5–3 days | Under 30 minutes |
+| Visits with complete photo and signature evidence | Not measurable | ≥ 90% |
 
 Full release criteria: [PRD §8](docs/prd.md#8-success-metrics--release-criteria).
 
@@ -171,12 +204,12 @@ Full release criteria: [PRD §8](docs/prd.md#8-success-metrics--release-criteria
 
 ## Competitive landscape
 
-| Software category | Serves whom | Why it doesn't fit |
+| Category | Target user | Gap for this segment |
 |---|---|---|
-| CMMS (SpeedMaint, Vietsoft…) | Factories maintaining their own assets | Asset-centric, not customer-contract-centric |
-| International field service (Jobber, Swept, MaintainX) | Service contractors | Right model, built for ad-hoc jobs — weak on long fixed-frequency contracts, no Vietnamese/Zalo/VietQR |
-| B2C marketplaces (bTaskee, JupViec) | Individual consumers | Wrong business model entirely |
-| **LichHD** | Recurring-service companies, 10–80 staff, 20–150 contracts | Contract-centric from the start |
+| CMMS (SpeedMaint, Vietsoft…) | Factories maintaining owned assets | Asset-centric, not customer-contract-centric |
+| International field service (Jobber, Swept, MaintainX) | Service contractors | Built for ad-hoc jobs; weak on fixed-frequency long-term contracts; no Vietnamese, Zalo or VietQR |
+| B2C marketplaces (bTaskee, JupViec) | Individual consumers | Different business model |
+| **LichHD** | Recurring-service companies, 10–80 staff, 20–150 contracts | — |
 
 Source: [PRD §1](docs/prd.md#1-introduction--purpose).
 
@@ -184,13 +217,13 @@ Source: [PRD §1](docs/prd.md#1-introduction--purpose).
 
 ## Documentation
 
-| # | Document | What it answers |
+| # | Document | Contents |
 |---|---|---|
-| 1 | [PRD](docs/prd.md) · [tiếng Việt](docs/prd.vi.md) | Problem, users, MVP scope, roadmap, release criteria |
-| 2 | [Design Analysis](docs/design-analysis.md) · [tiếng Việt](docs/design-analysis.vi.md) | Functional/non-functional requirements, use cases by role, every sequence, mermaid |
-| 3 | [Wireframe](docs/wireframe.html) | All 10 MVP screens, single self-contained HTML file |
-| 4 | [ERD](db/erd.md) | Entity-relationship diagram, mermaid |
-| 5 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, lookup tables instead of ENUM |
+| 1 | [PRD](docs/prd.md) · [tiếng Việt](docs/prd.vi.md) | Problem statement, personas, MVP scope, roadmap, release criteria |
+| 2 | [Design Analysis](docs/design-analysis.md) · [tiếng Việt](docs/design-analysis.vi.md) | FR/NFR, use cases per role, sequence diagrams |
+| 3 | [Wireframe](docs/wireframe.html) | 14 screens, 5 roles, single self-contained HTML file |
+| 4 | [ERD](db/erd.md) | Entity-relationship diagram |
+| 5 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, lookup tables in place of ENUM |
 
 ---
 
@@ -198,14 +231,18 @@ Source: [PRD §1](docs/prd.md#1-introduction--purpose).
 
 ```
 docs/
-├── prd.md                 # PRD — English (primary)
-├── prd.vi.md               # PRD — Vietnamese
-├── design-analysis.md      # FR/NFR, use cases, sequence diagrams
-├── wireframe.html           # single-file HTML wireframe, 10 screens
+├── prd.md                   # PRD — English (primary)
+├── prd.vi.md                # PRD — Vietnamese
+├── design-analysis.md       # FR/NFR, use cases, sequence diagrams
+├── design-analysis.vi.md    # same, Vietnamese
+├── wireframe.html           # single-file HTML wireframe, 14 screens, 5 roles
+├── screenshots/wireframe/   # captures, one folder per role
 └── mindmap.pdf
 db/
 ├── schema.sql               # ANSI SQL schema
 └── erd.md                   # mermaid ERD
+scripts/
+└── capture-wireframe.sh     # headless Chrome capture of every screen
 ```
 
 ---
