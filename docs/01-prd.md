@@ -1,8 +1,6 @@
 # PRD — LichHD
 ### Recurring Service Contract Management Software
 
-*[Bản tiếng Việt](prd.vi.md)*
-
 ---
 
 ## 1. Introduction & Purpose

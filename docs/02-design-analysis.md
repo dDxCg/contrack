@@ -1,11 +1,9 @@
 # LichHD — Design Analysis
 
-*[Bản tiếng Việt](design-analysis.vi.md)*
-
 ## Document Overview
 This is a design analysis report for **LichHD**, a recurring service contract management system for companies in industrial cleaning, HVAC/elevator maintenance, pest control, landscaping, and fire-safety maintenance. It replaces manual Excel scheduling and Zalo-based coordination with a single system for contracts, dispatch, field proof-of-work, and monthly statements.
 
-Source documents: [PRD](prd.md) · [ERD](../db/erd.md) · [SQL schema](../db/schema.sql) · [Wireframe](wireframe.html)
+Source documents: [PRD](01-prd.md) · [ERD](../db/erd.md) · [SQL schema](../db/schema.sql) · [Wireframe](ui/wireframe.html)
 
 ---
 
@@ -315,22 +313,21 @@ rendered statement PDFs. Two authorisation mechanisms: session credentials for t
 per-shift signed token for field submission, so an employee opens a link at a job site with no install
 and no password (FR7, NFR7).
 
-Full architecture — component breakdown, key decisions, cross-cutting concerns and open
-questions: [`architecture.md`](architecture.md).
+Full architecture — component breakdown, key decisions, cross-cutting concerns: `03-architecture.md`.
 
 ### Interfaces
 
 Endpoint contract per requirement, plus the role × resource × row-scope access-control matrix:
-[`api.md`](api.md).
+`04-api.md`.
 
 ### Data
 
-[`db/schema.sql`](../db/schema.sql) — 16 tables, ANSI SQL, single-tenant, lookup tables in place of
-`ENUM`. Diagram: [`db/erd.md`](../db/erd.md). Conventions: [`db/README.md`](../db/README.md).
+[`db/schema.sql`](../db/schema.sql) — 16 tables, ANSI SQL, single-tenant.
+Diagram: [`db/erd.md`](../db/erd.md). Conventions: [`db/README.md`](../db/README.md).
 
 ### User interface
 
-[`wireframe.html`](wireframe.html) — screens per role, navigation scoped to the role's use cases in
+[`wireframe.html`](ui/wireframe.html) — screens per role, navigation scoped to the role's use cases in
 §II. Captures: [`screenshots/`](screenshots/).
 
 ### Integrations

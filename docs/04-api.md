@@ -1,9 +1,19 @@
 # LichHD — API specification
+
+> **Status:** Draft — endpoint shapes settled, transport details follow the stack decision ([`03-architecture.md`](03-architecture.md#11-risks-and-technical-debt) R1)
+> **Audience:** Developers building the server or a client against it
+> **Answers:** Which operations exist, who may call them, and over what rows?
+
+Every endpoint traces to a requirement in [`02-design-analysis.md`](02-design-analysis.md). Field names match
+the columns in [`../db/schema.sql`](../db/schema.sql).
+
+---
+
 ## 1. Conventions
 
 **Base path** `/api/v1`. JSON request and response bodies, UTF-8.
 
-**Authentication.** Two mechanisms, per [`architecture.md`](architecture.md#51-authorisation):
+**Authentication.** Two mechanisms, per [`03-architecture.md`](03-architecture.md#81-authorisation):
 
 | Surface | Mechanism |
 |---|---|
@@ -50,7 +60,7 @@ Codes are listed in full in [§9](#9-error-codes).
 maximum 100.
 
 **Timestamps** are ISO 8601 UTC and server-assigned. A client-supplied time is never trusted for
-evidence ([`architecture.md`](architecture.md#52-evidence-integrity-and-retention)).
+evidence ([`03-architecture.md`](03-architecture.md#82-evidence-integrity-and-retention)).
 
 ---
 
@@ -82,7 +92,7 @@ carries a non-positive `unit_price`, matching the `alt validation failed` branch
 ### 3.1 Schedule generation — FR4
 
 Creating a contract generates `shifts` for every item across the term from the item's `frequency`.
-Frequency currently has **no grammar** — see [`architecture.md`](architecture.md#6-open-questions) Q2;
+Frequency currently has **no grammar** — see [`03-architecture.md`](03-architecture.md#11-risks-and-technical-debt) R2;
 this endpoint cannot be finished until that is resolved.
 
 | Method | Path | Purpose |
@@ -120,7 +130,7 @@ Unauthenticated in the session sense; authorised by the token, which names exact
 On submit the server stamps `captured_at` from its own clock, inserts `shift_photos`, sets
 `shifts.status = completed`, and writes `receipt_photo_url`. Re-submitting returns `409`
 `shift.already_completed` — evidence is write-once
-([`architecture.md`](architecture.md#4-key-decisions) D8).
+([`03-architecture.md`](03-architecture.md#9-architecture-decisions) D7).
 
 `latitude` and `longitude` may be null; the shift still completes and is flagged for missing location,
 matching the `else no GPS signal` branch of sequence 2.
@@ -140,7 +150,7 @@ matching the `else no GPS signal` branch of sequence 2.
 
 `POST /statements` returns `409` `statement.period_incomplete` with the offending shifts in `details`
 when any shift in the period lacks evidence or is disputed
-([`architecture.md`](architecture.md#4-key-decisions) D7).
+([`03-architecture.md`](03-architecture.md#9-architecture-decisions) D6).
 
 ---
 
@@ -160,7 +170,7 @@ when any shift in the period lacks evidence or is disputed
 ## 8. Access control
 
 Role grants the operation; scope restricts the rows. `—` is no access. This table is the contract
-that `SCREEN_ROLES` in [`wireframe.html`](wireframe.html) must agree with.
+that `SCREEN_ROLES` in [`wireframe.html`](ui/wireframe.html) must agree with.
 
 | Resource | Director | Manager | Accountant | Team lead | Employee |
 |---|---|---|---|---|---|
@@ -207,7 +217,7 @@ there is nothing to add.
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
 | `token.invalid` | 401 | Signature does not verify, or the token names no shift. | — |
-| `token.expired` | 401 | Past its lifetime ([`architecture.md`](architecture.md#6-open-questions) Q6). | `expired_at` |
+| `token.expired` | 401 | Past its lifetime ([`03-architecture.md`](03-architecture.md#11-risks-and-technical-debt) R6). | `expired_at` |
 | `token.shift_mismatch` | 403 | The token's shift is not the shift being submitted. | — |
 | `token.rate_limited` | 429 | Repeated redemption or upload attempts on one token. | `retry_after_seconds` |
 
@@ -218,7 +228,7 @@ there is nothing to add.
 | `contract.item_invalid` | 400 | An item is missing `frequency` or carries a non-positive `unit_price` — sequence 1's `alt validation failed`. | `items[]` with the offending index and field |
 | `contract.term_invalid` | 400 | `expires_at` is not after `signed_at`. | `signed_at`, `expires_at` |
 | `contract.customer_not_found` | 400 | `customer_id` names no customer. | `customer_id` |
-| `contract.frequency_unparsable` | 422 | `frequency` does not match the generator's grammar — blocked on [`architecture.md`](architecture.md#6-open-questions) Q2. | `item_id`, `frequency` |
+| `contract.frequency_unparsable` | 422 | `frequency` does not match the generator's grammar — blocked on [`03-architecture.md`](03-architecture.md#11-risks-and-technical-debt) R2. | `item_id`, `frequency` |
 | `schedule.no_shifts_generated` | 422 | The frequency parses but yields no occurrence inside the term. | `item_id` |
 | `schedule.regenerate_blocked` | 409 | Regeneration would move a completed or disputed shift. | `shift_ids[]` |
 
@@ -226,7 +236,7 @@ there is nothing to add.
 
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
-| `shift.already_completed` | 409 | Re-submitting, reassigning or rescheduling a completed shift — evidence is write-once ([`architecture.md`](architecture.md#4-key-decisions) D8). | `completed_at` |
+| `shift.already_completed` | 409 | Re-submitting, reassigning or rescheduling a completed shift — evidence is write-once ([`03-architecture.md`](03-architecture.md#9-architecture-decisions) D7). | `completed_at` |
 | `shift.evidence_incomplete` | 400 | Submit is missing a required photo type or `receipt_photo_key`. | `missing[]` |
 | `shift.assignee_out_of_team` | 403 | Reassigning to an employee outside the caller's team. | `assignee_id` |
 | `shift.not_disputed` | 409 | `dispute:resolve` on a shift that is not disputed. | `status` |
@@ -239,7 +249,7 @@ there is nothing to add.
 
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
-| `statement.period_incomplete` | 409 | A shift in the period lacks evidence or is disputed ([`architecture.md`](architecture.md#4-key-decisions) D7). | `shift_ids[]` grouped by reason |
+| `statement.period_incomplete` | 409 | A shift in the period lacks evidence or is disputed ([`03-architecture.md`](03-architecture.md#9-architecture-decisions) D6). | `shift_ids[]` grouped by reason |
 | `statement.already_exists` | 409 | A statement already exists for that `contract_id` + `period`. | `statement_id` |
 | `statement.not_issued` | 409 | `send` before `export` — there is no PDF yet. | `status` |
 | `statement.immutable` | 409 | Editing a statement already `issued` or `sent`. | `status` |
@@ -248,7 +258,7 @@ there is nothing to add.
 
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
-| `alert.channel_unavailable` | 502 | Zalo ZNS and SMS both rejected the send; the alert falls back in-app ([`architecture.md`](architecture.md#5-cross-cutting-concerns) §5.3). | `channel`, `provider_code` |
+| `alert.channel_unavailable` | 502 | Zalo ZNS and SMS both rejected the send; the alert falls back in-app ([`03-architecture.md`](03-architecture.md#8-crosscutting-concepts) §8.3). | `channel`, `provider_code` |
 | `customer.has_active_contracts` | 409 | Deleting a customer that still holds a non-terminated contract. | `contract_ids[]` |
 | `employee.has_assigned_shifts` | 409 | Deleting an employee still assigned to future shifts. | `shift_ids[]` |
 | `employee.username_taken` | 409 | `username` is already in use. | `username` |

@@ -5,7 +5,6 @@
 **Recurring Service Contract Management**
 
 [![Status](https://img.shields.io/badge/status-pre--development%20%C2%B7%20design%20phase-orange)](#architecture)
-[![Docs](https://img.shields.io/badge/docs-EN%20%2B%20VI-blue)](README.vi.md)
 
 </div>
 
@@ -52,13 +51,13 @@ before/after photos, a photographed customer-signed receipt, GPS coordinates and
 timestamp. Monthly statements are computed from completed shifts and exported as PDF
 with the evidence attached.
 
-Specification: [docs/prd.md](docs/prd.md) · [Bản tiếng Việt](docs/prd.vi.md).
+Specification: [docs/01-prd.md](docs/01-prd.md).
 
 ---
 
 ## Before and after
 
-**AS-IS** — Excel and Zalo ([PRD §4](docs/prd.md#4-user-flows--design)):
+**AS-IS** — Excel and Zalo ([PRD §4](docs/01-prd.md#4-user-flows--design)):
 
 1. Accountant types 24 schedule rows per 12-month contract into a spreadsheet.
 2. Manager posts the week's rows to a Zalo group each Monday.
@@ -82,14 +81,11 @@ Specification: [docs/prd.md](docs/prd.md) · [Bản tiếng Việt](docs/prd.vi.
 
 ## The screens
 
-[`docs/wireframe.html`](docs/wireframe.html) — 17 screens, 5 roles, single
+[`docs/ui/wireframe.html`](docs/ui/wireframe.html) — 17 screens, 5 roles, single
 self-contained HTML file, no build step. Role is selected from the top bar;
-navigation, identity and reachable screens follow the role. Deep link:
-`wireframe.html#<role>/<screen>`. Captures below produced by
-[`scripts/capture-wireframe.sh`](scripts/capture-wireframe.sh) — headless Chrome at
-1440×900, phone-frame screens at 560px.
+navigation, identity and reachable screens follow the role.
 
-[`docs/prototype.html`](docs/prototype.html) — the same screens wired as an
+[`docs/ui/prototype.html`](docs/ui/prototype.html) — the same screens wired as an
 application: login, role-scoped navigation, and the create and assign forms the
 inventory has no place for. 22 screens.
 
@@ -104,7 +100,7 @@ timestamp recorded by the system on submission.
 ![The LichHD field execution screen on a phone. A header reads Keangnam Landmark 72, VRV maintenance, Tòa A, 08:30 on 21/10. Three numbered steps follow: before photos, marked two captured; after photos, marked not yet; and the customer-signed receipt, marked not yet, with a note to have the customer sign the paper and photograph it. A grey panel below shows GPS 21.0176, 105.7833 and the time 21/10/2024 09:12, noted as recorded automatically on submission and not editable. A single button reads "Gửi & hoàn thành ca".](docs/screenshots/wireframe/employee/field.png)
 
 **Role-scoped access**, per the use cases in
-[the design analysis](docs/design-analysis.md#ii-use-cases). Employee scope: assigned
+[the design analysis](docs/02-design-analysis.md#ii-use-cases). Employee scope: assigned
 shifts and the field screen only; contracts, statements and dashboard are neither
 listed nor reachable.
 
@@ -125,8 +121,8 @@ listed nor reachable.
 ## Architecture
 
 Four views for orientation. Mechanisms, decisions and open questions:
-[docs/architecture.md](docs/architecture.md) · endpoint and access-control contract:
-[docs/api.md](docs/api.md).
+[docs/03-architecture.md](docs/03-architecture.md) · endpoint and access-control contract:
+[docs/04-api.md](docs/04-api.md).
 
 ### View 1 — who touches the system
 
@@ -211,7 +207,7 @@ stateDiagram-v2
 | Month-end statement closing time | 1.5–3 days | Under 30 minutes |
 | Visits with complete photo and signature evidence | Not measurable | ≥ 90% |
 
-Full release criteria: [PRD §8](docs/prd.md#8-success-metrics--release-criteria).
+Full release criteria: [PRD §8](docs/01-prd.md#8-success-metrics--release-criteria).
 
 ---
 
@@ -224,7 +220,7 @@ Full release criteria: [PRD §8](docs/prd.md#8-success-metrics--release-criteria
 | B2C marketplaces (bTaskee, JupViec) | Individual consumers | Different business model |
 | **LichHD** | Recurring-service companies, 10–80 staff, 20–150 contracts | — |
 
-Source: [PRD §1](docs/prd.md#1-introduction--purpose).
+Source: [PRD §1](docs/01-prd.md#1-introduction--purpose).
 
 ---
 
@@ -232,14 +228,14 @@ Source: [PRD §1](docs/prd.md#1-introduction--purpose).
 
 | # | Document | Contents |
 |---|---|---|
-| 1 | [PRD](docs/prd.md) · [tiếng Việt](docs/prd.vi.md) | Problem statement, personas, MVP scope, roadmap, release criteria |
-| 2 | [Design Analysis](docs/design-analysis.md) · [tiếng Việt](docs/design-analysis.vi.md) | FR/NFR, use cases per role, sequence diagrams |
-| 3 | [Architecture](docs/architecture.md) | Component breakdown and technology criteria, key decisions, cross-cutting concerns, open questions |
-| 4 | [API Specification](docs/api.md) | Endpoint contract, field-token submission path, access-control matrix |
-| 5 | [Wireframe](docs/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
-| 6 | [Prototype](docs/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
+| 1 | [PRD](docs/01-prd.md) | Problem statement, personas, MVP scope, roadmap, release criteria |
+| 2 | [Design Analysis](docs/02-design-analysis.md) | FR/NFR, use cases per role, sequence diagrams |
+| 3 | [Architecture](docs/03-architecture.md) | arc42-structured — constraints, solution strategy, building blocks, deployment, decisions, quality requirements, risks |
+| 4 | [API Specification](docs/04-api.md) | Endpoint contract, field-token submission path, access-control matrix |
+| 5 | [Wireframe](docs/ui/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
+| 6 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
 | 7 | [ERD](db/erd.md) | Entity-relationship diagram |
-| 8 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant, lookup tables in place of ENUM |
+| 8 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant |
 
 ---
 
@@ -247,16 +243,15 @@ Source: [PRD §1](docs/prd.md#1-introduction--purpose).
 
 ```
 docs/                        # → docs/README.md
-├── prd.md                   # PRD — English (primary)
-├── prd.vi.md                # PRD — Vietnamese
-├── design-analysis.md       # FR/NFR, use cases, sequence diagrams
-├── design-analysis.vi.md    # same, Vietnamese
-├── architecture.md          # components, decisions, open questions
-├── api.md                   # endpoint contract, access-control matrix
-├── wireframe.html           # single-file HTML wireframe, 17 screens, 5 roles
-├── prototype.html           # clickable prototype: login, role-scoped flows, 22 screens
-├── screenshots/wireframe/   # captures, one folder per role → screenshots/README.md
-└── mindmap.pdf
+├── 00-mindmap.pdf
+├── 01-prd.md                 # PRD — English (primary)
+├── 02-design-analysis.md     # FR/NFR, use cases, sequence diagrams
+├── 03-architecture.md        # arc42: constraints, decisions, quality, risks
+├── 04-api.md                 # endpoint contract, access-control matrix
+├── ui/
+│   ├── wireframe.html        # single-file HTML wireframe, 17 screens, 5 roles
+│   └── prototype.html        # clickable prototype: login, role-scoped flows, 22 screens
+└── screenshots/wireframe/    # captures, one folder per role → screenshots/README.md
 db/                          # → db/README.md
 ├── schema.sql               # ANSI SQL schema, 16 tables
 └── erd.md                   # mermaid ERD
