@@ -215,7 +215,7 @@ than by the shared scope check.
 ## 6. Runtime View
 
 The five scenarios, each with its failure branch, are diagrammed in
-[design-analysis.md §III](02-design-analysis.md#iii-sequence-diagrams): [create
+[design-analysis.md §IV](02-design-analysis.md#iv-sequence-diagrams): [create
 contract](02-design-analysis.md#1-create-contract-with-sites-and-service-items),
 [field submission](02-design-analysis.md#2-weekly-dispatch-and-field-shift-execution),
 [dispute](02-design-analysis.md#3-dispute-a-shift),

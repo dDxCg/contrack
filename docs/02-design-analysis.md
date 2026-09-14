@@ -171,7 +171,85 @@ flowchart LR
 
 ---
 
-## III: Sequence Diagrams
+## III: Activity Diagrams
+
+Decision flow inside each use case below — same branches and outcomes as the matching sequence
+diagram in §IV, expressed as control flow rather than message passing.
+
+### 1. Create contract with sites and service items 
+
+```mermaid
+stateDiagram-v2
+    [*] --> Submitted: manager submits contract (customer, term, sites, items)
+    Submitted --> Validating: validate frequency + unit price per item
+    Validating --> Rejected: invalid
+    Validating --> Inserted: valid
+    Rejected --> [*]: missing frequency / invalid price
+    Inserted --> ScheduleGenerated: generate shift schedule from each item's frequency
+    ScheduleGenerated --> ShiftsCreated: insert shifts, status = scheduled
+    ShiftsCreated --> [*]
+```
+
+### 2. Weekly dispatch and field shift execution 
+
+```mermaid
+stateDiagram-v2
+    [*] --> ListPushed: system pushes week's shift list (Monday)
+    ListPushed --> Assigned: team lead assigns shift to employee
+    Assigned --> LinkOpened: employee opens shift link on phone
+    LinkOpened --> PhotosCaptured: capture before / after photos
+    PhotosCaptured --> ReceiptSigned: customer signs paper receipt
+    ReceiptSigned --> ReceiptPhotographed: employee photographs signed receipt
+    ReceiptPhotographed --> GpsCaptured: capture GPS + timestamp
+    GpsCaptured --> CompletedWithLocation: GPS available
+    GpsCaptured --> CompletedFlagged: no GPS signal
+    CompletedWithLocation --> [*]
+    CompletedFlagged --> [*]: flagged for missing location
+```
+
+### 3. Dispute a shift 
+
+```mermaid
+stateDiagram-v2
+    [*] --> EvidenceFetched: manager fetches shift evidence
+    EvidenceFetched --> Reviewed: review photos, receipt, GPS, timestamp
+    Reviewed --> DisputeDismissed: evidence supports the visit
+    Reviewed --> Disputed: evidence is insufficient
+    DisputeDismissed --> [*]
+    Disputed --> [*]: excluded from next statement until resolved
+```
+
+### 4. Alerts: expiring contract and missed shift 
+
+```mermaid
+stateDiagram-v2
+    [*] --> ExpiryQueried: query contracts expiring within 30 days
+    ExpiryQueried --> OverdueQueried: query shifts overdue vs. item frequency
+    OverdueQueried --> Sent: send alerts via channel
+    Sent --> Delivered: channel available
+    Sent --> FallbackSent: channel unavailable
+    Delivered --> [*]
+    FallbackSent --> [*]: in-app / email reminder
+```
+
+### 5. Month-end statement export 
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: accountant requests statement for a contract + period
+    Requested --> Queried: query completed shifts + shift_photos for the period
+    Queried --> Blocked: evidence incomplete or disputed
+    Queried --> TotalComputed: all shifts have complete evidence
+    Blocked --> [*]: list incomplete shifts
+    TotalComputed --> PdfRendered: render PDF with photos + signed receipts
+    PdfRendered --> Issued: mark statement issued
+    Issued --> SentToCustomer: send PDF to customer
+    SentToCustomer --> [*]: mark statement sent
+```
+
+---
+
+## IV: Sequence Diagrams
 
 ### 1. Create contract with sites and service items
 
@@ -302,28 +380,63 @@ sequenceDiagram
 
 ---
 
-## IV: System Design
+## V: System Design
 
 ### Technical Architecture
 
-A browser-only client — no native app (NFR7) — against a server that owns contracts, schedule
-generation, evidence submission, alerting and statement rendering. Two storage systems: a relational
-database for the facts, and S3-compatible object storage for evidence photos, signed receipts and
-rendered statement PDFs. Two authorisation mechanisms: session credentials for the desk roles, and a
-per-shift signed token for field submission, so an employee opens a link at a job site with no install
-and no password (FR7, NFR7).
-
-Full architecture — component breakdown, key decisions, cross-cutting concerns: `03-architecture.md`.
-
-### Interfaces
-
-Endpoint contract per requirement, plus the role × resource × row-scope access-control matrix:
-`04-api.md`.
+Full architecture — component breakdown, key decisions, cross-cutting concerns: [`03-architecture.md`](./03-architecture.md).
 
 ### Data
 
 [`db/schema.sql`](../db/schema.sql) — 16 tables, ANSI SQL, single-tenant.
 Diagram: [`db/erd.md`](../db/erd.md). Conventions: [`db/README.md`](../db/README.md).
+
+Dataflow — how data moves through the processes:
+
+```mermaid
+flowchart LR
+    manager["Manager / Director"]
+    employee["Employee"]
+    customer["Customer<br/><i>offline</i>"]
+    accountant["Accountant"]
+    channel["Zalo / SMS channel"]
+
+    manageContract["Manage Contract"]
+    genSchedule["Generate Schedule"]
+    captureEvidence["Capture Field Evidence"]
+    handleDispute["Handle Dispute"]
+    computeStatement["Compute Statement"]
+    sendAlerts["Send Alerts"]
+
+    contracts[("Contracts / Sites / Items")]
+    shifts[("Shifts")]
+    photos[("Shift Photos<br/>object storage")]
+    statements[("Statements")]
+
+    manager --> manageContract --> contracts
+    contracts --> genSchedule --> shifts
+
+    customer -.->|"signs receipt"| employee
+    employee --> captureEvidence
+    shifts --> captureEvidence
+    captureEvidence --> photos
+    captureEvidence --> shifts
+
+    manager --> handleDispute
+    shifts --> handleDispute
+    photos --> handleDispute
+    handleDispute --> shifts
+
+    accountant --> computeStatement
+    shifts --> computeStatement
+    contracts --> computeStatement
+    computeStatement --> statements
+    statements --> accountant
+
+    contracts --> sendAlerts
+    shifts --> sendAlerts
+    sendAlerts --> channel
+```
 
 ### User interface
 
