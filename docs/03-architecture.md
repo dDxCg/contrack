@@ -22,7 +22,7 @@ completed shifts. Full scope, personas and MVP boundary: [`01-prd.md`](01-prd.md
 | G1 | **Evidence integrity** | A statement, and a dispute's resolution, both rest on evidence nobody — including LichHD's own staff — can alter after capture (NFR2) | 1 |
 | G2 | **Field usability with no login** | The one workflow reached with no training and the worst network is the one a new hire executes on day one (NFR7, NFR1) | 1 |
 | G3 | **Correct row-scoped access** | Five roles share one system; a manager seeing another manager's team, or an employee seeing another's shift, is a trust failure, not a bug report (NFR3) | 1 |
-| G4 | **Operable at single-company scale** | The target is one 10–80 staff company, not a multi-tenant platform; over-building isolation here is wasted design effort (NFR6) | 2 |
+| G4 | **Operable at single-company scale, in either package** | The target is a 10–80 staff company; self-host keeps that scale's simplicity, cloud adds only the isolation a shared deployment needs and nothing more (NFR6) | 2 |
 | G5 | **Evidence retained and exportable** | Reconciliation and disputes reach back months; a photo or a statement that cannot be produced later defeats the point of capturing it (NFR4, NFR5) | 2 |
 
 G1–G3 are architecture-defining: a design choice that trades one of them away
@@ -48,7 +48,7 @@ needs a decision recorded in §9, not a silent shortcut.
 | C1 | Budget and team are scoped to the 5 Must-have modules only ([PRD §6](01-prd.md#6-assumptions--constraints)) | Organisational | Should/Could-have items (VietQR, ERP integration) are named but not designed for here |
 | C2 | No ERP/accounting integration in the MVP | Organisational | The accountant enters costs manually; no accounting-system interface is designed |
 | C3 | Must run [`db/schema.sql`](../db/schema.sql) unmodified | Technical | Rules out an engine without ANSI SQL, identity columns and `NUMERIC` |
-| C4 | Target is one 10–80 staff company | Business | No multi-tenancy; drives D1 |
+| C4 | Target is one 10–80 staff company, sold as self-host or cloud | Business | Isolation must exist for cloud but stays out of self-host's path entirely; drives D1 |
 | C5 | No native app install (NFR7) | Technical | Browser-only client; field access cannot depend on app-store distribution |
 | C6 | Technology stack not yet selected | Organisational | §5 states criteria instead of naming a language, framework or database |
 | C7 | Design phase only — no implementation phase follows this plan | Organisational | §7's deployment view and §5's technology criteria describe an intended shape, not a provisioned environment |
@@ -105,7 +105,7 @@ flowchart TB
 | G1 evidence integrity | Write-once evidence, enforced in the API rather than by database permission | D7, §8.2 |
 | G2 field usability | Per-shift signed token, no login; the field page is the lightest page in the system | D3, §8.4 |
 | G3 row-scoped access | One authorisation model — role plus own/team/unit/all scope — reused by every screen and endpoint | §8.1, `04-api.md` §8 |
-| G4 single-company scale | No tenant column anywhere in the schema; a second customer means a second deployment | D1 |
+| G4 single-company scale | `tenant_id` nullable and NULL by default — a second self-host customer still means a second deployment; only the cloud package populates it | D1 |
 | G5 retention and export | Object storage with a lifecycle rule (§8.2); PDF and CSV/Excel export stated as a technology criterion (§5.1) | D2 |
 
 **The one-sentence strategy:** *enforce every irreversible fact — captured evidence,
@@ -155,7 +155,7 @@ flowchart LR
 | Server-side PDF rendering with embedded images | FR16 |
 | S3-compatible object storage client | §9 D2 |
 | Scheduled job execution | FR4, FR12, FR13 |
-| Single-tenant deployment on one host | C4 |
+| Runs unmodified on a single host (self-host) and on one shared host serving several tenants (cloud) | C4 |
 
 ### 5.2 Components (C4 - level 3)
 
@@ -231,7 +231,10 @@ contract](02-design-analysis.md#1-create-contract-with-sites-and-service-items),
 
 A target shape stated for estimating cost and operational surface, not a
 provisioned environment — C6 and C7 keep §5.1's technology criteria unnamed, so
-this names roles rather than products, beyond D2's choice of MinIO.
+this names roles rather than products, beyond D2's choice of MinIO. Two shapes,
+one per package (D1).
+
+### Self-host
 
 ```mermaid
 flowchart LR
@@ -251,8 +254,32 @@ flowchart LR
 | Environment | Node | Runs | Note |
 |---|---|---|---|
 | Production, per customer | App host | API, schedule generator, alert job | One host is sufficient at 10–80 staff scale (C4) |
-| Production, per customer | Database | The 16-table relational model | Can co-locate with the app host at this scale |
+| Production, per customer | Database | The 17-table relational model | Can co-locate with the app host at this scale; every `tenant_id` is NULL |
 | Production, per customer | Object storage | MinIO or a managed S3-compatible bucket | Co-located or managed, per D2 |
+
+### Cloud
+
+```mermaid
+flowchart LR
+    clientA["Tenant A browsers"] -->|HTTPS| app
+    clientB["Tenant B browsers"] -->|HTTPS| app
+
+    subgraph host["Shared host, one deployment (D1)"]
+        app["App process<br/>API + schedule generator + alert job<br/>filters every query by tenant_id — §8.1"]
+        db[("Database<br/>one row per tenant in `tenants`")]
+        store[("Object storage<br/>prefixed per tenant")]
+    end
+
+    app --> db
+    app --> store
+    app -->|HTTPS| zalo["Zalo ZNS / SMS"]
+```
+
+| Environment | Node | Runs | Note |
+|---|---|---|---|
+| Production, shared | App host | Same process as self-host; tenant filter added at the Access Control component (§5.2, §8.1) | No per-tenant process isolation in this design |
+| Production, shared | Database | Same schema; `contracts`, `employees`, `teams` carry `tenant_id` | `customers` has no `tenant_id` — scoped by joining through `contracts` (§11) |
+| Production, shared | Object storage | One bucket, tenant-prefixed object keys | Retention (D2, NFR4) unchanged per object |
 
 ---
 
@@ -272,6 +299,15 @@ lead sees the shifts of the team they belong to; `unit` resolves through `employ
 manager sees everyone reporting to them. A director sees everything. Desk staff have a `manager_id`
 but no `team_id`, which is why they hold `unit` or `all` scope and never `team` — the small-company
 target has field teams, not departments.
+
+**Tenant isolation (cloud only).** A request authenticated against an employee whose `tenant_id` is
+not NULL is filtered to that tenant before role/row scope is applied — the outermost check, ahead of
+own/team/unit/all. Self-host requests carry no `tenant_id` and skip the check entirely; it is not
+merely a no-op filter, there is no tenant machinery on that path. `contracts`, `employees` and
+`teams` carry `tenant_id` directly; `contract_sites`, `contract_items`, `shifts`, `shift_photos` and
+`statements` are filtered by joining up to `contracts`. `customers` has no `tenant_id` and is
+filtered by joining through `contracts.customer_id` — a customer with no contract yet is unreachable
+under tenant filtering until one is created (§11).
 
 ### 8.2 Evidence integrity and retention
 
@@ -297,7 +333,7 @@ before upload. The remaining mechanics — resumable upload, offline queue — a
 
 | # | Decision | Context and options | Consequence | Revisit when |
 |---|---|---|---|---|
-| D1 | **Single-tenant deployment** | One customer company per deployment. Multi-tenant with a `company_id` on every table was considered and rejected for a 10–80 staff target. | No tenant column, no cross-tenant isolation logic. Serving a second company means a second deployment. (NFR6) | A second customer company signs, or the business model shifts to selling LichHD to multiple companies rather than running it for one. |
+| D1 | **Two packages: self-host and cloud** | One customer company per deployment (self-host) was the only model until a second offering was requested: one shared deployment serving several companies (cloud). A `tenant_id` on every table was considered and rejected — it repeats down a chain that already resolves ownership by joining to `contracts`/`employees`. | `tenant_id` (nullable) on `contracts`, `employees`, `teams` only; NULL for self-host, which carries no isolation logic at all. `customers` has no `tenant_id` and is scoped by joining through `contracts` — a standalone customer is unreachable under tenant filtering until it has a contract (§11). (NFR6) | Self-host and cloud diverge enough operationally (backup, upgrade cadence, support) that sharing one schema stops paying for itself, or a customer needs to move between packages. |
 | D2 | **Evidence in S3-compatible object storage (MinIO)** | Alternatives: blobs in the database, or a directory on the app server. Photos are the bulk of the data and are retained ≥ 12 months. | DB stays small and easy to back up; retention (NFR4) becomes a bucket lifecycle rule; a storage service must be operated alongside the database. | A managed object-storage tier becomes available at a cost point the operating budget cannot ignore, or self-hosting MinIO turns out to need more operational effort than the team has. |
 | D3 | **Per-shift signed token for field access** | FR7 and NFR7 require a link that opens and works on a phone with no install. Alternatives: employee login, or a magic link per employee. | No password at a job site. The token names one shift, expires, and authorises only that shift's submission. Whoever holds the link can submit — acceptable because the evidence itself carries GPS and time. | A forwarded link is found to have been used by someone other than the assignee, or the business needs to know *who* submitted rather than only *that* the assigned shift was submitted. |
 | D4 | **Photographed paper receipt, not on-screen signature** | The customer already signs paper today and the original is filed. | No signature-capture component; the evidence is an image like any other. The paper original remains the legal artifact. | A customer disputes a photographed receipt as illegible or fraudulent often enough that an on-screen signature becomes worth building. |
@@ -320,7 +356,8 @@ this table states how each is tested.
 | QR3 | NFR3 | An account of role X requests a resource or row outside its role/scope in `04-api.md` §8 | Request is refused | `403` for a wrong role, `404` for a right role but wrong scope — zero exceptions found against the matrix |
 | QR4 | NFR4 | 12 months pass after a shift's evidence is captured | Photos remain retrievable | Bucket lifecycle rule confirms no object is deleted before `captured_at + 12 months` |
 | QR5 | NFR5 | Accountant exports a statement, then exports contract data | Both formats open in their target tool | PDF renders with photos and receipt embedded; CSV/Excel opens with every `contract_items` and `shifts` column named in `db/schema.sql` |
-| QR6 | NFR6 | Operating a single deployment for one customer company | No cross-company isolation code exists to fail | Zero `company_id`-shaped column or tenant filter in `db/schema.sql` (D1) |
+| QR6 | NFR6 | Self-host: operating a single deployment for one customer company | No cross-company isolation code exists to fail | Every `tenant_id` in `db/schema.sql` is NULL; no tenant filter runs on this path (D1) |
+| QR6b | NFR6 | Cloud: tenant A's authenticated session requests any resource | Tenant B's rows never appear in the response | Zero cross-tenant rows found against `contracts`, `employees`, `teams` and everything joined from them, across the row-scope matrix in `04-api.md` §8 |
 | QR7 | NFR7 | A newly hired field employee receives a shift link on a personal phone, no prior app install | Employee completes the shift | Zero installs, zero passwords entered, shift reaches `completed` |
 
 QR1 and QR4 cannot be measured until R1 (stack) and R4 (weak-network mechanics) in
@@ -339,6 +376,9 @@ is chosen.
 | R4 | **Weak-network mechanics undecided** — resumable upload, offline queue, retry policy | High — QR1 cannot be verified without this | Medium | Design before the field page is built; §8.4 states the goal only |
 | R5 | **ZNS sender identity, template registration and fallback order undecided** | Medium — blocks FR14; ZNS templates need registration lead time | Medium | Register ZNS templates early — an external dependency, independent of the stack decision |
 | R6 | **Token lifetime and reissue policy for D3 undecided** | Low–Medium — too short breaks a delayed shift, too long keeps a forwarded link live | Low | Pick a conservative default; revisit after pilot feedback |
+| R7 | **Standalone customer has no tenant-scoping path.** `customers` carries no `tenant_id`; a customer created before any contract exists is unreachable under tenant filtering (cloud only) until a contract links it. | Medium — blocks or silently leaks a customer created ahead of its first contract, under the cloud package only | Medium | Require a contract at customer-creation time in the cloud package, or add tenant scoping to `customers` if the standalone-creation flow turns out to matter |
+| R8 | **Noisy-neighbour and isolation-bug risk on the shared cloud host** — one process and database serve every tenant; a missed tenant filter leaks rows, and one tenant's load affects another's | High — a leaked row is a trust failure (G3), not a performance bug | Medium | Tenant filter enforced once in Access Control (§8.1), not per endpoint; QR6b gates release |
+| R9 | **Self-host ↔ cloud migration path undecided** — moving a customer from one package to the other means backfilling or clearing `tenant_id` across `contracts`, `employees`, `teams` | Low — no customer has asked yet | Low | Design the migration script when the first request arrives, not before |
 
 **Accepted for this design phase:** no customer-facing portal (D5), no on-screen
 signature (D4), no ERP integration (C2) — each is a named non-goal, not an
@@ -359,6 +399,7 @@ oversight.
 | Field token | The per-shift signed link that authorises evidence submission with no login (D3) |
 | Row scope | The own/team/unit/all boundary that narrows which rows a role's operation applies to |
 | Team | An explicit group of field staff (`teams`); membership is `employees.team_id`, separate from the reporting line `manager_id` |
+| Tenant | One customer company on the cloud package (`tenants`); `contracts`, `employees` and `teams` carry its `tenant_id`, NULL for self-host |
 | Dispute | A customer complaint recorded by staff on the customer's behalf; excludes the shift from the next statement until resolved |
 | Reconciliation | The accountant's view comparing shifts due by frequency against shifts with complete evidence |
 

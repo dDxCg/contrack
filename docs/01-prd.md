@@ -107,7 +107,7 @@
 | Payment | VietQR integration for payment flow (Could-have) |
 | Performance | The field-photo page must load on weak 3G/4G mobile connections (job sites, basements) |
 | Security & access control | Role-based access: director, accountant, manager, team lead, employee; evidence data logs cannot be deleted or edited |
-| Scalability | Single-tenant deployment |
+| Scalability | Two packages: **self-host** (one deployment per customer company, today's target) and **cloud** (one shared deployment serving several customer companies) |
 | Data retention | Retain photos/signatures for at least 12 months for reconciliation and contract disputes |
 | Data export | Export statements/invoices as PDF; export raw data (CSV/Excel) for accounting reconciliation |
 
@@ -161,6 +161,12 @@
 | Pilot | Months 3–4 | Trial rollout with 1–3 target customers, collect feedback |
 | Phase 2 | Months 4–9 | Should-have modules: Profit/loss per contract, Renewal & light CRM |
 | Phase 3 | Month 9+ | Could-have modules: Field workforce management, VietQR payment, Director dashboard |
+
+The MVP ships as **self-host** — one deployment per customer company, the model
+[System & Technical Requirements](#5-system--technical-requirements) and the rest
+of this document assume throughout. **Cloud** is a packaging option, not a new
+module: the same MVP scope, sold as a shared subscription instead of a dedicated
+deployment. It is not required for MVP or pilot.
 
 ---
 

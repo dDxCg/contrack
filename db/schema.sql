@@ -72,6 +72,14 @@ INSERT INTO statement_statuses (code) VALUES ('draft');
 INSERT INTO statement_statuses (code) VALUES ('issued');
 INSERT INTO statement_statuses (code) VALUES ('sent');
 
+-- Tenant (gói cloud multi-tenant; NULL trên các bảng bên dưới = self-host)
+CREATE TABLE tenants (
+    id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name            VARCHAR(255) NOT NULL,
+    plan            VARCHAR(20) NOT NULL DEFAULT 'cloud',
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Khách
 CREATE TABLE customers (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -88,14 +96,19 @@ CREATE INDEX idx_customers_segment ON customers(segment_id);
 
 CREATE TABLE teams (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tenant_id       INTEGER,  -- NULL với self-host; gói cloud gán tenant vận hành
     name            VARCHAR(100) NOT NULL,
     code            VARCHAR(20) NOT NULL UNIQUE,
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_teams_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id)
 );
+
+CREATE INDEX idx_teams_tenant ON teams(tenant_id);
 
 -- Nhân viên
 CREATE TABLE employees (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tenant_id       INTEGER,  -- NULL với self-host; gói cloud gán tenant vận hành
     name            VARCHAR(255) NOT NULL,
     contact         VARCHAR(255),
     username        VARCHAR(100) NOT NULL UNIQUE,
@@ -105,12 +118,14 @@ CREATE TABLE employees (
     team_id         INTEGER,  -- NULL với khối văn phòng: không thuộc tổ nào
     status_id       INTEGER NOT NULL DEFAULT 1,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_employees_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     CONSTRAINT fk_employees_role FOREIGN KEY (role_id) REFERENCES roles(id),
     CONSTRAINT fk_employees_manager FOREIGN KEY (manager_id) REFERENCES employees(id),
     CONSTRAINT fk_employees_team FOREIGN KEY (team_id) REFERENCES teams(id),
     CONSTRAINT fk_employees_status FOREIGN KEY (status_id) REFERENCES employee_statuses(id)
 );
 
+CREATE INDEX idx_employees_tenant ON employees(tenant_id);
 CREATE INDEX idx_employees_team ON employees(team_id);
 CREATE INDEX idx_employees_manager ON employees(manager_id);
 CREATE INDEX idx_employees_status ON employees(status_id);
@@ -118,15 +133,18 @@ CREATE INDEX idx_employees_status ON employees(status_id);
 -- Hợp đồng
 CREATE TABLE contracts (
     id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tenant_id   INTEGER,  -- NULL với self-host; gói cloud gán tenant vận hành
     customer_id INTEGER NOT NULL,
     signed_at   DATE NOT NULL,
     expires_at  DATE NOT NULL,
     status_id   INTEGER NOT NULL DEFAULT 1,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contracts_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     CONSTRAINT fk_contracts_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
     CONSTRAINT fk_contracts_status FOREIGN KEY (status_id) REFERENCES contract_statuses(id)
 );
 
+CREATE INDEX idx_contracts_tenant ON contracts(tenant_id);
 CREATE INDEX idx_contracts_customer ON contracts(customer_id);
 CREATE INDEX idx_contracts_status ON contracts(status_id);
 CREATE INDEX idx_contracts_expires_at ON contracts(expires_at);

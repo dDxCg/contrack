@@ -253,7 +253,7 @@ docs/                        # → docs/README.md
 │   └── prototype.html        # clickable prototype: login, role-scoped flows, 22 screens
 └── screenshots/wireframe/    # captures, one folder per role → screenshots/README.md
 db/                          # → db/README.md
-├── schema.sql               # ANSI SQL schema, 16 tables
+├── schema.sql               # ANSI SQL schema, 17 tables
 └── erd.md                   # mermaid ERD
 scripts/
 └── capture-wireframe.sh     # headless Chrome capture of every screen

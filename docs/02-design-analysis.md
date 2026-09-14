@@ -41,7 +41,7 @@ Source documents: [PRD](01-prd.md) · [ERD](../db/erd.md) · [SQL schema](../db/
 | NFR3 | Security | Role-based access control: director, accountant, manager, team lead, employee |
 | NFR4 | Retention | Photos and signed receipts retained at least 12 months |
 | NFR5 | Portability | Statements exportable as PDF; raw data exportable as CSV/Excel |
-| NFR6 | Scalability | Single-tenant deployment — no cross-company data isolation required |
+| NFR6 | Scalability | Two packages: self-host (one deployment per customer company, no cross-company isolation code) and cloud (one shared deployment, cross-company row isolation required) |
 | NFR7 | Usability | No native app install; access via a shared web link on any phone |
 
 ---

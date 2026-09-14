@@ -4,7 +4,7 @@ Data model for LichHD.
 
 | File | Contents |
 |---|---|
-| [`schema.sql`](schema.sql) | 16 tables, DDL with constraints and indexes |
+| [`schema.sql`](schema.sql) | 17 tables, DDL with constraints and indexes |
 | [`erd.md`](erd.md) | Entity-relationship diagram (mermaid) |
 
 ## Tables
@@ -19,6 +19,17 @@ period, unique on `(contract_id, period)`).
 **Teams.** `employees.team_id` is the only record of membership and is `NULL` for
 desk staff. `manager_id` is the reporting line and is not read to resolve a team.
 The lead is the member holding the team-lead role — `teams` carries no `lead_id`.
+
+**Tenants.** `tenants` exists for the cloud package only — one shared deployment
+serving several operating companies. `tenant_id` sits on `contracts`, `employees`
+and `teams`, the tables a tenant directly creates; `contract_sites`, `contract_items`,
+`shifts`, `shift_photos` and `statements` resolve their tenant by joining up to
+`contracts`, same as they already resolve their customer. `customers` carries no
+`tenant_id` — a customer is the operating company's own client, not a LichHD
+subscriber, and is reached only through `contracts.customer_id`; a customer added
+before any contract exists has no tenant-scoping path yet ([03-architecture.md
+§11](../docs/03-architecture.md#11-risks-and-technical-debt)). Every `tenant_id` is
+`NULL` for a self-host deployment, which has no tenant filtering at all.
 
 ## Conventions
 

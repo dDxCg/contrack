@@ -2,6 +2,9 @@
 
 ```mermaid
 erDiagram
+    tenants ||--o{ contracts : "owns (cloud only)"
+    tenants ||--o{ employees : "owns (cloud only)"
+    tenants ||--o{ teams : "owns (cloud only)"
     roles ||--o{ employees : "assigned to"
     employees ||--o{ employees : "manages"
     teams ||--o{ employees : "members"
@@ -64,8 +67,16 @@ erDiagram
         timestamp created_at
     }
 
+    tenants {
+        int id PK
+        varchar name
+        varchar plan
+        timestamp created_at
+    }
+
     teams {
         int id PK
+        int tenant_id FK
         varchar name
         varchar code
         timestamp created_at
@@ -73,6 +84,7 @@ erDiagram
 
     employees {
         int id PK
+        int tenant_id FK
         varchar name
         varchar contact
         varchar username
@@ -86,6 +98,7 @@ erDiagram
 
     contracts {
         int id PK
+        int tenant_id FK
         int customer_id FK
         date signed_at
         date expires_at
