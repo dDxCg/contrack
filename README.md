@@ -235,7 +235,7 @@ Source: [PRD §1](docs/01-prd.md#1-introduction--purpose).
 | 5 | [Wireframe](docs/ui/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
 | 6 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
 | 7 | [ERD](db/erd.md) | Entity-relationship diagram |
-| 8 | [SQL Schema](db/schema.sql) | ANSI SQL, single-tenant |
+| 8 | [SQL Schema](db/schema.sql) | ANSI SQL |
 
 ---
 

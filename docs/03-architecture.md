@@ -67,21 +67,24 @@ reminders (FR14), and VietQR for payment (Could-have, not in MVP).
 
 ```mermaid
 flowchart TB
-    desk["Director · Manager<br/>Accountant<br/><i>desk, authenticated</i>"]
-    field["Team lead · Employee<br/><i>phone, at the job site</i>"]
     customer["Customer<br/><i>outside the system</i>"]
+    employee["Field employee / team lead<br/><i>person</i>"]
+    accountant["Accountant / manager<br/><i>person</i>"]
+    director["Director<br/><i>person</i>"]
 
-    lichhd["<b>LichHD</b><br/>contracts · schedule<br/>field evidence · statements"]
+    lichhd["<b>LichHD</b><br/><i>the system</i><br/>contracts, schedule,<br/>field proof, statements"]
 
-    zalo["Zalo ZNS / SMS<br/><i>external</i>"]
-    vietqr["VietQR<br/><i>external, planned</i>"]
+    zalo["Zalo ZNS / SMS<br/><i>external</i><br/>reminders"]
+    vietqr["VietQR<br/><i>external, planned</i><br/>payment"]
 
-    customer -.->|"signs contract in person"| desk
-    customer -.->|"signs shift receipt in person"| field
-    field -->|"opens shift link, submits evidence"| lichhd
-    desk -->|"manages contracts, exports statements"| lichhd
-    lichhd -->|"reminders"| zalo
-    lichhd -->|"payment request"| vietqr
+    customer -.->|"signs contract in person"| director
+    customer -.->|"signs paper receipt in person"| employee
+    employee -->|"opens shift link,<br/>submits photos"| lichhd
+    accountant -->|"creates contracts,<br/>exports statements"| lichhd
+    director -->|"views dashboard"| lichhd
+
+    lichhd -->|"sends reminder"| zalo
+    lichhd -->|"requests payment"| vietqr
 ```
 
 ### 3.2 External interfaces

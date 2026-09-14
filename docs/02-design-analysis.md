@@ -64,8 +64,8 @@ flowchart LR
     Employee --- UC3
     Employee --- UC6
 
-    UC3 -.->|"<<Include>>"| UC4
-    UC3 -.->|"<<Include>>"| UC5
+    UC3 -.->|&laquo;include&raquo;| UC4
+    UC3 -.->|"&laquo;include&raquo;"| UC5
 ```
 
 ### Team Lead
@@ -102,9 +102,9 @@ flowchart LR
     Manager --- UC9
     Manager --- UC10
 
-    UC9 -.->|"<<Include>>"| UC9P
-    UC9 -.->|"<<Include>>"| UC17
-    UC6 -.->|"<<Include>>"| UC19
+    UC9 -.->|"&laquo;include&raquo;"| UC9P
+    UC9 -.->|"&laquo;include&raquo;"| UC17
+    UC10 -.->|"&laquo;include&raquo;"| UC19
 ```
 
 ### Accountant
@@ -122,7 +122,7 @@ flowchart LR
     Accountant --- UC12
     Accountant --- UC14
 
-    UC12 -.->|"<<Include>>"| UC13
+    UC12 -.->|"&laquo;include&raquo;"| UC13
 ```
 
 ### Director
@@ -149,10 +149,10 @@ flowchart LR
     Director --- UC15
     Director --- UC16
 
-    UC9 -.->|"<<Include>>"| UC9P
-    UC9 -.->|"<<Include>>"| UC17
-    UC16 -.->|"<<Include>>"| UC16P
-    UC6 -.->|"<<Include>>"| UC19
+    UC9 -.->|"&laquo;include&raquo;"| UC9P
+    UC9 -.->|"&laquo;include&raquo;"| UC17
+    UC16 -.->|"&laquo;include&raquo;"| UC16P
+    UC10 -.->|"&laquo;include&raquo;"| UC19
 ```
 
 ### Use Case Descriptions
@@ -388,7 +388,7 @@ Full architecture — component breakdown, key decisions, cross-cutting concerns
 
 ### Data
 
-[`db/schema.sql`](../db/schema.sql) — 16 tables, ANSI SQL, single-tenant.
+[`db/schema.sql`](../db/schema.sql) — ANSI SQL.
 Diagram: [`db/erd.md`](../db/erd.md). Conventions: [`db/README.md`](../db/README.md).
 
 Dataflow — how data moves through the processes:
