@@ -104,7 +104,7 @@ flowchart TB
 |---|---|---|
 | G1 evidence integrity | Write-once evidence, enforced in the API rather than by database permission | D7, §8.2 |
 | G2 field usability | Per-shift signed token, no login; the field page is the lightest page in the system | D3, §8.4 |
-| G3 row-scoped access | One authorisation model — role plus own/team/unit/all scope — reused by every screen and endpoint | §8.1, `04-api.md` §8 |
+| G3 row-scoped access | One authorisation model — role plus own/team/unit/all scope — reused by every screen and endpoint | §8.1, `05-api.md` §8 |
 | G4 single-company scale | No tenant column anywhere in the schema; a second customer means a second deployment | D1 |
 | G5 retention and export | Object storage with a lifecycle rule (§8.2); PDF and CSV/Excel export stated as a technology criterion (§5.1) | D2 |
 
@@ -160,7 +160,7 @@ flowchart LR
 ### 5.2 Components (C4 - level 3)
 
 C4 Level 3, zoomed into the one container worth decomposing — the API groups
-five responsibilities that `04-api.md` already separates by section, and
+five responsibilities that `05-api.md` already separates by section, and
 `SCREEN_ROLES` in [`wireframe.html`](ui/wireframe.html) depends on the same split.
 `Access Control` is cross-cutting (§8.1): every other component calls it, not the
 reverse.
@@ -174,11 +174,11 @@ flowchart TB
 
     subgraph apic["API container"]
         auth["Access Control<br/><i>[Component]</i><br/>Resolves role + row scope<br/>own / team / unit / all — §8.1"]
-        contracts["Contracts & Schedule<br/><i>[Component]</i><br/>CRUD contracts, sites, items<br/>04-api.md §3"]
-        shifts["Shifts & Dispatch<br/><i>[Component]</i><br/>List, reassign, dispute<br/>04-api.md §4"]
-        field["Field Submission<br/><i>[Component]</i><br/>Token redemption, upload, submit<br/>04-api.md §5"]
-        statements["Statements & Reconciliation<br/><i>[Component]</i><br/>Compute, export, reconcile<br/>04-api.md §6"]
-        directory["Directory & Alerts<br/><i>[Component]</i><br/>Customers, employees, teams,<br/>dashboard, alerts — 04-api.md §7"]
+        contracts["Contracts & Schedule<br/><i>[Component]</i><br/>CRUD contracts, sites, items<br/>05-api.md §3"]
+        shifts["Shifts & Dispatch<br/><i>[Component]</i><br/>List, reassign, dispute<br/>05-api.md §4"]
+        field["Field Submission<br/><i>[Component]</i><br/>Token redemption, upload, submit<br/>05-api.md §5"]
+        statements["Statements & Reconciliation<br/><i>[Component]</i><br/>Compute, export, reconcile<br/>05-api.md §6"]
+        directory["Directory & Alerts<br/><i>[Component]</i><br/>Customers, employees, teams,<br/>dashboard, alerts — 05-api.md §7"]
     end
 
     gen["Schedule Generator"]
@@ -264,7 +264,7 @@ Two distinct mechanisms:
 
 - **Desk roles** authenticate with `employees.username` / `password_hash` and are authorised by role
   plus a row scope — own, team, managed unit, or all. The full matrix is in
-  `04-api.md` §8.
+  `05-api.md` §8.
 - **Field access** carries a per-shift token (D3) and can reach exactly one shift.
 
 The two scopes rest on different columns: `team` resolves through `employees.team_id`, so a team
@@ -317,7 +317,7 @@ this table states how each is tested.
 |---|---|---|---|---|
 | QR1 | NFR1 | Employee opens the field page over a throttled 3G connection at a basement job site | Page becomes usable — photo capture available | Time to interactive ≤ 5 s on a 3G profile (~400 kbps, 400 ms RTT); page payload excluding photos ≤ 200 KB |
 | QR2 | NFR2 | A completed shift is submitted again with the same or different evidence | Second submission is rejected; original evidence is untouched | `409 shift.already_completed`; no row in `shifts` or `shift_photos` for that shift changes after first completion |
-| QR3 | NFR3 | An account of role X requests a resource or row outside its role/scope in `04-api.md` §8 | Request is refused | `403` for a wrong role, `404` for a right role but wrong scope — zero exceptions found against the matrix |
+| QR3 | NFR3 | An account of role X requests a resource or row outside its role/scope in `05-api.md` §8 | Request is refused | `403` for a wrong role, `404` for a right role but wrong scope — zero exceptions found against the matrix |
 | QR4 | NFR4 | 12 months pass after a shift's evidence is captured | Photos remain retrievable | Bucket lifecycle rule confirms no object is deleted before `captured_at + 12 months` |
 | QR5 | NFR5 | Accountant exports a statement, then exports contract data | Both formats open in their target tool | PDF renders with photos and receipt embedded; CSV/Excel opens with every `contract_items` and `shifts` column named in `db/schema.sql` |
 | QR6 | NFR6 | Operating a single deployment for one customer company | No cross-company isolation code exists to fail | Zero `company_id`-shaped column or tenant filter in `db/schema.sql` (D1) |
@@ -364,6 +364,3 @@ oversight.
 
 ---
 
-Related: [`02-design-analysis.md`](02-design-analysis.md) for requirements and use cases ·
-`04-api.md` for the endpoint and access-control contract ·
-[`../db/README.md`](../db/README.md) for the data model.

@@ -355,7 +355,7 @@ sequenceDiagram
     end
 ```
 
-Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
+Full architecture: [docs/04-architecture.md](docs/04-architecture.md).
 
 ---
 
@@ -377,9 +377,10 @@ docs/                        # → docs/README.md
 ├── 00-mindmap.pdf
 ├── 01-prd.md                 # PRD — English (primary)
 ├── 02-design-analysis.md     # FR/NFR, use cases, sequence diagrams
-├── 03-architecture.md        # arc42 + c4
-├── 04-api.md                 # endpoint contract, access-control matrix
-├── 04-api.yaml               # same contract, OpenAPI 3.0
+├── 03-functional-spec.md     # function → screens → API needed
+├── 04-architecture.md        # arc42 + c4
+├── 05-api.md                 # endpoint contract, access-control matrix
+├── 05-api.yaml               # same contract, OpenAPI 3.0
 ├── ui/
 │   ├── wireframe.html        # single-file HTML wireframe, 17 screens, 5 roles
 │   └── prototype.html        # clickable prototype: login, role-scoped flows, 22 screens
@@ -399,12 +400,13 @@ scripts/
 |---|---|---|
 | 1 | [PRD](docs/01-prd.md) | Problem statement, personas, MVP scope, roadmap, release criteria |
 | 2 | [Design Analysis](docs/02-design-analysis.md) | FR/NFR, use cases per role, sequence diagrams |
-| 3 | [Architecture](docs/03-architecture.md) | arc42 + c4 |
-| 4 | [API Specification](docs/04-api.md) | Endpoint contract, field-token submission path, access-control matrix |
-| 5 | [API Specification (OpenAPI)](docs/04-api.yaml) | Same contract as OpenAPI 3.0 — paths, schemas, error examples |
-| 6 | [Wireframe](docs/ui/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
-| 7 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
-| 8 | [ERD](db/erd.md) | Entity-relationship diagram |
-| 9 | [SQL Schema](db/schema.sql) | ANSI SQL |
+| 3 | [Functional Spec](docs/03-functional-spec.md) | Function → screens needed → API needed, per FR |
+| 4 | [Architecture](docs/04-architecture.md) | arc42 + c4 |
+| 5 | [API Specification](docs/05-api.md) | Endpoint contract, field-token submission path, access-control matrix |
+| 6 | [API Specification (OpenAPI)](docs/05-api.yaml) | Same contract as OpenAPI 3.0 — paths, schemas, error examples |
+| 7 | [Wireframe](docs/ui/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
+| 8 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
+| 9 | [ERD](db/erd.md) | Entity-relationship diagram |
+| 10 | [SQL Schema](db/schema.sql) | ANSI SQL |
 
 ---

@@ -6,7 +6,7 @@ info:
     Recurring service contract management. Every operation traces to a requirement
     in `02-design-analysis.md`; field names match the columns in `../db/schema.sql`.
     Status: draft — endpoint shapes settled, transport details follow the stack
-    decision (`03-architecture.md` §11 R1). See `04-api.md` for the prose version
+    decision (`04-architecture.md` §11 R1). See `05-api.md` for the prose version
     of this spec, including the full access-control matrix and error-code catalogue
     this file's `x-roles` / `x-scope` extensions and `components.examples` summarize.
   contact:
@@ -335,7 +335,7 @@ paths:
       summary: Regenerate future shifts after an item or term change
       description: >
         Never touches a completed or disputed shift. Frequency currently has no
-        grammar (`03-architecture.md` §11 R2) — blocked until that is resolved.
+        grammar (`04-architecture.md` §11 R2) — blocked until that is resolved.
       x-roles: [director, manager]
       x-scope: all
       responses:
@@ -594,7 +594,7 @@ paths:
       summary: >
         Complete the shift. The server stamps captured_at from its own clock,
         inserts shift_photos and writes receipt_photo_url — evidence is
-        write-once (`03-architecture.md` §9 D7). latitude/longitude may be
+        write-once (`04-architecture.md` §9 D7). latitude/longitude may be
         null; the shift still completes, flagged for missing location.
       security: []
       requestBody:
@@ -1120,7 +1120,7 @@ components:
       description: >
         Session or bearer token issued by POST /auth/login, carried on every desk
         request. Field endpoints (/field/*) carry no session — the per-shift signed
-        token in the path is their sole credential; see `03-architecture.md` §8.1.
+        token in the path is their sole credential; see `04-architecture.md` §8.1.
 
   parameters:
     Limit:
@@ -1210,7 +1210,7 @@ components:
         frequency:
           type: string
           description: >
-            Free text today — no grammar yet (`03-architecture.md` §11 R2);
+            Free text today — no grammar yet (`04-architecture.md` §11 R2);
             the generator's accepted forms are not yet fixed
           example: "2/thang"
         unit_price: { type: number, example: 42000000 }

@@ -1,15 +1,15 @@
 # LichHD — API specification
 
-> **Status:** Draft — endpoint shapes settled, transport details follow the stack decision ([`03-architecture.md`](03-architecture.md#11-risks-and-technical-debt) R1)
+> **Status:** Draft — endpoint shapes settled, transport details follow the stack decision ([`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R1)
 > **Audience:** Developers building the server or a client against it
 > **Answers:** Which operations exist, who may call them, and over what rows?
 
 Every endpoint traces to a requirement in [`02-design-analysis.md`](02-design-analysis.md). Field names match
 the columns in [`../db/schema.sql`](../db/schema.sql).
 
-Machine-readable version: [`04-api.yaml`](04-api.yaml), OpenAPI 3.0 — every operation, request/response
+Machine-readable version: [`05-api.yaml`](05-api.yaml), OpenAPI 3.0 — every operation, request/response
 schema and error-code example below also lives there, loadable in Swagger UI, Redoc or any OpenAPI-aware
-client. This file is the prose walkthrough; `04-api.yaml` is the contract.
+client. This file is the prose walkthrough; `05-api.yaml` is the contract.
 
 ---
 
@@ -17,7 +17,7 @@ client. This file is the prose walkthrough; `04-api.yaml` is the contract.
 
 **Base path** `/api/v1`. JSON request and response bodies, UTF-8.
 
-**Authentication.** Two mechanisms, per [`03-architecture.md`](03-architecture.md#81-authorisation):
+**Authentication.** Two mechanisms, per [`04-architecture.md`](04-architecture.md#81-authorisation):
 
 | Surface | Mechanism |
 |---|---|
@@ -64,7 +64,7 @@ Codes are listed in full in [§9](#9-error-codes).
 maximum 100.
 
 **Timestamps** are ISO 8601 UTC and server-assigned. A client-supplied time is never trusted for
-evidence ([`03-architecture.md`](03-architecture.md#82-evidence-integrity-and-retention)).
+evidence ([`04-architecture.md`](04-architecture.md#82-evidence-integrity-and-retention)).
 
 ---
 
@@ -96,7 +96,7 @@ carries a non-positive `unit_price`, matching the `alt validation failed` branch
 ### 3.1 Schedule generation — FR4
 
 Creating a contract generates `shifts` for every item across the term from the item's `frequency`.
-Frequency currently has **no grammar** — see [`03-architecture.md`](03-architecture.md#11-risks-and-technical-debt) R2;
+Frequency currently has **no grammar** — see [`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R2;
 this endpoint cannot be finished until that is resolved.
 
 | Method | Path | Purpose |
@@ -134,27 +134,27 @@ Unauthenticated in the session sense; authorised by the token, which names exact
 On submit the server stamps `captured_at` from its own clock, inserts `shift_photos`, sets
 `shifts.status = completed`, and writes `receipt_photo_url`. Re-submitting returns `409`
 `shift.already_completed` — evidence is write-once
-([`03-architecture.md`](03-architecture.md#9-architecture-decisions) D7).
+([`04-architecture.md`](04-architecture.md#9-architecture-decisions) D7).
 
 `latitude` and `longitude` may be null; the shift still completes and is flagged for missing location,
 matching the `else no GPS signal` branch of sequence 2.
 
 ---
 
-## 6. Statements — FR15, FR16
+## 6. Statements — FR15, FR16, FR19, FR20
 
-| Method | Path | Purpose |
-|---|---|---|
-| GET | `/statements` | List by `period` and `status`. |
-| POST | `/statements` | Compute a draft for `contract_id` + `period` from completed shifts × `contract_items.unit_price`. |
-| GET | `/statements/{id}` | Statement with its shift lines and evidence references. |
-| POST | `/statements/{id}/export` | Render the PDF with photos and receipts embedded; sets `status = issued`, writes `pdf_url`. |
-| POST | `/statements/{id}/send` | Record that it was sent to the customer; sets `status = sent`. |
-| GET | `/reconciliation?period=` | Per contract: shifts due by frequency, shifts with complete evidence, and the variance — FR15's reconciliation view. |
+| Method | Path | Purpose | Requirement |
+|---|---|---|---|
+| GET | `/statements` | List by `period` and `status`. | FR15 |
+| POST | `/statements` | Compute a draft for `contract_id` + `period` from completed shifts × `contract_items.unit_price`. | FR15 |
+| GET | `/statements/{id}` | Statement with its shift lines and evidence references. | FR15 |
+| POST | `/statements/{id}/export` | Render the PDF with photos and receipts embedded; sets `status = issued`, writes `pdf_url`. | FR16 |
+| POST | `/statements/{id}/send` | Record that it was sent to the customer; sets `status = sent`. | FR19 |
+| GET | `/reconciliation?period=` | Per contract: shifts due by frequency, shifts with complete evidence, and the variance. | FR20 |
 
 `POST /statements` returns `409` `statement.period_incomplete` with the offending shifts in `details`
 when any shift in the period lacks evidence or is disputed
-([`03-architecture.md`](03-architecture.md#9-architecture-decisions) D6).
+([`04-architecture.md`](04-architecture.md#9-architecture-decisions) D6).
 
 ---
 
@@ -165,7 +165,7 @@ when any shift in the period lacks evidence or is disputed
 | GET | `/alerts` | Expiring contracts and overdue shifts, with per-alert delivery status. | FR12, FR13 |
 | POST | `/alerts/{id}/send` | Re-send through Zalo ZNS or SMS. | FR14 |
 | GET | `/dashboard` | Active, expiring and disputed contract counts; projected revenue. **Director.** | FR17 |
-| GET POST PATCH DELETE | `/customers` , `/customers/{id}` | Customer records. | — |
+| GET POST PATCH DELETE | `/customers` , `/customers/{id}` | Customer records. | FR21 |
 | GET POST PATCH DELETE | `/employees` , `/employees/{id}` | Accounts with `role_id`, `manager_id` and `team_id`. **Director only.** | FR18 |
 | GET POST PATCH DELETE | `/teams` , `/teams/{id}` | Teams with `name` and `code`; the response derives `lead` and `member_count` from `employees`. Create, update and delete are **Director only**. | FR18 |
 
@@ -221,7 +221,7 @@ there is nothing to add.
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
 | `token.invalid` | 401 | Signature does not verify, or the token names no shift. | — |
-| `token.expired` | 401 | Past its lifetime ([`03-architecture.md`](03-architecture.md#11-risks-and-technical-debt) R6). | `expired_at` |
+| `token.expired` | 401 | Past its lifetime ([`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R6). | `expired_at` |
 | `token.shift_mismatch` | 403 | The token's shift is not the shift being submitted. | — |
 | `token.rate_limited` | 429 | Repeated redemption or upload attempts on one token. | `retry_after_seconds` |
 
@@ -232,7 +232,7 @@ there is nothing to add.
 | `contract.item_invalid` | 400 | An item is missing `frequency` or carries a non-positive `unit_price` — sequence 1's `alt validation failed`. | `items[]` with the offending index and field |
 | `contract.term_invalid` | 400 | `expires_at` is not after `signed_at`. | `signed_at`, `expires_at` |
 | `contract.customer_not_found` | 400 | `customer_id` names no customer. | `customer_id` |
-| `contract.frequency_unparsable` | 422 | `frequency` does not match the generator's grammar — blocked on [`03-architecture.md`](03-architecture.md#11-risks-and-technical-debt) R2. | `item_id`, `frequency` |
+| `contract.frequency_unparsable` | 422 | `frequency` does not match the generator's grammar — blocked on [`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R2. | `item_id`, `frequency` |
 | `schedule.no_shifts_generated` | 422 | The frequency parses but yields no occurrence inside the term. | `item_id` |
 | `schedule.regenerate_blocked` | 409 | Regeneration would move a completed or disputed shift. | `shift_ids[]` |
 
@@ -240,7 +240,7 @@ there is nothing to add.
 
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
-| `shift.already_completed` | 409 | Re-submitting, reassigning or rescheduling a completed shift — evidence is write-once ([`03-architecture.md`](03-architecture.md#9-architecture-decisions) D7). | `completed_at` |
+| `shift.already_completed` | 409 | Re-submitting, reassigning or rescheduling a completed shift — evidence is write-once ([`04-architecture.md`](04-architecture.md#9-architecture-decisions) D7). | `completed_at` |
 | `shift.evidence_incomplete` | 400 | Submit is missing a required photo type or `receipt_photo_key`. | `missing[]` |
 | `shift.assignee_out_of_team` | 403 | Reassigning to an employee outside the caller's team. | `assignee_id` |
 | `shift.not_disputed` | 409 | `dispute:resolve` on a shift that is not disputed. | `status` |
@@ -253,7 +253,7 @@ there is nothing to add.
 
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
-| `statement.period_incomplete` | 409 | A shift in the period lacks evidence or is disputed ([`03-architecture.md`](03-architecture.md#9-architecture-decisions) D6). | `shift_ids[]` grouped by reason |
+| `statement.period_incomplete` | 409 | A shift in the period lacks evidence or is disputed ([`04-architecture.md`](04-architecture.md#9-architecture-decisions) D6). | `shift_ids[]` grouped by reason |
 | `statement.already_exists` | 409 | A statement already exists for that `contract_id` + `period`. | `statement_id` |
 | `statement.not_issued` | 409 | `send` before `export` — there is no PDF yet. | `status` |
 | `statement.immutable` | 409 | Editing a statement already `issued` or `sent`. | `status` |
@@ -262,7 +262,7 @@ there is nothing to add.
 
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
-| `alert.channel_unavailable` | 502 | Zalo ZNS and SMS both rejected the send; the alert falls back in-app ([`03-architecture.md`](03-architecture.md#8-crosscutting-concepts) §8.3). | `channel`, `provider_code` |
+| `alert.channel_unavailable` | 502 | Zalo ZNS and SMS both rejected the send; the alert falls back in-app ([`04-architecture.md`](04-architecture.md#8-crosscutting-concepts) §8.3). | `channel`, `provider_code` |
 | `customer.has_active_contracts` | 409 | Deleting a customer that still holds a non-terminated contract. | `contract_ids[]` |
 | `employee.has_assigned_shifts` | 409 | Deleting an employee still assigned to future shifts. | `shift_ids[]` |
 | `employee.username_taken` | 409 | `username` is already in use. | `username` |

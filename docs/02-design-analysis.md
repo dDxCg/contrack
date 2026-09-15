@@ -24,6 +24,9 @@
 | FR16 | Accountant | Export a statement as PDF with photos and receipts attached |
 | FR17 | Director | View dashboard: active contracts, expiring contracts, disputed contracts, projected revenue |
 | FR18 | Director | Read, create, update or delete employee accounts, including role and manager assignment |
+| FR19 | Accountant | Send an exported statement to the customer, marking it sent |
+| FR20 | Accountant, Director | View reconciliation: shifts due by frequency vs. shifts with complete evidence, per contract per period |
+| FR21 | Manager, Director | Create or update a customer record (name, contact, address, segment). Delete: Director only, blocked while the customer holds a non-terminated contract |
 
 ### Non-Functional Requirements
 
@@ -89,15 +92,19 @@ flowchart LR
         UC17([Generate shift schedule])
         UC19([Review shift evidence])
         UC10([Mark shift as disputed])
+        UC21([Manage customer])
+        UC21P(["Read, create"])
     end
 
     Manager --- UC6
     Manager --- UC9
     Manager --- UC10
+    Manager --- UC21
 
     UC9 -.->|"&laquo;include&raquo;"| UC9P
     UC9 -.->|"&laquo;include&raquo;"| UC17
     UC10 -.->|"&laquo;include&raquo;"| UC19
+    UC21 -.->|"&laquo;include&raquo;"| UC21P
 ```
 
 ### Accountant
@@ -110,10 +117,12 @@ flowchart LR
         UC12([Export monthly statement])
         UC13([Generate statement data])
         UC14([Reconcile billed vs completed shifts])
+        UC20([Send statement to customer])
     end
 
     Accountant --- UC12
     Accountant --- UC14
+    Accountant --- UC20
 
     UC12 -.->|"&laquo;include&raquo;"| UC13
 ```
@@ -134,6 +143,9 @@ flowchart LR
         UC15([View dashboard])
         UC16([Manage account])
         UC16P(["Read, create, update, delete"])
+        UC14([Reconcile billed vs completed shifts])
+        UC21([Manage customer])
+        UC21P(["Read, create, update, delete"])
     end
 
     Director --- UC6
@@ -141,11 +153,14 @@ flowchart LR
     Director --- UC10
     Director --- UC15
     Director --- UC16
+    Director --- UC14
+    Director --- UC21
 
     UC9 -.->|"&laquo;include&raquo;"| UC9P
     UC9 -.->|"&laquo;include&raquo;"| UC17
     UC16 -.->|"&laquo;include&raquo;"| UC16P
     UC10 -.->|"&laquo;include&raquo;"| UC19
+    UC21 -.->|"&laquo;include&raquo;"| UC21P
 ```
 
 ### Use Case Descriptions
@@ -158,9 +173,11 @@ flowchart LR
 | Manage contract | Manager, Director | Read, create, update or delete a contract and its sites/service items (customer, term, frequency, price). Director holds all four (read/create/update/delete); Manager holds read/create only | Customer and contract terms are agreed offline |
 | Mark shift as disputed | Manager, Director | Manually record a shift as disputed, based on a customer complaint received by phone or in person | Customer has reported an issue outside the system |
 | Export monthly statement | Accountant | Export the monthly statement for a contract as PDF | A statement's underlying data has been generated for the period |
-| Reconcile billed vs completed shifts | Accountant | Compare what a statement bills against the shifts actually completed | A statement exists for the period |
+| Send statement to customer | Accountant | Record that an exported statement was sent to the customer | Statement has been exported |
+| Reconcile billed vs completed shifts | Accountant, Director | Compare what a statement bills against the shifts actually completed | A statement exists for the period |
 | View dashboard | Director | View active/expiring/disputed contracts and projected revenue | User is authenticated as director |
 | Manage account | Director | Read, create, update or delete an employee account, including its role and manager assignment | User is authenticated as director |
+| Manage customer | Manager, Director | Read, create, update or delete a customer record (name, contact, address, segment). Director holds all four; Manager holds read/create only | Deleting requires no non-terminated contract references the customer |
 
 ---
 
@@ -469,6 +486,6 @@ sequenceDiagram
 ## VI: System Design
 
 Subsystem decomposition, deployment, persistent data, concurrency, external integrations:
-[`03-architecture.md`](03-architecture.md).
+[`04-architecture.md`](04-architecture.md).
 
 ---
