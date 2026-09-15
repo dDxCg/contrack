@@ -127,10 +127,105 @@ flowchart TB
 
 Customer sits outside the system boundary: signatures and complaints are recorded offline by staff.
 
-### View 2 — the core flows
+### View 2 — class diagram
+
+Same domain classes as
+[design-analysis.md §III](docs/02-design-analysis.md#iii-class-diagram), design-level
+(typed attributes, typed methods).
+
+```mermaid
+classDiagram
+    class Customer {
+        -id: int
+        -name: string
+        -companyName: string
+        -contact: string
+        -address: string
+        -segment: CustomerSegment
+    }
+    class Contract {
+        -id: int
+        -signedAt: Date
+        -expiresAt: Date
+        -status: ContractStatus
+        +addSite(site: ContractSite) void
+        +generateSchedule() void
+    }
+    class ContractSite {
+        -id: int
+        -name: string
+        -workRequirements: string
+        -notes: string
+        +addItem(item: ContractItem) void
+    }
+    class ContractItem {
+        -id: int
+        -name: string
+        -frequency: string
+        -unitPrice: decimal
+        +generateShifts(term: DateRange) Shift[]
+    }
+    class Shift {
+        -id: int
+        -scheduledDate: Date
+        -status: ShiftStatus
+        -completedAt: DateTime
+        -latitude: decimal
+        -longitude: decimal
+        -capturedAt: DateTime
+        -receiptPhotoUrl: string
+        +complete(photos: Photo[], receipt: Photo, gps: GpsPoint) void
+        +dispute(reason: string) void
+        +resolveDispute() void
+        +reassign(employee: Employee) void
+        +reschedule(date: Date) void
+    }
+    class ShiftPhoto {
+        -id: int
+        -type: PhotoType
+        -url: string
+        -capturedAt: DateTime
+    }
+    class Statement {
+        -id: int
+        -period: Date
+        -totalAmount: decimal
+        -status: StatementStatus
+        -pdfUrl: string
+        +compute(shifts: Shift[]) void
+        +export() void
+        +send() void
+    }
+    class Employee {
+        -id: int
+        -name: string
+        -username: string
+        -role: Role
+        -status: EmployeeStatus
+    }
+    class Team {
+        -id: int
+        -name: string
+        -code: string
+        +lead() Employee
+        +memberCount() int
+    }
+
+    Customer "1" --> "0..*" Contract
+    Contract "1" *-- "1..*" ContractSite
+    ContractSite "1" *-- "1..*" ContractItem
+    ContractItem "1" --> "0..*" Shift : generates
+    Shift "1" *-- "0..*" ShiftPhoto
+    Contract "1" --> "0..*" Statement
+    Employee "1" --> "0..*" Shift : assignee
+    Employee "0..1" --> "0..*" Employee : manager
+    Team "0..1" --> "0..*" Employee : members
+```
+
+### View 3 — the core flows
 
 The same five sequence diagrams as
-[design-analysis.md §IV](docs/02-design-analysis.md#iv-sequence-diagrams), each with
+[design-analysis.md §V](docs/02-design-analysis.md#v-sequence-diagrams), each with
 its failure branch.
 
 **1. Create contract with sites and service items**

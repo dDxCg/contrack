@@ -1,12 +1,5 @@
 # LichHD — Design Analysis
 
-## Document Overview
-This is a design analysis report for **LichHD**, a recurring service contract management system for companies in industrial cleaning, HVAC/elevator maintenance, pest control, landscaping, and fire-safety maintenance. It replaces manual Excel scheduling and Zalo-based coordination with a single system for contracts, dispatch, field proof-of-work, and monthly statements.
-
-Source documents: [PRD](01-prd.md) · [ERD](../db/erd.md) · [SQL schema](../db/schema.sql) · [Wireframe](ui/wireframe.html)
-
----
-
 ## I: Requirements Analysis
 
 ### Functional Requirements
@@ -171,10 +164,103 @@ flowchart LR
 
 ---
 
-## III: Activity Diagrams
+## III: Class Diagram
 
-Decision flow inside each use case below — same branches and outcomes as the matching sequence
-diagram in §IV, expressed as control flow rather than message passing.
+Design-level: attributes are private with a type, methods are public with parameter and
+return types. Trivial getters are omitted by convention — a field with no listed accessor
+is read through the object that owns it, not exposed for direct mutation.
+
+```mermaid
+classDiagram
+    class Customer {
+        -id: int
+        -name: string
+        -companyName: string
+        -contact: string
+        -address: string
+        -segment: CustomerSegment
+    }
+    class Contract {
+        -id: int
+        -signedAt: Date
+        -expiresAt: Date
+        -status: ContractStatus
+        +addSite(site: ContractSite) void
+        +generateSchedule() void
+    }
+    class ContractSite {
+        -id: int
+        -name: string
+        -workRequirements: string
+        -notes: string
+        +addItem(item: ContractItem) void
+    }
+    class ContractItem {
+        -id: int
+        -name: string
+        -frequency: string
+        -unitPrice: decimal
+        +generateShifts(term: DateRange) Shift[]
+    }
+    class Shift {
+        -id: int
+        -scheduledDate: Date
+        -status: ShiftStatus
+        -completedAt: DateTime
+        -latitude: decimal
+        -longitude: decimal
+        -capturedAt: DateTime
+        -receiptPhotoUrl: string
+        +complete(photos: Photo[], receipt: Photo, gps: GpsPoint) void
+        +dispute(reason: string) void
+        +resolveDispute() void
+        +reassign(employee: Employee) void
+        +reschedule(date: Date) void
+    }
+    class ShiftPhoto {
+        -id: int
+        -type: PhotoType
+        -url: string
+        -capturedAt: DateTime
+    }
+    class Statement {
+        -id: int
+        -period: Date
+        -totalAmount: decimal
+        -status: StatementStatus
+        -pdfUrl: string
+        +compute(shifts: Shift[]) void
+        +export() void
+        +send() void
+    }
+    class Employee {
+        -id: int
+        -name: string
+        -username: string
+        -role: Role
+        -status: EmployeeStatus
+    }
+    class Team {
+        -id: int
+        -name: string
+        -code: string
+        +lead() Employee
+        +memberCount() int
+    }
+
+    Customer "1" --> "0..*" Contract
+    Contract "1" *-- "1..*" ContractSite
+    ContractSite "1" *-- "1..*" ContractItem
+    ContractItem "1" --> "0..*" Shift : generates
+    Shift "1" *-- "0..*" ShiftPhoto
+    Contract "1" --> "0..*" Statement
+    Employee "1" --> "0..*" Shift : assignee
+    Employee "0..1" --> "0..*" Employee : manager
+    Team "0..1" --> "0..*" Employee : members
+```
+---
+
+## IV: Activity Diagrams
 
 ### 1. Create contract with sites and service items 
 
@@ -249,7 +335,7 @@ stateDiagram-v2
 
 ---
 
-## IV: Sequence Diagrams
+## V: Sequence Diagrams
 
 ### 1. Create contract with sites and service items
 
@@ -380,72 +466,9 @@ sequenceDiagram
 
 ---
 
-## V: System Design
+## VI: System Design
 
-### Technical Architecture
-
-Full architecture — component breakdown, key decisions, cross-cutting concerns: [`03-architecture.md`](./03-architecture.md).
-
-### Data
-
-[`db/schema.sql`](../db/schema.sql) — ANSI SQL.
-Diagram: [`db/erd.md`](../db/erd.md). Conventions: [`db/README.md`](../db/README.md).
-
-Dataflow — how data moves through the processes:
-
-```mermaid
-flowchart LR
-    manager["Manager / Director"]
-    employee["Employee"]
-    customer["Customer<br/><i>offline</i>"]
-    accountant["Accountant"]
-    channel["Zalo / SMS channel"]
-
-    manageContract["Manage Contract"]
-    genSchedule["Generate Schedule"]
-    captureEvidence["Capture Field Evidence"]
-    handleDispute["Handle Dispute"]
-    computeStatement["Compute Statement"]
-    sendAlerts["Send Alerts"]
-
-    contracts[("Contracts / Sites / Items")]
-    shifts[("Shifts")]
-    photos[("Shift Photos<br/>object storage")]
-    statements[("Statements")]
-
-    manager --> manageContract --> contracts
-    contracts --> genSchedule --> shifts
-
-    customer -.->|"signs receipt"| employee
-    employee --> captureEvidence
-    shifts --> captureEvidence
-    captureEvidence --> photos
-    captureEvidence --> shifts
-
-    manager --> handleDispute
-    shifts --> handleDispute
-    photos --> handleDispute
-    handleDispute --> shifts
-
-    accountant --> computeStatement
-    shifts --> computeStatement
-    contracts --> computeStatement
-    computeStatement --> statements
-    statements --> accountant
-
-    contracts --> sendAlerts
-    shifts --> sendAlerts
-    sendAlerts --> channel
-```
-
-### User interface
-
-[`wireframe.html`](ui/wireframe.html) — screens per role, navigation scoped to the role's use cases in
-§II. Captures: [`screenshots/`](screenshots/).
-
-### Integrations
-
-Zalo (ZNS) and/or SMS for reminders (FR14), with an in-app fallback when the channel fails; VietQR for
-payment (Could-have, not in MVP).
+Subsystem decomposition, deployment, persistent data, concurrency, external integrations:
+[`03-architecture.md`](03-architecture.md).
 
 ---
