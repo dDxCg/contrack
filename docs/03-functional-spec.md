@@ -1,14 +1,18 @@
 # LichHD — Functional Specification
 
-## 0. Authentication
+## 0. Authentication — FR22
 
-*Cross-cutting — every function below assumes a signed-in employee with a role
-(NFR3, NFR7).*
+*Cross-cutting — every function below assumes a signed-in employee with a role,
+inside one tenant (NFR3, NFR6, NFR7).*
 
 | Screens needed | API needed |
 |---|---|
-| Login (username/password) | `POST` session (authenticate, issue token) |
+| Login (username/password) | `POST` session (authenticate, issue token carrying tenant + role) |
 | — | `POST` session refresh/logout |
+
+Login resolves `(tenant_id, username)`, not `username` alone — two tenants may each
+run a `director` account. A suspended tenant's login is rejected before password
+check (FR24).
 
 ---
 
@@ -147,10 +151,28 @@ section is where that record comes from.
 
 ---
 
+## 10. Tenant management — FR23, FR24
+
+*Platform Admin onboards and manages the operating companies (tenants) that run
+LichHD — outside any tenant, not reachable by Director or any tenant-scoped role.*
+
+| Screens needed | API needed |
+|---|---|
+| Tenant list (Platform Admin only) | `GET` tenants (list, filter by status) |
+| Tenant create — name + first Director's username/password | `POST` tenant (creates the tenant row and its first employee, role = director) |
+| Tenant suspend / reactivate | `PATCH` tenant status |
+
+A new tenant starts with exactly one account: the Director created alongside it.
+Every other employee, team, customer and contract for that tenant is created from
+inside it afterward, by that Director — Platform Admin never creates them.
+
+---
+
 ## Traceability
 
 | FR | Function | Screens | API |
 |---|---|---|---|
+| FR22 | §0 Authentication | 1 | 2 |
 | FR1–FR4 | §1 Contract setup | 3 | 5 |
 | FR5–FR6 | §2 Weekly dispatch | 1 | 2 |
 | FR7–FR10 | §3 Field execution | 4 | 4 |
@@ -160,6 +182,7 @@ section is where that record comes from.
 | FR17 | §7 Dashboard | 1 | 1 |
 | FR18 | §8 Employee/team management | 3 | 5 |
 | FR21 | §9 Customer management | 2 | 4 |
+| FR23–FR24 | §10 Tenant management | 3 | 3 |
 
 Every FR maps to at least one screen and one API operation — no orphaned requirement,
 no screen without a stated purpose back to an FR.

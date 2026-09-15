@@ -7,7 +7,9 @@
 
 **Problem being solved:** Recurring-service companies (industrial cleaning, HVAC/elevator maintenance, pest control, landscaping, fire-safety maintenance) currently manage work schedules in Excel and coordinate over Zalo. Result: missed visits → customer complaints/lost contracts; no proof of work when customers dispute; accountants spend 1.5–3 days each month-end reconciling manually; nobody tracks contracts nearing expiry → lost customers from missed renewals.
 
-**Target users:** Recurring-service companies with 10–80 employees and 20–150 active contracts.
+**Target users:** Recurring-service companies with 10–80 employees and 20–150 active
+contracts. LichHD is multi-tenant: one deployment serves many such companies at once,
+each fully isolated from the others.
 
 **Business goals:**
 - Help customers stop losing contracts to missed visits.
@@ -34,6 +36,7 @@
 | Champion | Accountant / admin | 3 days at month-end to reconcile | Export a statement in 10 minutes |
 | Daily user | Team lead, field staff | Asked "did you do it yet", blamed when there's no proof | Has proof to protect themselves |
 | Blocker | Long-tenured team lead | Afraid of exposing inflated hours/materials claims | Needs careful internal communication: not positioned as surveillance, avoid the word "monitoring" |
+| Operator | Platform Admin (LichHD's own ops) | Onboarding a new company customer today means someone touching the database by hand | Creates a new tenant company — with its first Director login — in one step; suspends one without any risk to another's data |
 
 ---
 
@@ -48,6 +51,7 @@
 | Field execution | Link opens on phone (no app install); before/after photos; customer signs a paper receipt, employee photographs the signed receipt as evidence, brings the original back to file later; GPS + timestamp stamped automatically |
 | Alerts & Reminders | Remind on visits not completed at the required frequency; remind on contracts expiring soon; remind via Zalo/SMS |
 | Statements & Invoicing | One button to export the monthly statement (with photos + signature) as PDF to send the customer; automatic reconciliation |
+| Tenant Onboarding | Platform Admin creates a new company (tenant) with its first Director login in one step; suspend/reactivate a tenant. Every other module above operates strictly inside one tenant |
 
 ### Should-have
 
@@ -106,8 +110,8 @@
 | Reminder channels | Send notifications via Zalo (ZNS) and/or SMS |
 | Payment | VietQR integration for payment flow (Could-have) |
 | Performance | The field-photo page must load on weak 3G/4G mobile connections (job sites, basements) |
-| Security & access control | Role-based access: director, accountant, manager, team lead, employee; evidence data logs cannot be deleted or edited |
-| Scalability | Single-tenant deployment |
+| Security & access control | Role-based access: director, accountant, manager, team lead, employee, each scoped inside one tenant company; a separate Platform Admin identity outside every tenant; evidence data logs cannot be deleted or edited |
+| Scalability | Multi-tenant deployment — one shared deployment serves many operating companies, each fully isolated from every other's data |
 | Data retention | Retain photos/signatures for at least 12 months for reconciliation and contract disputes |
 | Data export | Export statements/invoices as PDF; export raw data (CSV/Excel) for accounting reconciliation |
 
@@ -134,6 +138,7 @@
 | Dependency on the reliability of Zalo ZNS/SMS channels for reminders | Medium | Need a fallback (in-app/email reminders) if the channel is disrupted |
 | Competition: international players (Jobber, MaintainX) localize faster than expected | Low–Medium | The Vietnamese/Zalo/VietQR first-mover advantage needs to be reinforced early |
 | Dependency on input cost data (labor, materials) to compute profit/loss (Should-have) | Medium | Requires a cost-entry process from accounting, otherwise the profit/loss module will be inaccurate |
+| A tenant-isolation bug leaks one company's contracts, shifts or statements to another | High | Every core table is filtered by tenant on every query, enforced structurally rather than per-query; tested by an automated cross-tenant sweep (see `04-architecture.md` D1, QR6) |
 
 ---
 
@@ -157,8 +162,8 @@
 
 | Phase | Timeline | Scope |
 |---|---|---|
-| MVP | 0–3 months | 5 Must-have modules: Contracts, Scheduling & Dispatch, Field Execution, Alerts & Reminders, Statements & Invoicing |
-| Pilot | Months 3–4 | Trial rollout with 1–3 target customers, collect feedback |
+| MVP | 0–3 months | 6 Must-have modules: Contracts, Scheduling & Dispatch, Field Execution, Alerts & Reminders, Statements & Invoicing, Tenant Onboarding |
+| Pilot | Months 3–4 | Trial rollout with 1–3 target companies as separate tenants on the same deployment, collect feedback |
 | Phase 2 | Months 4–9 | Should-have modules: Profit/loss per contract, Renewal & light CRM |
 | Phase 3 | Month 9+ | Could-have modules: Field workforce management, VietQR payment, Director dashboard |
 

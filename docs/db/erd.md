@@ -2,6 +2,16 @@
 
 ```mermaid
 erDiagram
+    tenant_statuses ||--o{ tenants : "status of"
+    tenants ||--o{ customers : "owns"
+    tenants ||--o{ teams : "owns"
+    tenants ||--o{ employees : "owns"
+    tenants ||--o{ contracts : "owns"
+    tenants ||--o{ contract_sites : "owns"
+    tenants ||--o{ contract_items : "owns"
+    tenants ||--o{ shifts : "owns"
+    tenants ||--o{ shift_photos : "owns"
+    tenants ||--o{ statements : "owns"
     roles ||--o{ employees : "assigned to"
     employees ||--o{ employees : "manages"
     teams ||--o{ employees : "members"
@@ -18,6 +28,26 @@ erDiagram
     photo_types ||--o{ shift_photos : "type of"
     contracts ||--o{ statements : "has"
     statement_statuses ||--o{ statements : "status of"
+
+    tenant_statuses {
+        int id PK
+        varchar code
+    }
+
+    tenants {
+        int id PK
+        varchar name
+        int status_id FK
+        timestamp created_at
+    }
+
+    platform_admins {
+        int id PK
+        varchar name
+        varchar username
+        varchar password_hash
+        timestamp created_at
+    }
 
     roles {
         int id PK
@@ -56,6 +86,7 @@ erDiagram
 
     customers {
         int id PK
+        int tenant_id FK
         varchar name
         varchar company_name
         varchar contact
@@ -66,6 +97,7 @@ erDiagram
 
     teams {
         int id PK
+        int tenant_id FK
         varchar name
         varchar code
         timestamp created_at
@@ -73,6 +105,7 @@ erDiagram
 
     employees {
         int id PK
+        int tenant_id FK
         varchar name
         varchar contact
         varchar username
@@ -86,6 +119,7 @@ erDiagram
 
     contracts {
         int id PK
+        int tenant_id FK
         int customer_id FK
         date signed_at
         date expires_at
@@ -95,6 +129,7 @@ erDiagram
 
     contract_sites {
         int id PK
+        int tenant_id FK
         int contract_id FK
         varchar name
         varchar work_requirements
@@ -104,6 +139,7 @@ erDiagram
 
     contract_items {
         int id PK
+        int tenant_id FK
         int site_id FK
         varchar name
         varchar frequency
@@ -113,6 +149,7 @@ erDiagram
 
     shifts {
         int id PK
+        int tenant_id FK
         int contract_item_id FK
         int assignee_id FK
         date scheduled_date
@@ -127,6 +164,7 @@ erDiagram
 
     shift_photos {
         int id PK
+        int tenant_id FK
         int shift_id FK
         int type_id FK
         varchar url
@@ -135,6 +173,7 @@ erDiagram
 
     statements {
         int id PK
+        int tenant_id FK
         int contract_id FK
         date period
         numeric total_amount
@@ -143,3 +182,7 @@ erDiagram
         timestamp created_at
     }
 ```
+
+`platform_admins` carries no `tenant_id` and no relationship line to the tenant-owned
+tables above — it sits outside every tenant, the one identity allowed to create or
+suspend a `tenants` row in the first place.

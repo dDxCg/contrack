@@ -26,6 +26,10 @@ tags:
   - name: Customers
   - name: Employees
   - name: Teams
+  - name: Platform
+    description: >
+      /platform/* only. Authenticated against `platform_admins`, disjoint from every
+      other tag — carries no `tenant_id` and cannot reach any resource above.
 
 security:
   - bearerAuth: []
@@ -44,8 +48,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [username, password]
+              required: [tenant_id, username, password]
               properties:
+                tenant_id: { type: integer, example: 4 }
                 username: { type: string, example: mai.lt }
                 password: { type: string, format: password, example: "•••••••" }
       responses:
@@ -57,7 +62,7 @@ paths:
                 manager:
                   value:
                     token: eyJhbGciOiJIUzI1NiJ9.example
-                    employee: { id: 12, name: "Lê Thị Mai", role: manager }
+                    employee: { id: 12, tenant_id: 4, name: "Lê Thị Mai", role: manager }
               schema:
                 type: object
                 properties:
@@ -66,14 +71,18 @@ paths:
                     type: object
                     properties:
                       id: { type: integer }
+                      tenant_id: { type: integer }
                       name: { type: string }
                       role: { $ref: '#/components/schemas/Role' }
         '401':
-          description: Unknown username or wrong password — the two are not distinguished
+          description: >
+            Unknown (tenant_id, username) or wrong password — the two are not
+            distinguished — or the tenant is suspended
           content:
             application/json:
               examples:
                 invalid_credentials: { $ref: '#/components/examples/AuthInvalidCredentials' }
+                tenant_suspended: { $ref: '#/components/examples/TenantSuspended' }
               schema: { $ref: '#/components/schemas/Error' }
 
   /auth/logout:
@@ -95,6 +104,121 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Employee' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # -------------------------------------------------------------- Platform
+  /platform/auth/login:
+    post:
+      tags: [Platform]
+      operationId: platformLogin
+      summary: Exchange platform-admin credentials for a platform credential
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, example: ops.admin }
+                password: { type: string, format: password, example: "•••••••" }
+      responses:
+        '200':
+          description: Platform credential issued — carries no tenant_id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  platform_admin:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      name: { type: string }
+        '401':
+          description: Unknown username or wrong password
+          content:
+            application/json:
+              examples:
+                invalid_credentials: { $ref: '#/components/examples/AuthInvalidCredentials' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /platform/tenants:
+    get:
+      tags: [Platform]
+      operationId: listTenants
+      summary: List tenants
+      security: [{ platformBearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, suspended] }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Tenants
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Platform]
+      operationId: createTenant
+      summary: Create a tenant and its first Director account — FR23
+      security: [{ platformBearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TenantCreate' }
+      responses:
+        '201':
+          description: Tenant and its first Director created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tenant' }
+        '400':
+          description: Malformed body
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Error' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /platform/tenants/{id}:
+    patch:
+      tags: [Platform]
+      operationId: updateTenantStatus
+      summary: Suspend or reactivate a tenant — FR24
+      security: [{ platformBearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [active, suspended] }
+      responses:
+        '200':
+          description: Tenant updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tenant' }
+        '400':
+          description: Unknown tenant id
+          content:
+            application/json:
+              examples:
+                tenant_not_found: { $ref: '#/components/examples/TenantNotFound' }
+              schema: { $ref: '#/components/schemas/Error' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   # ---------------------------------------------------------- Contracts
@@ -1118,9 +1242,17 @@ components:
       type: http
       scheme: bearer
       description: >
-        Session or bearer token issued by POST /auth/login, carried on every desk
-        request. Field endpoints (/field/*) carry no session — the per-shift signed
-        token in the path is their sole credential; see `04-architecture.md` §8.1.
+        Session or bearer token issued by POST /auth/login, carrying tenant_id and
+        role, carried on every desk request. Field endpoints (/field/*) carry no
+        session — the per-shift signed token in the path is their sole credential;
+        see `04-architecture.md` §8.1.
+    platformBearerAuth:
+      type: http
+      scheme: bearer
+      description: >
+        Token issued by POST /platform/auth/login against platform_admins. Carries
+        no tenant_id and is rejected by every bearerAuth-secured operation above —
+        the two credential spaces are disjoint; see `04-architecture.md` §8.1.
 
   parameters:
     Limit:
@@ -1184,6 +1316,34 @@ components:
     Role:
       type: string
       enum: [director, accountant, manager, team_lead, employee]
+
+    TenantStatus:
+      type: string
+      enum: [active, suspended]
+
+    TenantCreate:
+      type: object
+      required: [name, director_username, director_password]
+      properties:
+        name: { type: string, example: "Vệ sinh công nghiệp Thành Đạt" }
+        director_username: { type: string, example: director }
+        director_password: { type: string, format: password, example: "•••••••" }
+    Tenant:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        status: { $ref: '#/components/schemas/TenantStatus' }
+        created_at: { type: string, format: date-time }
+        director_employee_id:
+          type: integer
+          description: id of the Director employee created alongside this tenant
+    TenantList:
+      allOf:
+        - type: object
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/Tenant' } }
+        - $ref: '#/components/schemas/CollectionMeta'
 
     ContractStatus:
       type: string
@@ -1450,6 +1610,10 @@ components:
   examples:
     AuthInvalidCredentials:
       value: { error: { code: auth.invalid_credentials, message: "Sai tên đăng nhập hoặc mật khẩu", details: {} } }
+    TenantSuspended:
+      value: { error: { code: tenant.suspended, message: "Tài khoản công ty đã bị tạm khóa", details: {} } }
+    TenantNotFound:
+      value: { error: { code: tenant.not_found, message: "Không tìm thấy công ty", details: { tenant_id: 999 } } }
     TokenExpired:
       value: { error: { code: token.expired, message: "Liên kết đã hết hạn", details: { expired_at: "2024-10-21T20:00:00Z" } } }
     TokenInvalid:

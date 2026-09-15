@@ -17,17 +17,24 @@ client. This file is the prose walkthrough; `05-api.yaml` is the contract.
 
 **Base path** `/api/v1`. JSON request and response bodies, UTF-8.
 
-**Authentication.** Two mechanisms, per [`04-architecture.md`](04-architecture.md#81-authorisation):
+**Authentication.** Three mechanisms, per [`04-architecture.md`](04-architecture.md#81-authorisation):
 
 | Surface | Mechanism |
 |---|---|
-| Desk endpoints | Session or bearer token issued by `POST /auth/login`, carried on every request |
+| Desk endpoints (`/contracts`, `/shifts`, …) | Session or bearer token issued by `POST /auth/login`, carrying `tenant_id` + `role`, carried on every request |
 | Field endpoints (`/field/*`) | Per-shift signed token in the path; no session, no login |
+| Platform endpoints (`/platform/*`, [§10](#10-platform-administration--fr23-fr24)) | Bearer token issued by `POST /platform/auth/login` against `platform_admins` — carries no `tenant_id`, cannot reach any `/api/v1/*` desk or field endpoint |
 
-**Row scope.** Authorisation is role plus scope — a role grants an operation, the scope restricts
-which rows it applies to. Scopes: `own` (rows where the caller is the assignee), `team` (employees sharing
-the caller's `employees.team_id`, which is `NULL` for desk staff — they hold no `team` scope),
-`unit` (employees reporting to the caller via `employees.manager_id`), `all`.
+**Tenant scope.** Every desk token names exactly one `tenant_id`, resolved once at login and never
+switched without logging in again. Every query below — list or single-resource — is filtered by it
+first, before role or row scope: a `GET /contracts/{id}` for a contract in another tenant returns `404`,
+identically to a row outside the caller's row scope ([`04-architecture.md`](04-architecture.md#81-authorisation)).
+
+**Row scope.** Within that tenant, authorisation is role plus scope — a role grants an operation, the
+scope restricts which rows it applies to. Scopes: `own` (rows where the caller is the assignee), `team`
+(employees sharing the caller's `employees.team_id`, which is `NULL` for desk staff — they hold no `team`
+scope), `unit` (employees reporting to the caller via `employees.manager_id`), `all` (every row **in the
+caller's tenant** — never cross-tenant).
 
 **Errors.** A single shape, HTTP status plus a stable code:
 
@@ -68,13 +75,13 @@ evidence ([`04-architecture.md`](04-architecture.md#82-evidence-integrity-and-re
 
 ---
 
-## 2. Authentication
+## 2. Authentication — FR22
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/auth/login` | Exchange `username` + `password` for a credential. Returns the employee's `role` and `id`. |
+| POST | `/auth/login` | Exchange `tenant_id` (or a tenant-unique slug) + `username` + `password` for a credential. Returns the employee's `tenant_id`, `role` and `id`. `401 tenant.suspended` if the tenant is not active. |
 | POST | `/auth/logout` | Invalidate the current credential. |
-| GET | `/auth/me` | Current employee, role, and manager chain — drives client-side navigation scoping. |
+| GET | `/auth/me` | Current employee, tenant, role, and manager chain — drives client-side navigation scoping. |
 
 ---
 
@@ -176,28 +183,32 @@ when any shift in the period lacks evidence or is disputed
 Role grants the operation; scope restricts the rows. `—` is no access. This table is the contract
 that `SCREEN_ROLES` in [`wireframe.html`](ui/wireframe.html) must agree with.
 
-| Resource | Director | Manager | Accountant | Team lead | Employee |
-|---|---|---|---|---|---|
-| Contracts | R C U D · all | R C · all | R · all | — | — |
-| Sites, service items | R C U D · all | R C · all | R · all | — | — |
-| Shifts | R · all | R · unit | — | R U · team | R · own |
-| Shift evidence | R · all | R · unit | R · all | R · team | R · own |
-| Dispute a shift | C U · all | C U · unit | — | — | — |
-| Field submission | — | — | — | token · one shift | token · one shift |
-| Statements | R · all | R · all | R C U · all | — | — |
-| Reconciliation | R · all | — | R · all | — | — |
-| Alerts | R U · all | R U · unit | — | R · team | — |
-| Dashboard | R · all | — | — | — | — |
-| Customers | R C U D · all | R C · all | R · all | — | — |
-| Employees | R C U D · all | — | — | — | — |
-| Teams | R C U D · all | R · all | — | R · own team | — |
+| Resource | Director | Manager | Accountant | Team lead | Employee | Platform Admin |
+|---|---|---|---|---|---|---|
+| Contracts | R C U D · all | R C · all | R · all | — | — | — |
+| Sites, service items | R C U D · all | R C · all | R · all | — | — | — |
+| Shifts | R · all | R · unit | — | R U · team | R · own | — |
+| Shift evidence | R · all | R · unit | R · all | R · team | R · own | — |
+| Dispute a shift | C U · all | C U · unit | — | — | — | — |
+| Field submission | — | — | — | token · one shift | token · one shift | — |
+| Statements | R · all | R · all | R C U · all | — | — | — |
+| Reconciliation | R · all | — | R · all | — | — | — |
+| Alerts | R U · all | R U · unit | — | R · team | — | — |
+| Dashboard | R · all | — | — | — | — | — |
+| Customers | R C U D · all | R C · all | R · all | — | — | — |
+| Employees | R C U D · all | — | — | — | — | — |
+| Teams | R C U D · all | R · all | — | R · own team | — | — |
+| Tenants | — | — | — | — | — | R C U · all |
 
-R read · C create · U update · D delete.
+R read · C create · U update · D delete. Every row and column above is additionally scoped to the
+caller's own tenant — a `Director`'s `all` on `Contracts` means all contracts **in their tenant**, never
+another tenant's. `Platform Admin` is the mirror case: it holds rights only on `Tenants`, and `—`
+everywhere a tenant-scoped role has access, because it belongs to no tenant to scope into.
 
 Two notes. **Field submission is not a role grant** — it is reached only with a per-shift token, which
 is why employees and team leads have no create right on shifts elsewhere in the table. And a `404` is
-returned for a row outside the caller's scope rather than a `403`, so that scope boundaries do not
-leak the existence of rows.
+returned for a row outside the caller's scope — tenant or row scope alike — rather than a `403`, so that
+scope boundaries do not leak the existence of rows.
 
 ---
 
@@ -211,10 +222,12 @@ there is nothing to add.
 
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
-| `auth.invalid_credentials` | 401 | `POST /auth/login` with an unknown username or wrong password. The two are not distinguished. | — |
+| `auth.invalid_credentials` | 401 | `POST /auth/login` or `POST /platform/auth/login` with an unknown `(tenant_id, username)` / `username`, or wrong password. The two are not distinguished. | — |
 | `auth.credential_expired` | 401 | Session or bearer token past its lifetime. | — |
 | `auth.forbidden_role` | 403 | The role does not hold the operation in [§8](#8-access-control). | `required_role` |
-| `auth.out_of_scope` | 404 | The row exists but falls outside the caller's row scope. Deliberately indistinguishable from a missing row. | — |
+| `auth.out_of_scope` | 404 | The row exists but falls outside the caller's row scope, or belongs to a different tenant. Deliberately indistinguishable from a missing row. | — |
+| `tenant.suspended` | 401 | `POST /auth/login` for a tenant whose `tenants.status` is `suspended`. Checked before password verification. | — |
+| `tenant.not_found` | 400 | `POST /platform/tenants/{id}` (`PATCH`) names no tenant. | `tenant_id` |
 
 ### Field token — `/field/*`
 
@@ -272,5 +285,21 @@ there is nothing to add.
 | `team.lead_conflict` | 409 | The team already has a member with the team-lead role. | `employee_id` |
 
 An unrecognised code is handled as its HTTP status. Clients must not parse `message`.
+
+---
+
+## 10. Platform Administration — FR23, FR24
+
+Reached only via `/platform/*`, authenticated only via `POST /platform/auth/login` against
+`platform_admins` — disjoint from every endpoint above §2–§7. No `/platform/*` operation reads or
+writes a `contract`, `shift`, `statement`, `customer`, `employee` or `team` row; the only resource is
+`tenants` itself ([§8](#8-access-control)).
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/platform/auth/login` | Exchange `username` + `password` (against `platform_admins`) for a platform credential. |
+| GET | `/platform/tenants` | List tenants. Filters: `status`. |
+| POST | `/platform/tenants` | Create a tenant (`name`) and its first employee in one call (`director_username`, `director_password`) — FR23. Returns the new `tenant_id` and `employee_id`. |
+| PATCH | `/platform/tenants/{id}` | Set `status` to `suspended` or `active` — FR24. A suspended tenant's `POST /auth/login` starts failing with `tenant.suspended` immediately; a session already issued before suspension is not retroactively revoked — an open risk tracked alongside [`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R6's token-lifetime work. |
 
 ---

@@ -6,6 +6,8 @@
 backend/
 ├── Controllers/
 │   ├── AuthController
+│   ├── PlatformAuthController
+│   ├── TenantsController
 │   ├── ContractsController
 │   ├── ShiftsController
 │   ├── FieldController
@@ -17,6 +19,7 @@ backend/
 │   ├── EmployeesController
 │   └── TeamsController
 ├── Services/
+│   ├── TenantService
 │   ├── ContractService
 │   ├── ScheduleGeneratorService
 │   ├── DispatchService
@@ -30,9 +33,11 @@ backend/
 │   ├── EmployeeService
 │   ├── TeamService
 │   └── AccessControl
+│       ├── TenantResolver
 │       ├── RoleResolver
 │       └── ScopeResolver
 ├── Repositories/
+│   ├── TenantRepository
 │   ├── ContractRepository
 │   ├── ContractSiteRepository
 │   ├── ContractItemRepository
@@ -43,6 +48,8 @@ backend/
 │   ├── TeamRepository
 │   └── CustomerRepository
 ├── Models/
+│   ├── Tenant
+│   ├── PlatformAdmin
 │   ├── Customer
 │   ├── Contract
 │   ├── ContractSite

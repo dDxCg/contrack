@@ -2,6 +2,22 @@
 
 ## I: Requirements Analysis
 
+### User Stories
+| As a... | I want to... | So that... | Acceptance criteria |
+|---|---|---|---|
+| Team lead | know which shifts my team owes this week without chasing anyone for it | I can assign work the moment the week starts | The week's shift list reaches the team lead by Monday morning, scoped to their own team |
+| Employee | leave proof that I actually did the visit | I'm protected if a customer disputes it later | A shift only reaches `completed` once before/after photos and the signed receipt are submitted, with location and time recorded |
+| Manager | know a contract is about to expire before it does | I can start the renewal conversation in time | Alert fires once per contract, 30 days before expiry |
+| Manager | know a visit was missed before the customer tells me | I can fix it before it becomes a complaint | Alert fires the moment a shift passes its due date uncompleted |
+| Accountant | close a contract's month without reassembling evidence by hand | I can send the customer a statement in minutes, not days | One action produces the full PDF; a period with incomplete evidence is blocked and lists exactly which shifts are missing it |
+| Director | see the state of every contract without asking staff for a status update | I catch a revenue or delivery problem myself, before it reaches me as a complaint | One view shows active, expiring and disputed contract counts plus projected revenue, current as of the underlying data |
+| Manager | set up a new contract with its sites and service items in one pass | the shift schedule generates itself instead of me building a calendar by hand | Saving a contract with at least one site and one service item immediately produces the full set of scheduled shifts |
+| Team lead | swap the assignee or date on a shift when someone's out or a site asks to move | the week still gets covered without waiting on a manager | Reassign/reschedule succeeds on any shift not yet completed and is rejected once it is |
+| Manager | flag a shift as disputed the moment a customer complains | the complaint is tied to the actual evidence instead of living in someone's memory | A disputed shift keeps its photos/receipt/GPS and shows a reason, separate from a normal completed shift |
+| Director | manage employee accounts, roles and manager assignment myself | access always matches who's actually on staff, without waiting on IT | Creating, editing or deactivating an employee takes effect on their next request, no redeploy needed |
+| Director | see what's billed against what actually got done, per contract and period | I catch billing drift before it reaches the customer as a dispute | Reconciliation view lists shifts due by frequency next to shifts with complete evidence, per contract per period |
+| Platform Admin | onboard a new operating company with its first Director account | a new customer of LichHD itself can start working without me touching the database | Creating a tenant immediately produces one active Director login, scoped to that tenant only |
+
 ### Functional Requirements
 
 | # | Role | Requirement |
@@ -27,6 +43,9 @@
 | FR19 | Accountant | Send an exported statement to the customer, marking it sent |
 | FR20 | Accountant, Director | View reconciliation: shifts due by frequency vs. shifts with complete evidence, per contract per period |
 | FR21 | Manager, Director | Create or update a customer record (name, contact, address, segment). Delete: Director only, blocked while the customer holds a non-terminated contract |
+| FR22 | Director, Accountant, Manager, Team Lead, Employee | Sign in with a username and password; the session carries the account's tenant, role and row scope for every later request |
+| FR23 | Platform Admin | Create a new tenant (operating company) with its first Director account | 
+| FR24 | Platform Admin | Suspend or reactivate a tenant; a suspended tenant's accounts can't sign in |
 
 ### Non-Functional Requirements
 
@@ -37,150 +56,106 @@
 | NFR3 | Security | Role-based access control: director, accountant, manager, team lead, employee |
 | NFR4 | Retention | Photos and signed receipts retained at least 12 months |
 | NFR5 | Portability | Statements exportable as PDF; raw data exportable as CSV/Excel |
-| NFR6 | Scalability | Single-tenant deployment — no cross-company data isolation required |
+| NFR6 | Scalability | Multi-tenant deployment — one shared deployment serves many operating companies (tenants); a tenant's data is never readable or writable by another tenant |
 | NFR7 | Usability | No native app install; access via a shared web link on any phone |
 
 ---
 
 ## II: Use Cases
 
-### Employee
-
 ```mermaid
+---
+config:
+  flowchart:
+    nodeSpacing: 22
+    rankSpacing: 45
+    padding: 8
+    subGraphTitleMargin: { top: 4, bottom: 4 }
+---
 flowchart LR
     Employee((Employee))
-
-    subgraph Boundary["LichHD"]
-        UC3([Complete shift])
-        UC4([Submit before / after photos])
-        UC5([Submit signed receipt photo])
-        UC6([View assigned shifts])
-    end
-
-    Employee --- UC3
-    Employee --- UC6
-
-    UC3 -.->|&laquo;include&raquo;| UC4
-    UC3 -.->|"&laquo;include&raquo;"| UC5
-```
-
-### Team Lead
-
-```mermaid
-flowchart LR
     TeamLead((Team Lead))
 
-    subgraph Boundary["LichHD"]
-        UC6([View assigned shifts])
-        UC7([Reassign / reschedule shift])
+    subgraph LichHD["LichHD"]
+        direction LR
+        subgraph DirectorBox[" "]
+            D_Login([Login])
+            D_View([View shifts])
+            D_Contract([Manage contract])
+            D_Schedule([Generate schedule])
+            D_Customer([Manage customer])
+            D_Dispute([Mark disputed])
+            D_Evidence([Review evidence])
+            D_Reconcile([Reconcile])
+            D_Account([Manage account])
+            D_Dashboard([View dashboard])
+        end
+        subgraph AccountantBox[" "]
+            A_Login([Login])
+            A_Export([Export statement])
+            A_GenStmt([Generate statement data])
+            A_Send([Send statement])
+            A_Reconcile([Reconcile])
+        end
+        subgraph ManagerBox[" "]
+            M_Login([Login])
+            M_View([View shifts])
+            M_Contract([Manage contract])
+            M_Schedule([Generate schedule])
+            M_Customer([Manage customer])
+            M_Dispute([Mark disputed])
+            M_Evidence([Review evidence])
+        end
+        subgraph TeamLeadBox[" "]
+            T_Login([Login])
+            T_View([View shifts])
+            T_Reassign([Reassign / reschedule])
+        end
+        subgraph EmployeeBox[" "]
+            E_Login([Login])
+            E_View([View shifts])
+            E_Complete([Complete shift])
+            E_Photos([Before / after photos])
+            E_Receipt([Signed receipt photo])
+            E_GPS([Capture GPS &amp; timestamp])
+        end
     end
 
-    TeamLead --- UC6
-    TeamLead --- UC7
-```
-
-### Manager
-
-```mermaid
-flowchart LR
     Manager((Manager))
-
-    subgraph Boundary["LichHD"]
-        UC6([View assigned shifts])
-        UC9([Manage contract])
-        UC9P(["Read, create"])
-        UC17([Generate shift schedule])
-        UC19([Review shift evidence])
-        UC10([Mark shift as disputed])
-        UC21([Manage customer])
-        UC21P(["Read, create"])
-    end
-
-    Manager --- UC6
-    Manager --- UC9
-    Manager --- UC10
-    Manager --- UC21
-
-    UC9 -.->|"&laquo;include&raquo;"| UC9P
-    UC9 -.->|"&laquo;include&raquo;"| UC17
-    UC10 -.->|"&laquo;include&raquo;"| UC19
-    UC21 -.->|"&laquo;include&raquo;"| UC21P
-```
-
-### Accountant
-
-```mermaid
-flowchart LR
     Accountant((Accountant))
-
-    subgraph Boundary["LichHD"]
-        UC12([Export monthly statement])
-        UC13([Generate statement data])
-        UC14([Reconcile billed vs completed shifts])
-        UC20([Send statement to customer])
-    end
-
-    Accountant --- UC12
-    Accountant --- UC14
-    Accountant --- UC20
-
-    UC12 -.->|"&laquo;include&raquo;"| UC13
-```
-
-### Director
-
-```mermaid
-flowchart LR
     Director((Director))
 
-    subgraph Boundary["LichHD"]
-        UC6([View assigned shifts])
-        UC9([Manage contract])
-        UC9P(["Read, create, update, delete"])
-        UC17([Generate shift schedule])
-        UC19([Review shift evidence])
-        UC10([Mark shift as disputed])
-        UC15([View dashboard])
-        UC16([Manage account])
-        UC16P(["Read, create, update, delete"])
-        UC14([Reconcile billed vs completed shifts])
-        UC21([Manage customer])
-        UC21P(["Read, create, update, delete"])
-    end
+    Employee --- EmployeeBox
+    TeamLead --- TeamLeadBox
+    ManagerBox --- Manager
+    AccountantBox --- Accountant
+    DirectorBox --- Director
 
-    Director --- UC6
-    Director --- UC9
-    Director --- UC10
-    Director --- UC15
-    Director --- UC16
-    Director --- UC14
-    Director --- UC21
+    E_Complete -.->|"&laquo;include&raquo;"| E_Photos
+    E_Complete -.->|"&laquo;include&raquo;"| E_Receipt
+    E_Complete -.->|"&laquo;include&raquo;"| E_GPS
+    D_Login ~~~ D_Reconcile
+    D_View ~~~ D_Account
+    D_Customer ~~~ D_Dashboard
 
-    UC9 -.->|"&laquo;include&raquo;"| UC9P
-    UC9 -.->|"&laquo;include&raquo;"| UC17
-    UC16 -.->|"&laquo;include&raquo;"| UC16P
-    UC10 -.->|"&laquo;include&raquo;"| UC19
-    UC21 -.->|"&laquo;include&raquo;"| UC21P
+    M_Contract -.->|"&laquo;include&raquo;"| M_Schedule
+    M_Dispute -.->|"&laquo;include&raquo;"| M_Evidence
+    D_Contract -.->|"&laquo;include&raquo;"| D_Schedule
+    D_Dispute -.->|"&laquo;include&raquo;"| D_Evidence
+    A_Export -.->|"&laquo;include&raquo;"| A_GenStmt
+
+    classDef box fill:#f8fafc,stroke:#94a3b8,color:#0f172a
+    class LichHD,EmployeeBox,TeamLeadBox,ManagerBox,AccountantBox,DirectorBox box
+    classDef actor fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef uc fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
+    classDef incReq fill:#f8fafc,stroke:#1d4ed8,color:#0f172a
+    class Employee,TeamLead,Manager,Accountant,Director actor
+    class E_Login,E_View,E_Complete,T_Login,T_View,T_Reassign,M_Login,M_View,M_Contract,M_Customer,M_Dispute,A_Login,A_Export,A_Send,A_Reconcile,D_Login,D_View,D_Contract,D_Customer,D_Dispute,D_Reconcile,D_Account,D_Dashboard uc
+    class M_Schedule,M_Evidence,D_Schedule,D_Evidence,A_GenStmt inc
+    class E_Photos,E_Receipt,E_GPS incReq
 ```
-
-### Use Case Descriptions
-
-| Use case | Actor | Description | Precondition |
-|---|---|---|---|
-| Complete shift | Employee | Submit before/after photos and the signed receipt photo for an assigned shift; system captures GPS and timestamp | Shift is scheduled and assigned to the employee |
-| View assigned shifts | Employee, Team Lead, Manager, Director | View the shift list, scoped by role: Employee sees own shifts, Team Lead sees the team's, Manager sees their managed unit's, Director sees all | User is authenticated |
-| Reassign / reschedule shift | Team Lead | Change the assignee or date of a shift when a conflict arises | Shift exists and is not yet completed |
-| Manage contract | Manager, Director | Read, create, update or delete a contract and its sites/service items (customer, term, frequency, price). Director holds all four (read/create/update/delete); Manager holds read/create only | Customer and contract terms are agreed offline |
-| Mark shift as disputed | Manager, Director | Manually record a shift as disputed, based on a customer complaint received by phone or in person | Customer has reported an issue outside the system |
-| Export monthly statement | Accountant | Export the monthly statement for a contract as PDF | A statement's underlying data has been generated for the period |
-| Send statement to customer | Accountant | Record that an exported statement was sent to the customer | Statement has been exported |
-| Reconcile billed vs completed shifts | Accountant, Director | Compare what a statement bills against the shifts actually completed | A statement exists for the period |
-| View dashboard | Director | View active/expiring/disputed contracts and projected revenue | User is authenticated as director |
-| Manage account | Director | Read, create, update or delete an employee account, including its role and manager assignment | User is authenticated as director |
-| Manage customer | Manager, Director | Read, create, update or delete a customer record (name, contact, address, segment). Director holds all four; Manager holds read/create only | Deleting requires no non-terminated contract references the customer |
-
 ---
-
 ## III: Class Diagram
 
 Design-level: attributes are private with a type, methods are public with parameter and
@@ -189,6 +164,11 @@ is read through the object that owns it, not exposed for direct mutation.
 
 ```mermaid
 classDiagram
+    class Tenant {
+        -id: int
+        -name: string
+        -status: TenantStatus
+    }
     class Customer {
         -id: int
         -name: string
@@ -274,85 +254,14 @@ classDiagram
     Employee "1" --> "0..*" Shift : assignee
     Employee "0..1" --> "0..*" Employee : manager
     Team "0..1" --> "0..*" Employee : members
+    Tenant "1" --> "0..*" Customer
+    Tenant "1" --> "0..*" Employee
+    Tenant "1" --> "0..*" Team
+    Tenant "1" --> "0..*" Contract
 ```
 ---
 
-## IV: Activity Diagrams
-
-### 1. Create contract with sites and service items 
-
-```mermaid
-stateDiagram-v2
-    [*] --> Submitted: manager submits contract (customer, term, sites, items)
-    Submitted --> Validating: validate frequency + unit price per item
-    Validating --> Rejected: invalid
-    Validating --> Inserted: valid
-    Rejected --> [*]: missing frequency / invalid price
-    Inserted --> ScheduleGenerated: generate shift schedule from each item's frequency
-    ScheduleGenerated --> ShiftsCreated: insert shifts, status = scheduled
-    ShiftsCreated --> [*]
-```
-
-### 2. Weekly dispatch and field shift execution 
-
-```mermaid
-stateDiagram-v2
-    [*] --> ListPushed: system pushes week's shift list (Monday)
-    ListPushed --> Assigned: team lead assigns shift to employee
-    Assigned --> LinkOpened: employee opens shift link on phone
-    LinkOpened --> PhotosCaptured: capture before / after photos
-    PhotosCaptured --> ReceiptSigned: customer signs paper receipt
-    ReceiptSigned --> ReceiptPhotographed: employee photographs signed receipt
-    ReceiptPhotographed --> GpsCaptured: capture GPS + timestamp
-    GpsCaptured --> CompletedWithLocation: GPS available
-    GpsCaptured --> CompletedFlagged: no GPS signal
-    CompletedWithLocation --> [*]
-    CompletedFlagged --> [*]: flagged for missing location
-```
-
-### 3. Dispute a shift 
-
-```mermaid
-stateDiagram-v2
-    [*] --> EvidenceFetched: manager fetches shift evidence
-    EvidenceFetched --> Reviewed: review photos, receipt, GPS, timestamp
-    Reviewed --> DisputeDismissed: evidence supports the visit
-    Reviewed --> Disputed: evidence is insufficient
-    DisputeDismissed --> [*]
-    Disputed --> [*]: excluded from next statement until resolved
-```
-
-### 4. Alerts: expiring contract and missed shift 
-
-```mermaid
-stateDiagram-v2
-    [*] --> ExpiryQueried: query contracts expiring within 30 days
-    ExpiryQueried --> OverdueQueried: query shifts overdue vs. item frequency
-    OverdueQueried --> Sent: send alerts via channel
-    Sent --> Delivered: channel available
-    Sent --> FallbackSent: channel unavailable
-    Delivered --> [*]
-    FallbackSent --> [*]: in-app / email reminder
-```
-
-### 5. Month-end statement export 
-
-```mermaid
-stateDiagram-v2
-    [*] --> Requested: accountant requests statement for a contract + period
-    Requested --> Queried: query completed shifts + shift_photos for the period
-    Queried --> Blocked: evidence incomplete or disputed
-    Queried --> TotalComputed: all shifts have complete evidence
-    Blocked --> [*]: list incomplete shifts
-    TotalComputed --> PdfRendered: render PDF with photos + signed receipts
-    PdfRendered --> Issued: mark statement issued
-    Issued --> SentToCustomer: send PDF to customer
-    SentToCustomer --> [*]: mark statement sent
-```
-
----
-
-## V: Sequence Diagrams
+## IV: Sequence Diagrams
 
 ### 1. Create contract with sites and service items
 
@@ -483,7 +392,7 @@ sequenceDiagram
 
 ---
 
-## VI: System Design
+## V: System Design
 
 Subsystem decomposition, deployment, persistent data, concurrency, external integrations:
 [`04-architecture.md`](04-architecture.md).

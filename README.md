@@ -24,10 +24,8 @@
 
 ## What LichHD is
 
-Contract management for companies delivering **the same service on a fixed frequency
-over a contract term** — industrial cleaning, HVAC/elevator maintenance, pest control,
-landscaping, fire-safety maintenance. The recurring contract is the primary entity;
-schedule, field evidence and statements derive from it.
+Contract management and scheduling for companies delivering **periodic services** — industrial cleaning, HVAC/elevator maintenance, pest control,
+landscaping, fire-safety maintenance, etc. 
 
 ```mermaid
 flowchart LR
@@ -57,6 +55,8 @@ Specification: [docs/01-prd.md](docs/01-prd.md).
 | Manager | know a visit was missed before the customer tells me | I can fix it before it becomes a complaint | Alert fires the moment a shift passes its due date uncompleted |
 | Accountant | close a contract's month without reassembling evidence by hand | I can send the customer a statement in minutes, not days | One action produces the full PDF; a period with incomplete evidence is blocked and lists exactly which shifts are missing it |
 | Director | see the state of every contract without asking staff for a status update | I catch a revenue or delivery problem myself, before it reaches me as a complaint | One view shows active, expiring and disputed contract counts plus projected revenue, current as of the underlying data |
+
+Full user stories: [design-analysis.md §I](docs/02-design-analysis.md#user-stories).
 
 ---
 
@@ -106,11 +106,12 @@ Full screen set: [`docs/screenshots/`](docs/screenshots/).
 ```mermaid
 flowchart TB
     customer["Customer<br/><i>outside the system</i>"]
-    employee["Field employee / team lead<br/><i>person</i>"]
-    accountant["Accountant / manager<br/><i>person</i>"]
-    director["Director<br/><i>person</i>"]
+    employee["Field employee / team lead<br/><i>person, in one tenant</i>"]
+    accountant["Accountant / manager<br/><i>person, in one tenant</i>"]
+    director["Director<br/><i>person, in one tenant</i>"]
+    platformadmin["Platform Admin<br/><i>person, outside every tenant</i>"]
 
-    lichhd["<b>LichHD</b><br/><i>the system</i><br/>contracts, schedule,<br/>field proof, statements"]
+    lichhd["<b>LichHD</b><br/><i>the system, multi-tenant</i><br/>contracts, schedule,<br/>field proof, statements"]
 
     zalo["Zalo ZNS / SMS<br/><i>external</i><br/>reminders"]
     vietqr["VietQR<br/><i>external, planned</i><br/>payment"]
@@ -120,12 +121,15 @@ flowchart TB
     employee -->|"opens shift link,<br/>submits photos"| lichhd
     accountant -->|"creates contracts,<br/>exports statements"| lichhd
     director -->|"views dashboard"| lichhd
+    platformadmin -->|"creates / suspends tenants"| lichhd
 
     lichhd -->|"sends reminder"| zalo
     lichhd -->|"requests payment"| vietqr
 ```
 
-Customer sits outside the system boundary: signatures and complaints are recorded offline by staff.
+Customer sits outside the system boundary: signatures and complaints are recorded
+offline by staff. Platform Admin sits outside every tenant: it provisions companies,
+never their contracts or shifts.
 
 ### View 2 — class diagram
 
@@ -135,6 +139,11 @@ Same domain classes as
 
 ```mermaid
 classDiagram
+    class Tenant {
+        -id: int
+        -name: string
+        -status: TenantStatus
+    }
     class Customer {
         -id: int
         -name: string
@@ -220,6 +229,10 @@ classDiagram
     Employee "1" --> "0..*" Shift : assignee
     Employee "0..1" --> "0..*" Employee : manager
     Team "0..1" --> "0..*" Employee : members
+    Tenant "1" --> "0..*" Customer
+    Tenant "1" --> "0..*" Employee
+    Tenant "1" --> "0..*" Team
+    Tenant "1" --> "0..*" Contract
 ```
 
 ### View 3 — the core flows
@@ -409,7 +422,7 @@ Full layout: [docs/06-repo-layout.md](docs/06-repo-layout.md).
 | # | Document | Contents |
 |---|---|---|
 | 1 | [PRD](docs/01-prd.md) | Problem statement, personas, MVP scope, roadmap, release criteria |
-| 2 | [Design Analysis](docs/02-design-analysis.md) | FR/NFR, use cases per role, sequence diagrams |
+| 2 | [Design Analysis](docs/02-design-analysis.md) | FR/NFR, use cases, class diagram, sequence diagrams |
 | 3 | [Functional Spec](docs/03-functional-spec.md) | Function → screens needed → API needed, per FR |
 | 4 | [Architecture](docs/04-architecture.md) | arc42 + c4 |
 | 5 | [API Specification](docs/05-api.md) | Endpoint contract, field-token submission path, access-control matrix |
