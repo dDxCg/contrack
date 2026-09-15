@@ -181,7 +181,7 @@ when any shift in the period lacks evidence or is disputed
 ## 8. Access control
 
 Role grants the operation; scope restricts the rows. `—` is no access. This table is the contract
-that `SCREEN_ROLES` in [`wireframe.html`](ui/wireframe.html) must agree with.
+that `SCREEN_ROLES` in [`prototype.html`](ui/prototype.html) must agree with.
 
 | Resource | Director | Manager | Accountant | Team lead | Employee | Platform Admin |
 |---|---|---|---|---|---|---|

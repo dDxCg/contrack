@@ -168,7 +168,7 @@ flowchart LR
 
 C4 Level 3, zoomed into the one container worth decomposing — the API groups
 five responsibilities that `05-api.md` already separates by section, and
-`SCREEN_ROLES` in [`wireframe.html`](ui/wireframe.html) depends on the same split.
+`SCREEN_ROLES` in [`prototype.html`](ui/prototype.html) depends on the same split.
 `Access Control` is cross-cutting (§8.1): every other component calls it, not the
 reverse.
 

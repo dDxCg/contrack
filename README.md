@@ -62,36 +62,30 @@ Full user stories: [design-analysis.md §I](docs/02-design-analysis.md#user-stor
 
 ## The screens
 
-**1. Director dashboard.** State of every contract, without asking staff for a status
-update.
+**1. Director dashboard.**
 
 ![The LichHD director dashboard for October 2024. Four figures read 48 hợp đồng đang chạy, 5 sắp hết hạn, 3 ca bị khiếu nại, and 245tr doanh thu dự kiến. A "Cần chú ý" list flags Keangnam Landmark 72 (còn 18 ngày) and Chung cư Golden Park (khiếu nại). Two more tiles read 94% ca có đủ bằng chứng and 41/48 bảng kê đã chốt.](docs/screenshots/prototype/director/dashboard.png)
 
-**2. Create contract with sites and service items.** Manager enters it once; schedule
-generates itself.
+**2. Create contract with sites and service items.** 
 
 ![Tạo hợp đồng form for customer Keangnam Landmark 72, signed and expiry dates, one site Tòa A with service Bảo trì VRV & Chiller at 2 lần/tháng and 42.000.000đ. Footer reads "Sẽ tự sinh 20 ca từ 15/01 đến 15/11/2024" next to a "Tạo & sinh lịch" button.](docs/screenshots/prototype/director/new-contract.png)
 ![The resulting contracts list. Keangnam Landmark 72 now shows this period's schedule progress, days left on the term and monthly value — generated from the form above, not entered separately.](docs/screenshots/prototype/manager/contracts.png)
 
-**3. Weekly dispatch and field shift execution.** Team lead assigns; employee submits
-proof from the site.
+**3. Weekly dispatch and field shift execution.**
 
 ![Lịch tổ 1 — HVAC, week 43. 8 ca tuần này, 3 đã xong, 2 chưa có người. An unassigned shift at Golden Park is highlighted with a "Phân người" button.](docs/screenshots/prototype/team_lead/team-shifts.png)
 ![Field execution screen on a phone for Keangnam Landmark 72, 08:30, 21/10. Three steps — before photos (2 captured), after photos, and the signed receipt — plus a GPS/timestamp panel marked recorded automatically and not editable.](docs/screenshots/prototype/employee/field.png)
 
-**4. Dispute a shift.** Manager reviews the submitted evidence, then records the
-complaint if it doesn't hold up.
+**4. Dispute a shift.** 
 
 ![Ca #22 — Keangnam Landmark 72, marked Đã hoàn thành. An evidence panel shows before/after photo counts and a signed receipt; an automatic-capture panel shows GPS and submission time. Two actions: "Xác nhận bằng chứng hợp lệ" or "Đánh dấu khiếu nại".](docs/screenshots/prototype/director/shift-detail.png)
 ![Ghi nhận khiếu nại form for the same shift — reason (Không thấy nhân viên đến), how the customer reported it, who reported it, when, and a description.](docs/screenshots/prototype/director/new-dispute.png)
 
-**5. Alerts: expiring contract and missed shift.** One list, two triggers — 30 days
-from expiry, or a shift overdue against its frequency.
+**5. Alerts: expiring contract and missed shift.**
 
 ![Cảnh báo screen, 7 việc cần xử lý. Hợp đồng sắp hết hạn: Keangnam Landmark 72 (còn 18 ngày, đã gửi Zalo) and Discovery Complex (còn 31 ngày, chưa gửi). Ca chậm tần suất: Chung cư Golden Park (quá hạn 2 ngày) and Vinhomes Skylake (còn 3 ngày).](docs/screenshots/prototype/director/alerts.png)
 
-**6. Month-end statement export.** Blocked while evidence is incomplete; one click to
-PDF once it isn't.
+**6. Month-end statement export.**
 
 ![Bảng kê T10/2024 for Keangnam Landmark 72. A warning banner reads "Kỳ chưa chốt được: ca 28/10 chưa có bằng chứng." Two shift rows show evidence status Đủ and Chưa có, with a running subtotal of 21.000.000đ for the one complete shift.](docs/screenshots/prototype/accountant/statement-preview.png)
 
@@ -428,9 +422,8 @@ Full layout: [docs/06-repo-layout.md](docs/06-repo-layout.md).
 | 5 | [API Specification](docs/05-api.md) | Endpoint contract, field-token submission path, access-control matrix |
 | 6 | [API Specification (OpenAPI)](docs/05-api.yaml) | Same contract as OpenAPI 3.0 — paths, schemas, error examples |
 | 7 | [Repo Layout](docs/06-repo-layout.md) | Planned source tree by architecture style — stack not yet decided |
-| 8 | [Wireframe](docs/ui/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
-| 9 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
-| 10 | [ERD](docs/db/erd.md) | Entity-relationship diagram |
-| 11 | [SQL Schema](docs/db/schema.sql) | ANSI SQL |
+| 8 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
+| 9 | [ERD](docs/db/erd.md) | Entity-relationship diagram |
+| 10 | [SQL Schema](docs/db/schema.sql) | ANSI SQL |
 
 ---
