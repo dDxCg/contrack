@@ -13,13 +13,12 @@
 ## Table of contents
 
 - [What LichHD is](#what-lichhd-is)
-- [Before and after](#before-and-after)
+- [User stories](#user-stories)
 - [The screens](#the-screens)
 - [Architecture](#architecture)
 - [Success metrics](#success-metrics)
-- [Competitive landscape](#competitive-landscape)
-- [Documentation](#documentation)
 - [Repository layout](#repository-layout)
+- [Documentation](#documentation)
 
 ---
 
@@ -44,87 +43,65 @@ flowchart LR
     class C yours
     class S,P,T ours
 ```
-
-One contract covers one or more sites; each site carries service items with a frequency
-and unit price. Shifts are generated from item frequency. Each completed shift records
-before/after photos, a photographed customer-signed receipt, GPS coordinates and a
-timestamp. Monthly statements are computed from completed shifts and exported as PDF
-with the evidence attached.
-
 Specification: [docs/01-prd.md](docs/01-prd.md).
 
 ---
 
-## Before and after
+## User stories
 
-**AS-IS** — Excel and Zalo ([PRD §4](docs/01-prd.md#4-user-flows--design)):
-
-1. Accountant types 24 schedule rows per 12-month contract into a spreadsheet.
-2. Manager posts the week's rows to a Zalo group each Monday.
-3. Team lead assigns staff from the Zalo message.
-4. Evidence photos age out of the Zalo group.
-5. Signed paper receipts are held in the field until delivered to the office.
-6. Month-end statements are reconstructed from Zalo history and paper records.
-7. Missed visits surface on customer complaint.
-
-**TO-BE** — LichHD:
-
-1. Contract entered once — sites, items, frequency, unit price; shifts generated from frequency.
-2. Weekly shift list pushed to each team lead.
-3. Employee opens a shift link on a phone, no install; submits before/after photos and
-   the photographed signed receipt.
-4. GPS and timestamp recorded on submission, non-editable thereafter.
-5. Statement exported as PDF with attached evidence.
-6. Expiry alert at 30 days; missed-frequency alert on overdue shifts.
+| As a... | I want to... | So that... | Acceptance criteria |
+|---|---|---|---|
+| Team lead | know which shifts my team owes this week without chasing anyone for it | I can assign work the moment the week starts | The week's shift list reaches the team lead by Monday morning, scoped to their own team |
+| Employee | leave proof that I actually did the visit | I'm protected if a customer disputes it later | A shift only reaches `completed` once before/after photos and the signed receipt are submitted, with location and time recorded |
+| Manager | know a contract is about to expire before it does | I can start the renewal conversation in time | Alert fires once per contract, 30 days before expiry |
+| Manager | know a visit was missed before the customer tells me | I can fix it before it becomes a complaint | Alert fires the moment a shift passes its due date uncompleted |
+| Accountant | close a contract's month without reassembling evidence by hand | I can send the customer a statement in minutes, not days | One action produces the full PDF; a period with incomplete evidence is blocked and lists exactly which shifts are missing it |
+| Director | see the state of every contract without asking staff for a status update | I catch a revenue or delivery problem myself, before it reaches me as a complaint | One view shows active, expiring and disputed contract counts plus projected revenue, current as of the underlying data |
 
 ---
 
 ## The screens
 
-[`docs/ui/wireframe.html`](docs/ui/wireframe.html) — 17 screens, 5 roles, single
-self-contained HTML file, no build step. Role is selected from the top bar;
-navigation, identity and reachable screens follow the role.
+**1. Director dashboard.** State of every contract, without asking staff for a status
+update.
 
-[`docs/ui/prototype.html`](docs/ui/prototype.html) — the same screens wired as an
-application: login, role-scoped navigation, and the create and assign forms the
-inventory has no place for. 22 screens.
+![The LichHD director dashboard for October 2024. Four figures read 48 hợp đồng đang chạy, 5 sắp hết hạn, 3 ca bị khiếu nại, and 245tr doanh thu dự kiến. A "Cần chú ý" list flags Keangnam Landmark 72 (còn 18 ngày) and Chung cư Golden Park (khiếu nại). Two more tiles read 94% ca có đủ bằng chứng and 41/48 bảng kê đã chốt.](docs/screenshots/prototype/director/dashboard.png)
 
-**Contract-derived scheduling.** Each row carries its service frequency and
-current-period progress against it.
+**2. Create contract with sites and service items.** Manager enters it once; schedule
+generates itself.
 
-![The LichHD contracts screen. Three figures read 48 active contracts at 245 million VND a month, 5 expiring within 30 days, and 2 behind their required frequency. A table lists four contracts — Keangnam Landmark 72, BV ĐKQT Thu Cúc, Chung cư Golden Park and Vinhomes Skylake — each with its service and frequency, this period's progress as a badge, days remaining on the term, and monthly value.](docs/screenshots/wireframe/director/contracts.png)
+![Tạo hợp đồng form for customer Keangnam Landmark 72, signed and expiry dates, one site Tòa A with service Bảo trì VRV & Chiller at 2 lần/tháng and 42.000.000đ. Footer reads "Sẽ tự sinh 20 ca từ 15/01 đến 15/11/2024" next to a "Tạo & sinh lịch" button.](docs/screenshots/prototype/director/new-contract.png)
+![The resulting contracts list. Keangnam Landmark 72 now shows this period's schedule progress, days left on the term and monthly value — generated from the form above, not entered separately.](docs/screenshots/prototype/manager/contracts.png)
 
-**Field evidence capture.** Before/after photos, photographed signed receipt, GPS and
-timestamp recorded by the system on submission.
+**3. Weekly dispatch and field shift execution.** Team lead assigns; employee submits
+proof from the site.
 
-![The LichHD field execution screen on a phone. A header reads Keangnam Landmark 72, VRV maintenance, Tòa A, 08:30 on 21/10. Three numbered steps follow: before photos, marked two captured; after photos, marked not yet; and the customer-signed receipt, marked not yet, with a note to have the customer sign the paper and photograph it. A grey panel below shows GPS 21.0176, 105.7833 and the time 21/10/2024 09:12, noted as recorded automatically on submission and not editable. A single button reads "Gửi & hoàn thành ca".](docs/screenshots/wireframe/employee/field.png)
+![Lịch tổ 1 — HVAC, week 43. 8 ca tuần này, 3 đã xong, 2 chưa có người. An unassigned shift at Golden Park is highlighted with a "Phân người" button.](docs/screenshots/prototype/team_lead/team-shifts.png)
+![Field execution screen on a phone for Keangnam Landmark 72, 08:30, 21/10. Three steps — before photos (2 captured), after photos, and the signed receipt — plus a GPS/timestamp panel marked recorded automatically and not editable.](docs/screenshots/prototype/employee/field.png)
 
-**Role-scoped access**, per the use cases in
-[the design analysis](docs/02-design-analysis.md#ii-use-cases). Employee scope: assigned
-shifts and the field screen only; contracts, statements and dashboard are neither
-listed nor reachable.
+**4. Dispute a shift.** Manager reviews the submitted evidence, then records the
+complaint if it doesn't hold up.
 
-![The LichHD employee view. The sidebar holds exactly one item, "Ca của tôi", and identifies the user as Nguyễn Văn Toàn, nhân viên, Tổ 1. The page lists today's shift at Keangnam Landmark 72 with a "Bắt đầu ca" button, two upcoming shifts marked waiting, one finished shift at BV ĐKQT Thu Cúc marked done with 3 photos and a receipt, and a closing line: only shifts assigned to you are shown.](docs/screenshots/wireframe/employee/my-shifts.png)
+![Ca #22 — Keangnam Landmark 72, marked Đã hoàn thành. An evidence panel shows before/after photo counts and a signed receipt; an automatic-capture panel shows GPS and submission time. Two actions: "Xác nhận bằng chứng hợp lệ" or "Đánh dấu khiếu nại".](docs/screenshots/prototype/director/shift-detail.png)
+![Ghi nhận khiếu nại form for the same shift — reason (Không thấy nhân viên đến), how the customer reported it, who reported it, when, and a description.](docs/screenshots/prototype/director/new-dispute.png)
 
-### Every screen
+**5. Alerts: expiring contract and missed shift.** One list, two triggers — 30 days
+from expiry, or a shift overdue against its frequency.
 
-| Role | Screens |
-|---|---|
-| Director | [dashboard](docs/screenshots/wireframe/director/dashboard.png) · [contracts](docs/screenshots/wireframe/director/contracts.png) · [contract detail](docs/screenshots/wireframe/director/contract-detail.png) · [new contract](docs/screenshots/wireframe/director/new-contract.png) · [schedule](docs/screenshots/wireframe/director/schedule.png) · [shift detail](docs/screenshots/wireframe/director/shift-detail.png) · [dispute](docs/screenshots/wireframe/director/dispute.png) · [billing](docs/screenshots/wireframe/director/billing.png) · [statement](docs/screenshots/wireframe/director/statement-preview.png) · [reconcile](docs/screenshots/wireframe/director/reconcile.png) · [alerts](docs/screenshots/wireframe/director/alerts.png) · [customers](docs/screenshots/wireframe/director/customers.png) · [employees](docs/screenshots/wireframe/director/employees.png) |
-| Manager | [contracts](docs/screenshots/wireframe/manager/contracts.png) · [contract detail](docs/screenshots/wireframe/manager/contract-detail.png) · [schedule](docs/screenshots/wireframe/manager/schedule.png) · [shift detail](docs/screenshots/wireframe/manager/shift-detail.png) · [new contract](docs/screenshots/wireframe/manager/new-contract.png) · [dispute](docs/screenshots/wireframe/manager/dispute.png) · [alerts](docs/screenshots/wireframe/manager/alerts.png) · [customers](docs/screenshots/wireframe/manager/customers.png) |
-| Accountant | [billing](docs/screenshots/wireframe/accountant/billing.png) · [statement](docs/screenshots/wireframe/accountant/statement-preview.png) · [reconcile](docs/screenshots/wireframe/accountant/reconcile.png) · [contracts](docs/screenshots/wireframe/accountant/contracts.png) · [contract detail](docs/screenshots/wireframe/accountant/contract-detail.png) · [shift detail](docs/screenshots/wireframe/accountant/shift-detail.png) · [customers](docs/screenshots/wireframe/accountant/customers.png) |
-| Team lead | [team shifts](docs/screenshots/wireframe/team_lead/team-shifts.png) · [shift detail](docs/screenshots/wireframe/team_lead/shift-detail.png) · [field execution](docs/screenshots/wireframe/team_lead/field.png) · [alerts](docs/screenshots/wireframe/team_lead/alerts.png) |
-| Employee | [my shifts](docs/screenshots/wireframe/employee/my-shifts.png) · [field execution](docs/screenshots/wireframe/employee/field.png) |
+![Cảnh báo screen, 7 việc cần xử lý. Hợp đồng sắp hết hạn: Keangnam Landmark 72 (còn 18 ngày, đã gửi Zalo) and Discovery Complex (còn 31 ngày, chưa gửi). Ca chậm tần suất: Chung cư Golden Park (quá hạn 2 ngày) and Vinhomes Skylake (còn 3 ngày).](docs/screenshots/prototype/director/alerts.png)
+
+**6. Month-end statement export.** Blocked while evidence is incomplete; one click to
+PDF once it isn't.
+
+![Bảng kê T10/2024 for Keangnam Landmark 72. A warning banner reads "Kỳ chưa chốt được: ca 28/10 chưa có bằng chứng." Two shift rows show evidence status Đủ and Chưa có, with a running subtotal of 21.000.000đ for the one complete shift.](docs/screenshots/prototype/accountant/statement-preview.png)
+
+Full screen set: [`docs/screenshots/`](docs/screenshots/).
 
 ---
 
 ## Architecture
 
-Four views for orientation. Mechanisms, decisions and open questions:
-[docs/03-architecture.md](docs/03-architecture.md) · endpoint and access-control contract:
-[docs/04-api.md](docs/04-api.md).
-
-### View 1 — who touches the system
+### View 1 — System context
 
 ```mermaid
 flowchart TB
@@ -150,54 +127,141 @@ flowchart TB
 
 Customer sits outside the system boundary: signatures and complaints are recorded offline by staff.
 
-### View 2 — one shift, end to end
+### View 2 — the core flows
+
+The same five sequence diagrams as
+[design-analysis.md §IV](docs/02-design-analysis.md#iv-sequence-diagrams), each with
+its failure branch.
+
+**1. Create contract with sites and service items**
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Employee
+    actor Manager
     participant System
     participant DB as Database
-    actor Customer
 
+    Manager->>System: Submit new contract (customer, term, sites, items)
+    System->>DB: INSERT contracts, contract_sites, contract_items
+    System->>System: Validate frequency + unit price per item
+    alt validation passed
+        System->>System: Generate shift schedule from each item's frequency
+        System->>DB: INSERT shifts (scheduled_date, status = scheduled)
+        System-->>Manager: Contract created, schedule generated
+    else validation failed
+        System-->>Manager: Reject (missing frequency / invalid price)
+    end
+```
+
+**2. Weekly dispatch and field shift execution**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant System
+    actor TeamLead as Team Lead
+    actor Employee
+    actor Customer
+    participant DB as Database
+
+    System->>TeamLead: Push this week's shift list (Monday)
+    TeamLead->>Employee: Assign shift
     Employee->>System: Open shift link on phone
     Employee->>System: Submit before / after photos
     Customer->>Employee: Sign paper receipt
     Employee->>System: Submit photo of signed receipt
     System->>System: Capture GPS + timestamp
-    System->>DB: UPDATE shifts SET status = completed
-    System-->>Employee: Shift marked completed
+    alt GPS signal available
+        System->>DB: UPDATE shifts SET status = completed, latitude, longitude, captured_at, receipt_photo_url
+        System->>DB: INSERT shift_photos (before, after)
+        System-->>Employee: Shift marked completed
+    else no GPS signal
+        System->>DB: UPDATE shifts SET status = completed, latitude = NULL, longitude = NULL
+        System-->>Employee: Shift completed, flagged for missing location
+    end
+    Note over Employee: Keeps original paper receipt for filing
 ```
 
-### View 3 — the data model, layered
+**3. Dispute a shift**
 
 ```mermaid
-flowchart LR
-    Customer --> Contract --> Site["Contract Site"] --> Item["Contract Item"] --> Shift
-    Shift --> Photo["Shift Photo"]
-    Contract --> Statement
-    Employee -.->|assigned to| Shift
-    Employee -.->|manager_id, reporting line| Employee
-    Team -.->|team_id, field staff only| Employee
+sequenceDiagram
+    autonumber
+    actor Manager
+    participant System
+    participant DB as Database
+
+    Manager->>System: Fetch shift evidence
+    System->>DB: SELECT shift + shift_photos
+    DB-->>System: Evidence
+    System-->>Manager: Photos, receipt, GPS, timestamp
+    alt evidence supports the visit
+        Manager->>System: Confirm visit valid
+        System-->>Manager: Dispute dismissed
+    else evidence is insufficient
+        Manager->>System: Mark shift as disputed
+        System->>DB: UPDATE shifts SET status = disputed
+        System-->>Manager: Excluded from next statement until resolved
+    end
 ```
 
-Team membership and reporting line are separate columns: `team_id` scopes what a
-team lead sees and is `NULL` for desk staff, `manager_id` is the reporting chain.
-
-Full ERD and SQL Schema: [db/erd.md](db/erd.md) · [db/schema.sql](db/schema.sql).
-
-### View 4 — the life of a shift
+**4. Alerts: expiring contract and missed shift**
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Scheduled: contract item's frequency generates it
-    Scheduled --> Late: scheduled_date passes, not completed
-    Scheduled --> Completed: photos + signed receipt + GPS submitted
-    Late --> Completed: submitted late
-    Completed --> Disputed: customer disputes, manager flags it
-    Disputed --> Completed: evidence reviewed, upheld
-    Completed --> [*]
+sequenceDiagram
+    autonumber
+    participant Scheduler as System (daily job)
+    participant DB as Database
+    participant Channel as Zalo / SMS Gateway
+    actor Director
+    actor TeamLead as Team Lead
+
+    Scheduler->>DB: Query contracts WHERE expires_at <= today + 30 days
+    DB-->>Scheduler: Contracts expiring soon
+    Scheduler->>DB: Query shifts overdue vs. item frequency
+    DB-->>Scheduler: Missed shifts
+    Scheduler->>Channel: Send alerts (expiry list, missed-shift list)
+    alt channel available
+        Channel-->>Director: "N contracts expiring in 30 days"
+        Channel-->>TeamLead: "Shift at site X not completed"
+        Channel-->>Scheduler: Delivery confirmed
+    else channel unavailable
+        Channel-->>Scheduler: Delivery failed
+        Scheduler->>Director: Fallback in-app / email reminder
+        Scheduler->>TeamLead: Fallback in-app / email reminder
+    end
 ```
+
+**5. Month-end statement export**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Accountant
+    participant System
+    participant DB as Database
+    actor Customer
+
+    Accountant->>System: Request monthly statement for a contract
+    System->>DB: Query completed shifts + shift_photos for the period
+    DB-->>System: Shifts, photos, receipts
+    alt all shifts in period have complete evidence
+        System->>System: Compute total_amount from contract_items unit_price
+        System->>DB: INSERT statements (period, total_amount, status = draft)
+        System->>System: Render PDF with photos + signed receipts attached
+        System->>DB: UPDATE statements SET status = issued, pdf_url
+        System-->>Accountant: Statement ready
+        Accountant->>Customer: Send PDF statement
+        Accountant->>System: Confirm sent
+        System->>DB: UPDATE statements SET status = sent
+    else a shift is missing evidence or still disputed
+        System-->>Accountant: Cannot close period, list incomplete shifts
+    end
+```
+
+Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
+
 ---
 
 ## Success metrics
@@ -211,16 +275,26 @@ Full release criteria: [PRD §8](docs/01-prd.md#8-success-metrics--release-crite
 
 ---
 
-## Competitive landscape
+## Repository layout
 
-| Category | Target user | Gap for this segment |
-|---|---|---|
-| CMMS (SpeedMaint, Vietsoft…) | Factories maintaining owned assets | Asset-centric, not customer-contract-centric |
-| International field service (Jobber, Swept, MaintainX) | Service contractors | Built for ad-hoc jobs; weak on fixed-frequency long-term contracts; no Vietnamese, Zalo or VietQR |
-| B2C marketplaces (bTaskee, JupViec) | Individual consumers | Different business model |
-| **LichHD** | Recurring-service companies, 10–80 staff, 20–150 contracts | — |
-
-Source: [PRD §1](docs/01-prd.md#1-introduction--purpose).
+```
+docs/                        # → docs/README.md
+├── 00-mindmap.pdf
+├── 01-prd.md                 # PRD — English (primary)
+├── 02-design-analysis.md     # FR/NFR, use cases, sequence diagrams
+├── 03-architecture.md        # arc42 + c4
+├── 04-api.md                 # endpoint contract, access-control matrix
+├── 04-api.yaml               # same contract, OpenAPI 3.0
+├── ui/
+│   ├── wireframe.html        # single-file HTML wireframe, 17 screens, 5 roles
+│   └── prototype.html        # clickable prototype: login, role-scoped flows, 22 screens
+└── screenshots/prototype/    # captures, one folder per role → screenshots/README.md
+db/                          # → db/README.md
+├── schema.sql               # ANSI SQL schema, 16 tables
+└── erd.md                   # mermaid ERD
+scripts/
+└── capture-wireframe.sh     # headless Chrome capture of every screen
+```
 
 ---
 
@@ -230,33 +304,12 @@ Source: [PRD §1](docs/01-prd.md#1-introduction--purpose).
 |---|---|---|
 | 1 | [PRD](docs/01-prd.md) | Problem statement, personas, MVP scope, roadmap, release criteria |
 | 2 | [Design Analysis](docs/02-design-analysis.md) | FR/NFR, use cases per role, sequence diagrams |
-| 3 | [Architecture](docs/03-architecture.md) | arc42-structured — constraints, solution strategy, building blocks, deployment, decisions, quality requirements, risks |
+| 3 | [Architecture](docs/03-architecture.md) | arc42 + c4 |
 | 4 | [API Specification](docs/04-api.md) | Endpoint contract, field-token submission path, access-control matrix |
-| 5 | [Wireframe](docs/ui/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
-| 6 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
-| 7 | [ERD](db/erd.md) | Entity-relationship diagram |
-| 8 | [SQL Schema](db/schema.sql) | ANSI SQL |
-
----
-
-## Repository layout
-
-```
-docs/                        # → docs/README.md
-├── 00-mindmap.pdf
-├── 01-prd.md                 # PRD — English (primary)
-├── 02-design-analysis.md     # FR/NFR, use cases, sequence diagrams
-├── 03-architecture.md        # arc42: constraints, decisions, quality, risks
-├── 04-api.md                 # endpoint contract, access-control matrix
-├── ui/
-│   ├── wireframe.html        # single-file HTML wireframe, 17 screens, 5 roles
-│   └── prototype.html        # clickable prototype: login, role-scoped flows, 22 screens
-└── screenshots/wireframe/    # captures, one folder per role → screenshots/README.md
-db/                          # → db/README.md
-├── schema.sql               # ANSI SQL schema, 16 tables
-└── erd.md                   # mermaid ERD
-scripts/
-└── capture-wireframe.sh     # headless Chrome capture of every screen
-```
+| 5 | [API Specification (OpenAPI)](docs/04-api.yaml) | Same contract as OpenAPI 3.0 — paths, schemas, error examples |
+| 6 | [Wireframe](docs/ui/wireframe.html) | 17 screens, 5 roles, single self-contained HTML file |
+| 7 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
+| 8 | [ERD](db/erd.md) | Entity-relationship diagram |
+| 9 | [SQL Schema](db/schema.sql) | ANSI SQL |
 
 ---

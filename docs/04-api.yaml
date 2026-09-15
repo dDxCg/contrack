@@ -1,0 +1,1512 @@
+openapi: 3.0.3
+info:
+  title: LichHD API
+  version: 0.1.0-draft
+  description: >
+    Recurring service contract management. Every operation traces to a requirement
+    in `02-design-analysis.md`; field names match the columns in `../db/schema.sql`.
+    Status: draft — endpoint shapes settled, transport details follow the stack
+    decision (`03-architecture.md` §11 R1). See `04-api.md` for the prose version
+    of this spec, including the full access-control matrix and error-code catalogue
+    this file's `x-roles` / `x-scope` extensions and `components.examples` summarize.
+  contact:
+    name: LichHD documentation
+    url: https://github.com/
+servers:
+  - url: /api/v1
+
+tags:
+  - name: Auth
+  - name: Contracts
+  - name: Shifts
+  - name: Field
+    description: Reached only with a per-shift signed token — no session, no login.
+  - name: Statements
+  - name: Alerts and dashboard
+  - name: Customers
+  - name: Employees
+  - name: Teams
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ---------------------------------------------------------------- Auth
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Exchange credentials for a session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, example: mai.lt }
+                password: { type: string, format: password, example: "•••••••" }
+      responses:
+        '200':
+          description: Credential issued
+          content:
+            application/json:
+              examples:
+                manager:
+                  value:
+                    token: eyJhbGciOiJIUzI1NiJ9.example
+                    employee: { id: 12, name: "Lê Thị Mai", role: manager }
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  employee:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      name: { type: string }
+                      role: { $ref: '#/components/schemas/Role' }
+        '401':
+          description: Unknown username or wrong password — the two are not distinguished
+          content:
+            application/json:
+              examples:
+                invalid_credentials: { $ref: '#/components/examples/AuthInvalidCredentials' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Invalidate the current credential
+      responses:
+        '204': { description: Logged out }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      operationId: getCurrentEmployee
+      summary: Current employee, role and manager chain — drives client-side navigation scoping
+      responses:
+        '200':
+          description: The authenticated employee
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Employee' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ---------------------------------------------------------- Contracts
+  /contracts:
+    get:
+      tags: [Contracts]
+      operationId: listContracts
+      summary: List contracts
+      x-roles: [director, manager, accountant]
+      x-scope: all
+      parameters:
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/ContractStatus' } }
+        - { name: expiring_within_days, in: query, schema: { type: integer, example: 30 } }
+        - { name: customer_id, in: query, schema: { type: integer } }
+        - { name: q, in: query, schema: { type: string }, description: "Free-text match on contract code, customer or site name" }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: A page of contracts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContractList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Contracts]
+      operationId: createContract
+      summary: Create a contract with nested sites and service items — generates its shift schedule
+      x-roles: [director, manager]
+      x-scope: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContractCreate' }
+            examples:
+              keangnam:
+                summary: Contract with one site and one service item
+                value:
+                  customer_id: 7
+                  signed_at: "2024-01-15"
+                  expires_at: "2024-11-15"
+                  sites:
+                    - name: "Tòa A — Phạm Hùng, Nam Từ Liêm"
+                      work_requirements: "Bảo trì VRV & Chiller theo lịch"
+                      items:
+                        - { name: "Bảo trì VRV & Chiller", frequency: "2/thang", unit_price: 42000000 }
+      responses:
+        '201':
+          description: Contract created; shifts generated for the full term
+          headers:
+            Location: { schema: { type: string }, example: /api/v1/contracts/89 }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contract' }
+        '400':
+          description: Malformed body, invalid term, or an item invalid — sequence 1's `alt validation failed` branch
+          content:
+            application/json:
+              examples:
+                item_invalid: { $ref: '#/components/examples/ContractItemInvalid' }
+                term_invalid: { $ref: '#/components/examples/ContractTermInvalid' }
+                customer_not_found: { $ref: '#/components/examples/ContractCustomerNotFound' }
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422':
+          description: Well-formed and permitted, but not satisfiable
+          content:
+            application/json:
+              examples:
+                frequency_unparsable: { $ref: '#/components/examples/ContractFrequencyUnparsable' }
+                no_shifts_generated: { $ref: '#/components/examples/ScheduleNoShiftsGenerated' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /contracts/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/ContractId' }
+    get:
+      tags: [Contracts]
+      operationId: getContract
+      summary: Contract with sites, items, current-period progress and statement history
+      x-roles: [director, manager, accountant]
+      x-scope: all
+      responses:
+        '200':
+          description: The contract
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contract' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Contracts]
+      operationId: updateContract
+      summary: Update term or status
+      x-roles: [director]
+      x-scope: all
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expires_at: { type: string, format: date }
+                status: { $ref: '#/components/schemas/ContractStatus' }
+      responses:
+        '200':
+          description: Updated contract
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Contract' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Contracts]
+      operationId: deleteContract
+      summary: Delete — cascades to sites, items, shifts, photos, statements
+      x-roles: [director]
+      x-scope: all
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /contracts/{id}/sites:
+    parameters:
+      - { $ref: '#/components/parameters/ContractId' }
+    post:
+      tags: [Contracts]
+      operationId: addSite
+      summary: Add a site to a contract
+      x-roles: [director, manager]
+      x-scope: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContractSiteCreate' }
+      responses:
+        '201':
+          description: Site added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContractSite' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /sites/{siteId}:
+    parameters:
+      - { name: siteId, in: path, required: true, schema: { type: integer } }
+    patch:
+      tags: [Contracts]
+      operationId: updateSite
+      summary: Update a site
+      x-roles: [director]
+      x-scope: all
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContractSiteCreate' }
+      responses:
+        '200':
+          description: Updated site
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ContractSite' } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Contracts]
+      operationId: deleteSite
+      summary: Delete a site — cascades to its items and shifts
+      x-roles: [director]
+      x-scope: all
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /sites/{siteId}/items:
+    parameters:
+      - { name: siteId, in: path, required: true, schema: { type: integer } }
+    post:
+      tags: [Contracts]
+      operationId: addServiceItem
+      summary: Add a service item to a site
+      x-roles: [director, manager]
+      x-scope: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ServiceItemCreate' }
+      responses:
+        '201':
+          description: Item added
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ServiceItem' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /items/{itemId}:
+    parameters:
+      - { name: itemId, in: path, required: true, schema: { type: integer } }
+    patch:
+      tags: [Contracts]
+      operationId: updateServiceItem
+      summary: Update a service item's frequency or price
+      x-roles: [director]
+      x-scope: all
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ServiceItemCreate' }
+      responses:
+        '200':
+          description: Updated item
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/ServiceItem' } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Contracts]
+      operationId: deleteServiceItem
+      summary: Delete a service item — cascades to its shifts
+      x-roles: [director]
+      x-scope: all
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /contracts/{id}/schedule:regenerate:
+    parameters:
+      - { $ref: '#/components/parameters/ContractId' }
+    post:
+      tags: [Contracts]
+      operationId: regenerateSchedule
+      summary: Regenerate future shifts after an item or term change
+      description: >
+        Never touches a completed or disputed shift. Frequency currently has no
+        grammar (`03-architecture.md` §11 R2) — blocked until that is resolved.
+      x-roles: [director, manager]
+      x-scope: all
+      responses:
+        '202':
+          description: Regeneration queued; body carries the job reference
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id: { type: string }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Regeneration would move a completed or disputed shift
+          content:
+            application/json:
+              examples:
+                regenerate_blocked: { $ref: '#/components/examples/ScheduleRegenerateBlocked' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # -------------------------------------------------------------- Shifts
+  /shifts:
+    get:
+      tags: [Shifts]
+      operationId: listShifts
+      summary: >
+        List shifts, always scope-filtered. The single endpoint behind four
+        screens — "Ca của tôi", "Lịch tổ", "Lịch điều phối" and the manager's
+        shift list are the same query at different row scopes.
+      x-roles: [director, manager, team_lead, employee]
+      x-scope: own/team/unit/all
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/ShiftStatus' } }
+        - { name: assignee_id, in: query, schema: { type: integer } }
+        - { name: contract_id, in: query, schema: { type: integer } }
+        - { name: team_id, in: query, schema: { type: integer } }
+        - { name: manager_id, in: query, schema: { type: integer } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: A page of shifts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShiftList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /shifts/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/ShiftId' }
+    get:
+      tags: [Shifts]
+      operationId: getShift
+      summary: Shift with contract, site, item, assignee, evidence and GPS
+      x-roles: [director, manager, accountant, team_lead, employee]
+      x-scope: own/team/unit/all
+      responses:
+        '200':
+          description: The shift
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Shift' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Shifts]
+      operationId: updateShift
+      summary: Reassign or reschedule — rejected on a completed shift
+      x-roles: [team_lead]
+      x-scope: team
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignee_id: { type: integer }
+                scheduled_date: { type: string, format: date }
+      responses:
+        '200':
+          description: Updated shift
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Shift' } }
+        '403':
+          description: Reassigning to an employee outside the caller's team
+          content:
+            application/json:
+              examples:
+                assignee_out_of_team: { $ref: '#/components/examples/ShiftAssigneeOutOfTeam' }
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Evidence is write-once — a completed shift rejects reassignment
+          content:
+            application/json:
+              examples:
+                already_completed: { $ref: '#/components/examples/ShiftAlreadyCompleted' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /shifts/{id}/dispute:
+    parameters:
+      - { $ref: '#/components/parameters/ShiftId' }
+    post:
+      tags: [Shifts]
+      operationId: disputeShift
+      summary: Mark disputed with a reason recorded by staff on the customer's behalf
+      x-roles: [manager, director]
+      x-scope: unit/all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, example: "Không thấy nhân viên đến" }
+                reported_via: { type: string, enum: [phone, in_person], example: phone }
+                reported_by: { type: string, example: "Chị Lan, quản lý toà nhà" }
+                reported_at: { type: string, format: date-time }
+                description: { type: string }
+      responses:
+        '200':
+          description: Shift marked disputed; excluded from the next statement until resolved
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Shift' } }
+        '409':
+          description: Already disputed
+          content:
+            application/json:
+              examples:
+                already_disputed: { $ref: '#/components/examples/ShiftAlreadyDisputed' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /shifts/{id}/dispute:resolve:
+    parameters:
+      - { $ref: '#/components/parameters/ShiftId' }
+    post:
+      tags: [Shifts]
+      operationId: resolveDispute
+      summary: Evidence upheld — return the shift to completed
+      x-roles: [manager, director]
+      x-scope: unit/all
+      responses:
+        '200':
+          description: Shift returned to completed
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Shift' } }
+        '409':
+          description: Not currently disputed
+          content:
+            application/json:
+              examples:
+                not_disputed: { $ref: '#/components/examples/ShiftNotDisputed' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /shifts/{id}/link:
+    parameters:
+      - { $ref: '#/components/parameters/ShiftId' }
+    get:
+      tags: [Shifts]
+      operationId: getFieldLink
+      summary: Issue the per-shift field token and its URL
+      x-roles: [team_lead, manager, director]
+      x-scope: team/unit/all
+      responses:
+        '200':
+          description: The field link
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  url: { type: string, format: uri, example: "https://app.lichhd.vn/field/eyJhbGciOi..." }
+                  expires_at: { type: string, format: date-time }
+
+  # -------------------------------------------------------------- Field
+  /field/{token}:
+    parameters:
+      - { $ref: '#/components/parameters/FieldToken' }
+    get:
+      tags: [Field]
+      operationId: getFieldContext
+      summary: Shift context — site, service item, scheduled time, which evidence steps remain
+      security: []
+      responses:
+        '200':
+          description: Field context for this token's shift
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FieldContext' }
+              example:
+                contract_site: "Tòa A — Phạm Hùng, Nam Từ Liêm"
+                service_item: "Bảo trì VRV & Chiller"
+                scheduled_at: "2024-10-21T08:30:00Z"
+                remaining_steps: [after_photo, receipt_photo]
+        '401':
+          description: Expired or invalid token
+          content:
+            application/json:
+              examples:
+                expired: { $ref: '#/components/examples/TokenExpired' }
+                invalid: { $ref: '#/components/examples/TokenInvalid' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /field/{token}/uploads:
+    parameters:
+      - { $ref: '#/components/parameters/FieldToken' }
+    post:
+      tags: [Field]
+      operationId: requestUploadTarget
+      summary: Request a direct object-storage upload target for one image
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content_type]
+              properties:
+                content_type: { type: string, example: image/jpeg }
+      responses:
+        '200':
+          description: Upload target issued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UploadTarget' }
+        '400':
+          description: Content type is not an accepted image type
+          content:
+            application/json:
+              examples:
+                unsupported_type: { $ref: '#/components/examples/UploadUnsupportedType' }
+              schema: { $ref: '#/components/schemas/Error' }
+        '413':
+          description: Image exceeds the per-image limit after client-side downscaling
+          content:
+            application/json:
+              examples:
+                too_large: { $ref: '#/components/examples/UploadTooLarge' }
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          description: Too many attempts on one token
+          content:
+            application/json:
+              examples:
+                rate_limited: { $ref: '#/components/examples/TokenRateLimited' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /field/{token}/submit:
+    parameters:
+      - { $ref: '#/components/parameters/FieldToken' }
+    post:
+      tags: [Field]
+      operationId: submitShift
+      summary: >
+        Complete the shift. The server stamps captured_at from its own clock,
+        inserts shift_photos and writes receipt_photo_url — evidence is
+        write-once (`03-architecture.md` §9 D7). latitude/longitude may be
+        null; the shift still completes, flagged for missing location.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FieldSubmission' }
+            examples:
+              with_gps:
+                value:
+                  photo_keys:
+                    before: ["uploads/9f1c/before-1.jpg", "uploads/9f1c/before-2.jpg"]
+                    after: ["uploads/9f1c/after-1.jpg"]
+                  receipt_photo_key: "uploads/9f1c/receipt.jpg"
+                  latitude: 21.0176
+                  longitude: 105.7833
+              no_gps:
+                value:
+                  photo_keys:
+                    before: ["uploads/9f1c/before-1.jpg"]
+                    after: ["uploads/9f1c/after-1.jpg"]
+                  receipt_photo_key: "uploads/9f1c/receipt.jpg"
+                  latitude: null
+                  longitude: null
+      responses:
+        '200':
+          description: Shift marked completed
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Shift' } }
+        '400':
+          description: Missing a required photo type, receipt, or citing an unissued upload key
+          content:
+            application/json:
+              examples:
+                evidence_incomplete: { $ref: '#/components/examples/ShiftEvidenceIncomplete' }
+                key_unknown: { $ref: '#/components/examples/UploadKeyUnknown' }
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: The token's shift is not the shift being submitted
+          content:
+            application/json:
+              examples:
+                shift_mismatch: { $ref: '#/components/examples/TokenShiftMismatch' }
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Re-submitting a completed shift — evidence is write-once
+          content:
+            application/json:
+              examples:
+                already_completed: { $ref: '#/components/examples/ShiftAlreadyCompleted' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # --------------------------------------------------------- Statements
+  /statements:
+    get:
+      tags: [Statements]
+      operationId: listStatements
+      summary: List statements by period and status
+      x-roles: [director, accountant]
+      x-scope: all
+      parameters:
+        - { name: period, in: query, schema: { type: string, format: date }, example: "2024-10-01" }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/StatementStatus' } }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: A page of statements
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/StatementList' } }
+    post:
+      tags: [Statements]
+      operationId: computeStatement
+      summary: Compute a draft from a contract's completed shifts × item unit_price
+      x-roles: [accountant]
+      x-scope: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contract_id, period]
+              properties:
+                contract_id: { type: integer, example: 89 }
+                period: { type: string, format: date, example: "2024-10-01" }
+      responses:
+        '201':
+          description: Draft statement created
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Statement' } }
+        '409':
+          description: A shift in the period lacks evidence or is disputed, or a statement already exists
+          content:
+            application/json:
+              examples:
+                period_incomplete: { $ref: '#/components/examples/StatementPeriodIncomplete' }
+                already_exists: { $ref: '#/components/examples/StatementAlreadyExists' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /statements/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/StatementId' }
+    get:
+      tags: [Statements]
+      operationId: getStatement
+      summary: Statement with its shift lines and evidence references
+      x-roles: [director, accountant]
+      x-scope: all
+      responses:
+        '200':
+          description: The statement
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Statement' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /statements/{id}/export:
+    parameters:
+      - { $ref: '#/components/parameters/StatementId' }
+    post:
+      tags: [Statements]
+      operationId: exportStatement
+      summary: Render the PDF with photos and receipts embedded; sets status = issued
+      x-roles: [accountant]
+      x-scope: all
+      responses:
+        '202':
+          description: Rendering queued; body carries the job reference
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { job_id: { type: string } }
+        '409':
+          description: Editing a statement already issued or sent
+          content:
+            application/json:
+              examples:
+                immutable: { $ref: '#/components/examples/StatementImmutable' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /statements/{id}/send:
+    parameters:
+      - { $ref: '#/components/parameters/StatementId' }
+    post:
+      tags: [Statements]
+      operationId: sendStatement
+      summary: Record that the statement was sent to the customer; sets status = sent
+      x-roles: [accountant]
+      x-scope: all
+      responses:
+        '200':
+          description: Statement marked sent
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Statement' } }
+        '409':
+          description: Sending before export — there is no PDF yet
+          content:
+            application/json:
+              examples:
+                not_issued: { $ref: '#/components/examples/StatementNotIssued' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /reconciliation:
+    get:
+      tags: [Statements]
+      operationId: getReconciliation
+      summary: Per contract — shifts due by frequency, shifts with complete evidence, and the variance
+      x-roles: [director, accountant]
+      x-scope: all
+      parameters:
+        - { name: period, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Reconciliation rows for the period
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ReconciliationRow' }
+
+  # ------------------------------------------------- Alerts / dashboard
+  /alerts:
+    get:
+      tags: [Alerts and dashboard]
+      operationId: listAlerts
+      summary: Expiring contracts and overdue shifts, with per-alert delivery status
+      x-roles: [director, manager, team_lead]
+      x-scope: unit/team/all
+      responses:
+        '200':
+          description: A page of alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Alert' }
+
+  /alerts/{id}/send:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    post:
+      tags: [Alerts and dashboard]
+      operationId: resendAlert
+      summary: Re-send through Zalo ZNS or SMS
+      x-roles: [director, manager]
+      x-scope: unit/all
+      responses:
+        '202':
+          description: Send queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { job_id: { type: string } }
+        '502':
+          description: Zalo ZNS and SMS both rejected the send; falls back in-app
+          content:
+            application/json:
+              examples:
+                channel_unavailable: { $ref: '#/components/examples/AlertChannelUnavailable' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /dashboard:
+    get:
+      tags: [Alerts and dashboard]
+      operationId: getDashboard
+      summary: Active, expiring and disputed contract counts; projected revenue
+      x-roles: [director]
+      x-scope: all
+      responses:
+        '200':
+          description: Dashboard summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DashboardSummary' }
+              example:
+                active_contracts: 48
+                expiring_soon: 5
+                disputed_shifts: 3
+                projected_revenue: 245000000
+                shifts_with_evidence_pct: 94
+                statements_closed: { closed: 41, total: 48 }
+
+  # ----------------------------------------------------------- Customers
+  /customers:
+    get:
+      tags: [Customers]
+      operationId: listCustomers
+      summary: List customers
+      x-roles: [director, manager, accountant]
+      x-scope: all
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: A page of customers
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/CustomerList' } }
+    post:
+      tags: [Customers]
+      operationId: createCustomer
+      summary: Create a customer record
+      x-roles: [director, manager]
+      x-scope: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CustomerCreate' }
+      responses:
+        '201':
+          description: Customer created
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Customer' } }
+
+  /customers/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Customers]
+      operationId: getCustomer
+      summary: Get a customer
+      x-roles: [director, manager, accountant]
+      x-scope: all
+      responses:
+        '200':
+          description: The customer
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Customer' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Customers]
+      operationId: updateCustomer
+      summary: Update a customer
+      x-roles: [director]
+      x-scope: all
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CustomerCreate' }
+      responses:
+        '200':
+          description: Updated customer
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Customer' } }
+    delete:
+      tags: [Customers]
+      operationId: deleteCustomer
+      summary: Delete a customer
+      x-roles: [director]
+      x-scope: all
+      responses:
+        '204': { description: Deleted }
+        '409':
+          description: Still holds a non-terminated contract
+          content:
+            application/json:
+              examples:
+                has_active_contracts: { $ref: '#/components/examples/CustomerHasActiveContracts' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ---------------------------------------------------------- Employees
+  /employees:
+    get:
+      tags: [Employees]
+      operationId: listEmployees
+      summary: List employee accounts
+      x-roles: [director]
+      x-scope: all
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: A page of employees
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/EmployeeList' } }
+    post:
+      tags: [Employees]
+      operationId: createEmployee
+      summary: Create an employee account
+      x-roles: [director]
+      x-scope: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmployeeCreate' }
+      responses:
+        '201':
+          description: Employee created
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Employee' } }
+        '409':
+          description: Username already in use
+          content:
+            application/json:
+              examples:
+                username_taken: { $ref: '#/components/examples/EmployeeUsernameTaken' }
+              schema: { $ref: '#/components/schemas/Error' }
+        '400':
+          description: manager_id would create a cycle in the reporting chain
+          content:
+            application/json:
+              examples:
+                manager_cycle: { $ref: '#/components/examples/EmployeeManagerCycle' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /employees/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Employees]
+      operationId: getEmployee
+      summary: Get an employee account
+      x-roles: [director]
+      x-scope: all
+      responses:
+        '200':
+          description: The employee
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Employee' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Employees]
+      operationId: updateEmployee
+      summary: Update role, manager or team assignment
+      x-roles: [director]
+      x-scope: all
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmployeeCreate' }
+      responses:
+        '200':
+          description: Updated employee
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Employee' } }
+        '409':
+          description: Setting role to team_lead on a team that already has one
+          content:
+            application/json:
+              examples:
+                lead_conflict: { $ref: '#/components/examples/TeamLeadConflict' }
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      tags: [Employees]
+      operationId: deleteEmployee
+      summary: Delete an employee account
+      x-roles: [director]
+      x-scope: all
+      responses:
+        '204': { description: Deleted }
+        '409':
+          description: Still assigned to future shifts
+          content:
+            application/json:
+              examples:
+                has_assigned_shifts: { $ref: '#/components/examples/EmployeeHasAssignedShifts' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # -------------------------------------------------------------- Teams
+  /teams:
+    get:
+      tags: [Teams]
+      operationId: listTeams
+      summary: List teams — the response derives lead and member_count from employees
+      x-roles: [director, manager, team_lead]
+      x-scope: all/own-team
+      responses:
+        '200':
+          description: A page of teams
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/Team' } }
+    post:
+      tags: [Teams]
+      operationId: createTeam
+      summary: Create a team
+      x-roles: [director]
+      x-scope: all
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, code]
+              properties:
+                name: { type: string, example: "Tổ 3 — PCCC" }
+                code: { type: string, example: T3 }
+      responses:
+        '201':
+          description: Team created
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Team' } }
+        '409':
+          description: Code already in use
+          content:
+            application/json:
+              examples:
+                code_taken: { $ref: '#/components/examples/TeamCodeTaken' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /teams/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Teams]
+      operationId: getTeam
+      summary: Get a team
+      x-roles: [director, manager, team_lead]
+      x-scope: all/own-team
+      responses:
+        '200':
+          description: The team
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Team' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Teams]
+      operationId: updateTeam
+      summary: Update a team's name or code
+      x-roles: [director]
+      x-scope: all
+      responses:
+        '200':
+          description: Updated team
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Team' } }
+    delete:
+      tags: [Teams]
+      operationId: deleteTeam
+      summary: Delete a team
+      x-roles: [director]
+      x-scope: all
+      responses:
+        '204': { description: Deleted }
+        '409':
+          description: Still has members
+          content:
+            application/json:
+              examples:
+                has_members: { $ref: '#/components/examples/TeamHasMembers' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >
+        Session or bearer token issued by POST /auth/login, carried on every desk
+        request. Field endpoints (/field/*) carry no session — the per-shift signed
+        token in the path is their sole credential; see `03-architecture.md` §8.1.
+
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, default: 25, maximum: 100 }
+    Offset:
+      name: offset
+      in: query
+      schema: { type: integer, default: 0 }
+    ContractId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    ShiftId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    StatementId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    FieldToken:
+      name: token
+      in: path
+      required: true
+      description: Per-shift signed token — names exactly one shift, expires
+      schema: { type: string }
+
+  responses:
+    Unauthorized:
+      description: Missing or expired credential
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/Error' } }
+    Forbidden:
+      description: Authenticated but out of role or out of scope
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/Error' } }
+    NotFound:
+      description: >
+        Not found, or found but outside the caller's scope — the two are
+        deliberately indistinguishable so a scope boundary never leaks a row's
+        existence
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/Error' } }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string, example: shift.already_completed }
+            message: { type: string, example: "Ca đã hoàn thành" }
+            details: { type: object }
+
+    Role:
+      type: string
+      enum: [director, accountant, manager, team_lead, employee]
+
+    ContractStatus:
+      type: string
+      enum: [active, expiring_soon, expired, cancelled, renewed]
+    ShiftStatus:
+      type: string
+      enum: [scheduled, late, completed, disputed]
+    StatementStatus:
+      type: string
+      enum: [draft, issued, sent]
+
+    CollectionMeta:
+      type: object
+      properties:
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+
+    ServiceItemCreate:
+      type: object
+      required: [name, frequency, unit_price]
+      properties:
+        name: { type: string, example: "Bảo trì VRV & Chiller" }
+        frequency:
+          type: string
+          description: >
+            Free text today — no grammar yet (`03-architecture.md` §11 R2);
+            the generator's accepted forms are not yet fixed
+          example: "2/thang"
+        unit_price: { type: number, example: 42000000 }
+    ServiceItem:
+      allOf:
+        - $ref: '#/components/schemas/ServiceItemCreate'
+        - type: object
+          properties:
+            id: { type: integer }
+            site_id: { type: integer }
+
+    ContractSiteCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, example: "Tòa A — Phạm Hùng, Nam Từ Liêm" }
+        work_requirements: { type: string }
+        notes: { type: string }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ServiceItemCreate' }
+    ContractSite:
+      allOf:
+        - $ref: '#/components/schemas/ContractSiteCreate'
+        - type: object
+          properties:
+            id: { type: integer }
+            contract_id: { type: integer }
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/ServiceItem' }
+
+    ContractCreate:
+      type: object
+      required: [customer_id, signed_at, expires_at, sites]
+      properties:
+        customer_id: { type: integer }
+        signed_at: { type: string, format: date }
+        expires_at: { type: string, format: date }
+        sites:
+          type: array
+          items: { $ref: '#/components/schemas/ContractSiteCreate' }
+    Contract:
+      allOf:
+        - type: object
+          properties:
+            id: { type: integer }
+            customer_id: { type: integer }
+            signed_at: { type: string, format: date }
+            expires_at: { type: string, format: date }
+            status: { $ref: '#/components/schemas/ContractStatus' }
+            created_at: { type: string, format: date-time }
+            sites:
+              type: array
+              items: { $ref: '#/components/schemas/ContractSite' }
+    ContractList:
+      allOf:
+        - type: object
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/Contract' } }
+        - $ref: '#/components/schemas/CollectionMeta'
+
+    ShiftPhoto:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string, enum: [before, after] }
+        url: { type: string, format: uri }
+        captured_at: { type: string, format: date-time }
+
+    Shift:
+      type: object
+      properties:
+        id: { type: integer }
+        contract_item_id: { type: integer }
+        assignee_id: { type: integer }
+        scheduled_date: { type: string, format: date }
+        completed_at: { type: string, format: date-time, nullable: true }
+        status: { $ref: '#/components/schemas/ShiftStatus' }
+        latitude: { type: number, nullable: true, example: 21.0176 }
+        longitude: { type: number, nullable: true, example: 105.7833 }
+        captured_at: { type: string, format: date-time, nullable: true }
+        receipt_photo_url: { type: string, format: uri, nullable: true }
+        photos:
+          type: array
+          items: { $ref: '#/components/schemas/ShiftPhoto' }
+    ShiftList:
+      allOf:
+        - type: object
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/Shift' } }
+        - $ref: '#/components/schemas/CollectionMeta'
+
+    FieldContext:
+      type: object
+      properties:
+        contract_site: { type: string }
+        service_item: { type: string }
+        scheduled_at: { type: string, format: date-time }
+        remaining_steps:
+          type: array
+          items: { type: string, enum: [before_photo, after_photo, receipt_photo] }
+
+    UploadTarget:
+      type: object
+      properties:
+        upload_url: { type: string, format: uri }
+        key: { type: string, example: "uploads/9f1c/after-1.jpg" }
+
+    FieldSubmission:
+      type: object
+      required: [photo_keys, receipt_photo_key]
+      properties:
+        photo_keys:
+          type: object
+          properties:
+            before: { type: array, items: { type: string } }
+            after: { type: array, items: { type: string } }
+        receipt_photo_key: { type: string }
+        latitude: { type: number, nullable: true }
+        longitude: { type: number, nullable: true }
+
+    StatementLine:
+      type: object
+      properties:
+        shift_id: { type: integer }
+        scheduled_date: { type: string, format: date }
+        has_evidence: { type: boolean }
+        amount: { type: number }
+    Statement:
+      type: object
+      properties:
+        id: { type: integer }
+        contract_id: { type: integer }
+        period: { type: string, format: date }
+        total_amount: { type: number }
+        status: { $ref: '#/components/schemas/StatementStatus' }
+        pdf_url: { type: string, format: uri, nullable: true }
+        lines:
+          type: array
+          items: { $ref: '#/components/schemas/StatementLine' }
+    StatementList:
+      allOf:
+        - type: object
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/Statement' } }
+        - $ref: '#/components/schemas/CollectionMeta'
+
+    ReconciliationRow:
+      type: object
+      properties:
+        contract_id: { type: integer }
+        shifts_due: { type: integer }
+        shifts_with_evidence: { type: integer }
+        variance: { type: integer }
+
+    Alert:
+      type: object
+      properties:
+        id: { type: integer }
+        kind: { type: string, enum: [contract_expiring, shift_overdue] }
+        subject_id: { type: integer }
+        due_in_days: { type: integer, nullable: true }
+        overdue_by_days: { type: integer, nullable: true }
+        delivery_status: { type: string, enum: [sent, not_sent, fallback] }
+
+    DashboardSummary:
+      type: object
+      properties:
+        active_contracts: { type: integer }
+        expiring_soon: { type: integer }
+        disputed_shifts: { type: integer }
+        projected_revenue: { type: number }
+        shifts_with_evidence_pct: { type: number }
+        statements_closed:
+          type: object
+          properties:
+            closed: { type: integer }
+            total: { type: integer }
+
+    CustomerCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, example: "Keangnam Landmark 72" }
+        company_name: { type: string, nullable: true }
+        contact: { type: string, example: "Chị Lan · 0912 345 678" }
+        address: { type: string }
+        segment: { type: string, enum: [regular, vip], default: regular }
+    Customer:
+      allOf:
+        - $ref: '#/components/schemas/CustomerCreate'
+        - type: object
+          properties:
+            id: { type: integer }
+            created_at: { type: string, format: date-time }
+    CustomerList:
+      allOf:
+        - type: object
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/Customer' } }
+        - $ref: '#/components/schemas/CollectionMeta'
+
+    EmployeeCreate:
+      type: object
+      required: [name, username, role]
+      properties:
+        name: { type: string, example: "Nguyễn Văn Toàn" }
+        contact: { type: string }
+        username: { type: string, example: toan.nv }
+        role: { $ref: '#/components/schemas/Role' }
+        manager_id: { type: integer, nullable: true }
+        team_id: { type: integer, nullable: true, description: "NULL for desk staff — not every employee belongs to a team" }
+    Employee:
+      allOf:
+        - $ref: '#/components/schemas/EmployeeCreate'
+        - type: object
+          properties:
+            id: { type: integer }
+            status: { type: string, enum: [active, terminated] }
+    EmployeeList:
+      allOf:
+        - type: object
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/Employee' } }
+        - $ref: '#/components/schemas/CollectionMeta'
+
+    Team:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string, example: "Tổ 1 — HVAC" }
+        code: { type: string, example: T1 }
+        lead: { type: string, nullable: true, description: Derived — the member holding the team-lead role }
+        member_count: { type: integer }
+
+  examples:
+    AuthInvalidCredentials:
+      value: { error: { code: auth.invalid_credentials, message: "Sai tên đăng nhập hoặc mật khẩu", details: {} } }
+    TokenExpired:
+      value: { error: { code: token.expired, message: "Liên kết đã hết hạn", details: { expired_at: "2024-10-21T20:00:00Z" } } }
+    TokenInvalid:
+      value: { error: { code: token.invalid, message: "Liên kết không hợp lệ", details: {} } }
+    TokenShiftMismatch:
+      value: { error: { code: token.shift_mismatch, message: "Liên kết không khớp ca này", details: {} } }
+    TokenRateLimited:
+      value: { error: { code: token.rate_limited, message: "Thử lại sau ít phút", details: { retry_after_seconds: 60 } } }
+    ContractItemInvalid:
+      value: { error: { code: contract.item_invalid, message: "Hạng mục thiếu tần suất hoặc đơn giá không hợp lệ", details: { items: [{ index: 0, field: frequency }] } } }
+    ContractTermInvalid:
+      value: { error: { code: contract.term_invalid, message: "Ngày hết hạn phải sau ngày ký", details: { signed_at: "2024-01-15", expires_at: "2024-01-01" } } }
+    ContractCustomerNotFound:
+      value: { error: { code: contract.customer_not_found, message: "Không tìm thấy khách hàng", details: { customer_id: 999 } } }
+    ContractFrequencyUnparsable:
+      value: { error: { code: contract.frequency_unparsable, message: "Không đọc được tần suất", details: { item_id: 4, frequency: "thỉnh thoảng" } } }
+    ScheduleNoShiftsGenerated:
+      value: { error: { code: schedule.no_shifts_generated, message: "Không sinh được ca nào trong thời hạn hợp đồng", details: { item_id: 4 } } }
+    ScheduleRegenerateBlocked:
+      value: { error: { code: schedule.regenerate_blocked, message: "Có ca đã hoàn thành hoặc đang khiếu nại", details: { shift_ids: [22, 23] } } }
+    ShiftAlreadyCompleted:
+      value: { error: { code: shift.already_completed, message: "Ca đã hoàn thành", details: { completed_at: "2024-10-14T10:41:00Z" } } }
+    ShiftEvidenceIncomplete:
+      value: { error: { code: shift.evidence_incomplete, message: "Thiếu ảnh hoặc biên lai", details: { missing: [after_photo] } } }
+    ShiftAssigneeOutOfTeam:
+      value: { error: { code: shift.assignee_out_of_team, message: "Nhân viên không thuộc tổ của bạn", details: { assignee_id: 31 } } }
+    ShiftNotDisputed:
+      value: { error: { code: shift.not_disputed, message: "Ca này không ở trạng thái khiếu nại", details: { status: completed } } }
+    ShiftAlreadyDisputed:
+      value: { error: { code: shift.already_disputed, message: "Ca đã bị khiếu nại", details: { disputed_at: "2024-10-15T09:20:00Z" } } }
+    UploadTooLarge:
+      value: { error: { code: upload.too_large, message: "Ảnh vượt quá dung lượng cho phép", details: { limit_bytes: 5242880, actual_bytes: 8123456 } } }
+    UploadUnsupportedType:
+      value: { error: { code: upload.unsupported_type, message: "Định dạng ảnh không được hỗ trợ", details: { content_type: image/heic } } }
+    UploadKeyUnknown:
+      value: { error: { code: upload.key_unknown, message: "Ảnh chưa được tải lên cho ca này", details: { keys: ["uploads/x/y.jpg"] } } }
+    StatementPeriodIncomplete:
+      value: { error: { code: statement.period_incomplete, message: "Còn ca chưa đủ bằng chứng hoặc đang khiếu nại", details: { shift_ids: [23] } } }
+    StatementAlreadyExists:
+      value: { error: { code: statement.already_exists, message: "Bảng kê kỳ này đã tồn tại", details: { statement_id: 15 } } }
+    StatementNotIssued:
+      value: { error: { code: statement.not_issued, message: "Chưa xuất PDF", details: { status: draft } } }
+    StatementImmutable:
+      value: { error: { code: statement.immutable, message: "Bảng kê đã chốt, không thể sửa", details: { status: issued } } }
+    AlertChannelUnavailable:
+      value: { error: { code: alert.channel_unavailable, message: "Không gửi được qua Zalo/SMS, đã chuyển sang nhắc trong ứng dụng", details: { channel: zalo_zns, provider_code: "ERR_TEMPLATE" } } }
+    CustomerHasActiveContracts:
+      value: { error: { code: customer.has_active_contracts, message: "Khách hàng còn hợp đồng đang chạy", details: { contract_ids: [89] } } }
+    EmployeeHasAssignedShifts:
+      value: { error: { code: employee.has_assigned_shifts, message: "Nhân viên còn ca sắp tới", details: { shift_ids: [40, 41] } } }
+    EmployeeUsernameTaken:
+      value: { error: { code: employee.username_taken, message: "Tên đăng nhập đã tồn tại", details: { username: toan.nv } } }
+    EmployeeManagerCycle:
+      value: { error: { code: employee.manager_cycle, message: "Sẽ tạo vòng lặp quản lý", details: { path: [12, 31, 12] } } }
+    TeamCodeTaken:
+      value: { error: { code: team.code_taken, message: "Mã tổ đã tồn tại", details: { code: T1 } } }
+    TeamHasMembers:
+      value: { error: { code: team.has_members, message: "Tổ còn thành viên", details: { employee_ids: [31, 40] } } }
+    TeamLeadConflict:
+      value: { error: { code: team.lead_conflict, message: "Tổ đã có tổ trưởng", details: { employee_id: 31 } } }

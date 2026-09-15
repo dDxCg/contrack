@@ -7,6 +7,10 @@
 Every endpoint traces to a requirement in [`02-design-analysis.md`](02-design-analysis.md). Field names match
 the columns in [`../db/schema.sql`](../db/schema.sql).
 
+Machine-readable version: [`04-api.yaml`](04-api.yaml), OpenAPI 3.0 — every operation, request/response
+schema and error-code example below also lives there, loadable in Swagger UI, Redoc or any OpenAPI-aware
+client. This file is the prose walkthrough; `04-api.yaml` is the contract.
+
 ---
 
 ## 1. Conventions
