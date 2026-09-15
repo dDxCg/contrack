@@ -4,7 +4,7 @@ info:
   version: 0.1.0-draft
   description: >
     Recurring service contract management. Every operation traces to a requirement
-    in `02-design-analysis.md`; field names match the columns in `../db/schema.sql`.
+    in `02-design-analysis.md`; field names match the columns in `db/schema.sql`.
     Status: draft — endpoint shapes settled, transport details follow the stack
     decision (`04-architecture.md` §11 R1). See `05-api.md` for the prose version
     of this spec, including the full access-control matrix and error-code catalogue

@@ -5,7 +5,7 @@
 > **Answers:** Which operations exist, who may call them, and over what rows?
 
 Every endpoint traces to a requirement in [`02-design-analysis.md`](02-design-analysis.md). Field names match
-the columns in [`../db/schema.sql`](../db/schema.sql).
+the columns in [`db/schema.sql`](db/schema.sql).
 
 Machine-readable version: [`05-api.yaml`](05-api.yaml), OpenAPI 3.0 — every operation, request/response
 schema and error-code example below also lives there, loadable in Swagger UI, Redoc or any OpenAPI-aware

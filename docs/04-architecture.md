@@ -47,7 +47,7 @@ needs a decision recorded in §9, not a silent shortcut.
 |---|---|---|---|
 | C1 | Budget and team are scoped to the 5 Must-have modules only ([PRD §6](01-prd.md#6-assumptions--constraints)) | Organisational | Should/Could-have items (VietQR, ERP integration) are named but not designed for here |
 | C2 | No ERP/accounting integration in the MVP | Organisational | The accountant enters costs manually; no accounting-system interface is designed |
-| C3 | Must run [`db/schema.sql`](../db/schema.sql) unmodified | Technical | Rules out an engine without ANSI SQL, identity columns and `NUMERIC` |
+| C3 | Must run [`db/schema.sql`](db/schema.sql) unmodified | Technical | Rules out an engine without ANSI SQL, identity columns and `NUMERIC` |
 | C4 | Target is one 10–80 staff company | Business | No multi-tenancy; drives D1 |
 | C5 | No native app install (NFR7) | Technical | Browser-only client; field access cannot depend on app-store distribution |
 | C6 | Technology stack not yet selected | Organisational | §5 states criteria instead of naming a language, framework or database |
@@ -151,7 +151,7 @@ flowchart LR
 | Criterion | Source |
 |---|---|
 | Responsive web, no native app install | NFR7, FR7 |
-| Runs [`db/schema.sql`](../db/schema.sql) unmodified — ANSI SQL, identity columns, `NUMERIC` | C3 |
+| Runs [`db/schema.sql`](db/schema.sql) unmodified — ANSI SQL, identity columns, `NUMERIC` | C3 |
 | Server-side PDF rendering with embedded images | FR16 |
 | S3-compatible object storage client | §9 D2 |
 | Scheduled job execution | FR4, FR12, FR13 |

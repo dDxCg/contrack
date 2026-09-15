@@ -29,6 +29,6 @@ The lead is the member holding the team-lead role — `teams` carries no `lead_i
 - Money as `NUMERIC(14,2)`; GPS as `NUMERIC(9,6)`.
 - Field evidence columns on `shifts` (`latitude`, `longitude`, `captured_at`,
   `receipt_photo_url`) are write-once by application rule — see
-  [NFR2](../docs/02-design-analysis.md#non-functional-requirements).
+  [NFR2](../02-design-analysis.md#non-functional-requirements).
 
-Requirements this model implements: [`docs/02-design-analysis.md`](../docs/02-design-analysis.md).
+Requirements this model implements: [`02-design-analysis.md`](../02-design-analysis.md).
