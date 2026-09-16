@@ -16,6 +16,8 @@
 | Manager | flag a shift as disputed the moment a customer complains | the complaint is tied to the actual evidence instead of living in someone's memory | A disputed shift keeps its photos/receipt/GPS and shows a reason, separate from a normal completed shift |
 | Director | manage employee accounts, roles and manager assignment myself | access always matches who's actually on staff, without waiting on IT | Creating, editing or deactivating an employee takes effect on their next request, no redeploy needed |
 | Director | see what's billed against what actually got done, per contract and period | I catch billing drift before it reaches the customer as a dispute | Reconciliation view lists shifts due by frequency next to shifts with complete evidence, per contract per period |
+| Director | know which contracts are profitable and which are losing money, without waiting on the Accountant to close the month | I catch a bad contract before renewing it, and the dashboard never shows a gap | Profit/loss per contract, per month, is revenue from `contract_items` minus that month's recorded labor/materials/other costs — or, before the Accountant records them, an estimate clearly marked as such |
+| Accountant | record labor and materials costs against a contract each month | the Director's profit/loss numbers are accurate, not guessed | Saving a cost entry (category, month, amount) updates that contract's profit/loss for that month immediately |
 | Platform Admin | onboard a new operating company with its first Director account | a new customer of LichHD itself can start working without me touching the database | Creating a tenant immediately produces one active Director login, scoped to that tenant only |
 
 ### Functional Requirements
@@ -38,7 +40,7 @@
 | FR14 | System | Send alerts via Zalo (ZNS) and/or SMS |
 | FR15 | Accountant | Generate a monthly statement per contract from its completed shifts |
 | FR16 | Accountant | Export a statement as PDF with photos and receipts attached |
-| FR17 | Director | View dashboard: active contracts, expiring contracts, disputed contracts, projected revenue |
+| FR17 | Director | View dashboard: active/expiring/disputed contract counts, projected revenue, late/missed shifts by month, on-time renewal rate, cancellation rate, new contracts signed by month, profit/loss trend — filterable by month |
 | FR18 | Director | Read, create, update or delete employee accounts, including role and manager assignment |
 | FR19 | Accountant | Send an exported statement to the customer, marking it sent |
 | FR20 | Accountant, Director | View reconciliation: shifts due by frequency vs. shifts with complete evidence, per contract per period |
@@ -46,6 +48,10 @@
 | FR22 | Director, Accountant, Manager, Team Lead, Employee | Sign in with a username and password; the session carries the account's tenant, role and row scope for every later request |
 | FR23 | Platform Admin | Create a new tenant (operating company) with its first Director account | 
 | FR24 | Platform Admin | Suspend or reactivate a tenant; a suspended tenant's accounts can't sign in |
+| FR25 | Platform Admin | View platform dashboard: tenant counts by status, recent onboarding activity, tenant growth trend |
+| FR26 | Accountant | Record or update a contract's monthly cost (category: labor, materials, other) |
+| FR27 | Director, Accountant | View profit/loss per contract per month: revenue from `contract_items` minus that month's recorded or estimated cost |
+| FR28 | System | Estimate a contract's month cost when the Accountant hasn't recorded it yet — trailing 3-month average of that contract's own recorded costs, or the tenant's average cost-to-revenue ratio if the contract has no recorded cost history — so FR17/FR27 never show a gap for an unclosed month |
 
 ### Non-Functional Requirements
 
@@ -244,6 +250,12 @@ classDiagram
         +lead() Employee
         +memberCount() int
     }
+    class ContractCost {
+        -id: int
+        -category: CostCategory
+        -period: Date
+        -amount: decimal
+    }
 
     Customer "1" --> "0..*" Contract
     Contract "1" *-- "1..*" ContractSite
@@ -251,6 +263,8 @@ classDiagram
     ContractItem "1" --> "0..*" Shift : generates
     Shift "1" *-- "0..*" ShiftPhoto
     Contract "1" --> "0..*" Statement
+    Contract "1" --> "0..*" ContractCost
+    Employee "1" --> "0..*" ContractCost : recorded by
     Employee "1" --> "0..*" Shift : assignee
     Employee "0..1" --> "0..*" Employee : manager
     Team "0..1" --> "0..*" Employee : members

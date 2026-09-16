@@ -8,11 +8,13 @@ backend/
 │   ├── AuthController
 │   ├── PlatformAuthController
 │   ├── TenantsController
+│   ├── PlatformDashboardController
 │   ├── ContractsController
 │   ├── ShiftsController
 │   ├── FieldController
 │   ├── StatementsController
 │   ├── ReconciliationController
+│   ├── ContractCostsController
 │   ├── AlertsController
 │   ├── DashboardController
 │   ├── CustomersController
@@ -20,6 +22,7 @@ backend/
 │   └── TeamsController
 ├── Services/
 │   ├── TenantService
+│   ├── PlatformDashboardService
 │   ├── ContractService
 │   ├── ScheduleGeneratorService
 │   ├── DispatchService
@@ -28,6 +31,8 @@ backend/
 │   ├── AlertJobService
 │   ├── StatementService
 │   ├── ReconciliationService
+│   ├── ContractProfitabilityService
+│   ├── CostEstimationService
 │   ├── DashboardService
 │   ├── CustomerService
 │   ├── EmployeeService
@@ -44,6 +49,7 @@ backend/
 │   ├── ShiftRepository
 │   ├── ShiftPhotoRepository
 │   ├── StatementRepository
+│   ├── ContractCostRepository
 │   ├── EmployeeRepository
 │   ├── TeamRepository
 │   └── CustomerRepository
@@ -57,6 +63,7 @@ backend/
 │   ├── Shift
 │   ├── ShiftPhoto
 │   ├── Statement
+│   ├── ContractCost
 │   ├── Employee
 │   └── Team
 └── Data/
@@ -99,11 +106,14 @@ frontend/
 │   │   ├── Statements
 │   │   ├── StatementPreview
 │   │   ├── Reconciliation
+│   │   ├── ContractCosts
 │   │   ├── Dashboard
 │   │   ├── Employees
 │   │   ├── Teams
 │   │   ├── Customers
-│   │   └── Field
+│   │   ├── Field
+│   │   ├── PlatformDashboard
+│   │   └── Tenants
 │   ├── hooks/
 │   │   ├── useAuth
 │   │   ├── useRole
@@ -118,18 +128,22 @@ frontend/
 │   │   ├── fieldService
 │   │   ├── statementService
 │   │   ├── reconciliationService
+│   │   ├── contractCostService
 │   │   ├── alertService
 │   │   ├── dashboardService
 │   │   ├── customerService
 │   │   ├── employeeService
-│   │   └── teamService
+│   │   ├── teamService
+│   │   └── platformService
 │   ├── types/
 │   │   ├── Customer
 │   │   ├── Contract
 │   │   ├── Shift
 │   │   ├── Statement
+│   │   ├── ContractCost
 │   │   ├── Employee
 │   │   ├── Team
+│   │   ├── Tenant
 │   │   └── Common
 │   ├── routes/
 │   │   └── AppRoutes

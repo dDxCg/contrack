@@ -25,6 +25,10 @@ tailwind.config = {
 <style>
   html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
   .material-symbols-outlined { font-size: 20px; line-height: 1; }
+  /* Card elevation — SLDS card-shadow token (0 2px 2px rgba(0,0,0,.10)), softened
+     to .06 alpha so it stays quiet against a border rather than fighting it
+     (HIG Deference: chrome should never outshine the content it holds). */
+  .lh-card-shadow { box-shadow: 0 2px 2px rgba(0, 0, 0, .06); }
   /* Sidebar width scales with viewport — % of screen, bounded so it never
      gets cramped on a small laptop or bloated on an ultra-wide monitor. */
   :root { --sidebar-w: clamp(15rem, 16vw, 18rem); }
@@ -49,22 +53,22 @@ tailwind.config = {
 
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Hợp đồng</h1>
+          <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Hợp đồng</h1>
         </div>
         <button onclick="wfShow('new-contract')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Tạo hợp đồng</button>
       </div>
 
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Đang thực hiện</div>
           <div class="mt-2 font-mono text-2xl font-semibold">48</div>
           <div class="mt-1 text-sm text-zinc-500">245 triệu / tháng</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Sắp hết hạn (Trong 30 ngày tới)</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-amber-700">5</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Chậm tiến độ</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-red-700">2</div>
         </div>
@@ -81,7 +85,7 @@ tailwind.config = {
           </div>
         </div>
 
-        <div class="overflow-x-auto md:rounded-xl md:border md:border-zinc-200 md:bg-white">
+        <div class="overflow-x-auto md:rounded-2xl md:border md:border-zinc-200 md:bg-white md:lh-card-shadow">
           <table class="stack w-full text-left text-sm">
             <thead class="border-b border-zinc-200 text-xs font-medium text-zinc-500">
               <tr>
@@ -209,7 +213,7 @@ tailwind.config = {
 
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Lịch tuần 43</h1>
+          <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Lịch tuần 43</h1>
           <p class="mt-1 font-mono text-sm text-zinc-500">21/10 – 27/10/2024</p>
         </div>
         <div class="flex gap-2">
@@ -220,21 +224,21 @@ tailwind.config = {
       </div>
 
       <div class="grid grid-cols-3 gap-3">
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Tổng ca</div>
           <div class="mt-2 font-mono text-2xl font-semibold">32</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Đã hoàn thành</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-emerald-700">18</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Trùng ca</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-red-700">2</div>
         </div>
       </div>
 
-      <div class="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+      <div class="overflow-x-auto rounded-2xl border border-zinc-200 bg-white lh-card-shadow">
         <div class="min-w-[820px]">
           <div class="grid grid-cols-6 border-b border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-500">
             <div class="px-4 py-3">Tổ</div>
@@ -253,19 +257,19 @@ tailwind.config = {
             <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Keangnam</div>
               <div class="font-mono text-xs text-zinc-500">08:30</div>
-              <div class="mt-1.5 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">Đã xong</div>
+              <div class="mt-1.5 inline-block rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">Đã xong</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
             <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-red-200 bg-red-50/40 p-2.5 hover:border-red-400">
               <div class="font-medium">Golden Park</div>
               <div class="font-mono text-xs text-zinc-500">09:00</div>
-              <div class="mt-1.5 inline-block rounded bg-red-50 px-1.5 py-0.5 text-xs text-red-700">Trùng ca</div>
+              <div class="mt-1.5 inline-block rounded-md bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-700">Trùng ca</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
             <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Skylake</div>
               <div class="font-mono text-xs text-zinc-500">14:00</div>
-              <div class="mt-1.5 inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600">Chờ chạy</div>
+              <div class="mt-1.5 inline-block rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-600">Chờ chạy</div>
             </div>
           </div>
 
@@ -277,18 +281,18 @@ tailwind.config = {
             <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Thu Cúc</div>
               <div class="font-mono text-xs text-zinc-500">07:00</div>
-              <div class="mt-1.5 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">Đã xong</div>
+              <div class="mt-1.5 inline-block rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">Đã xong</div>
             </div>
             <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Thu Cúc</div>
               <div class="font-mono text-xs text-zinc-500">07:00</div>
-              <div class="mt-1.5 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-700">Đã xong</div>
+              <div class="mt-1.5 inline-block rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">Đã xong</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
             <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Discovery</div>
               <div class="font-mono text-xs text-zinc-500">13:30</div>
-              <div class="mt-1.5 inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600">Chờ chạy</div>
+              <div class="mt-1.5 inline-block rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-600">Chờ chạy</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
           </div>
@@ -302,13 +306,13 @@ tailwind.config = {
             <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Golden Park</div>
               <div class="font-mono text-xs text-zinc-500">08:00</div>
-              <div class="mt-1.5 inline-block rounded bg-red-50 px-1.5 py-0.5 text-xs text-red-700">Quá hạn</div>
+              <div class="mt-1.5 inline-block rounded-md bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-700">Quá hạn</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
             <div onclick="wfShow('shift-detail')" class="cursor-pointer rounded-lg border border-zinc-200 p-2.5 hover:border-zinc-400">
               <div class="font-medium">Keangnam</div>
               <div class="font-mono text-xs text-zinc-500">15:00</div>
-              <div class="mt-1.5 inline-block rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600">Chờ chạy</div>
+              <div class="mt-1.5 inline-block rounded-md bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-600">Chờ chạy</div>
             </div>
             <div class="rounded-lg border border-dashed border-zinc-200"></div>
           </div>
@@ -322,7 +326,7 @@ tailwind.config = {
 <!-- ================= 3. THỰC HIỆN HIỆN TRƯỜNG (mobile) ================= -->
 <section class="wf-screen" data-screen="field" data-title="Thực hiện hiện trường" hidden>
   <div class="flex min-h-screen justify-center bg-zinc-100 p-4 sm:p-8">
-    <div class="w-full max-w-sm overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+    <div class="w-full max-w-sm overflow-hidden rounded-2xl border border-zinc-200 bg-white lh-card-shadow">
 
       <div class="border-b border-zinc-200 px-4 py-3">
         <div class="text-sm font-medium">Keangnam Landmark 72</div>
@@ -387,28 +391,28 @@ tailwind.config = {
 
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Bảng kê tháng 10/2024</h1>
+          <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Bảng kê tháng 10/2024</h1>
           <p class="mt-1 text-sm text-zinc-500">Chốt kỳ trước ngày 05/11</p>
         </div>
         <button onclick="wfToast('Đã xuất 41 bảng kê đủ bằng chứng')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Xuất PDF hàng loạt</button>
       </div>
 
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Tổng giá trị kỳ</div>
           <div class="mt-2 font-mono text-2xl font-semibold">245tr</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Đủ bằng chứng</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-emerald-700">41</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Chờ bằng chứng</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-amber-700">7</div>
         </div>
       </div>
 
-      <div class="overflow-x-auto md:rounded-xl md:border md:border-zinc-200 md:bg-white">
+      <div class="overflow-x-auto md:rounded-2xl md:border md:border-zinc-200 md:bg-white md:lh-card-shadow">
         <table class="stack w-full text-left text-sm">
           <thead class="border-b border-zinc-200 text-xs font-medium text-zinc-500">
             <tr>
@@ -431,7 +435,7 @@ tailwind.config = {
               </td>
               <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Thành tiền">36.500.000đ</td>
               <td class="px-4 py-3 text-right" data-label="Thao tác">
-                <button onclick="wfShow('statement-preview')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Tải lại</button>
+                <button onclick="wfShow('statement-preview')" class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs">Tải lại</button>
               </td>
             </tr>
             <tr>
@@ -445,7 +449,7 @@ tailwind.config = {
               </td>
               <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Thành tiền">21.000.000đ</td>
               <td class="px-4 py-3 text-right" data-label="Thao tác">
-                <button onclick="wfShow('statement-preview')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xem ca</button>
+                <button onclick="wfShow('statement-preview')" class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xem ca</button>
               </td>
             </tr>
             <tr>
@@ -459,7 +463,7 @@ tailwind.config = {
               </td>
               <td class="px-4 py-3 text-right font-mono text-zinc-400 md:whitespace-nowrap" data-label="Thành tiền">—</td>
               <td class="px-4 py-3 text-right" data-label="Thao tác">
-                <button onclick="wfShow('shift-detail')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xử lý</button>
+                <button onclick="wfShow('shift-detail')" class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xử lý</button>
               </td>
             </tr>
             <tr>
@@ -473,7 +477,7 @@ tailwind.config = {
               </td>
               <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Thành tiền">29.000.000đ</td>
               <td class="px-4 py-3 text-right" data-label="Thao tác">
-                <button onclick="wfShow('statement-preview')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Tải lại</button>
+                <button onclick="wfShow('statement-preview')" class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs">Tải lại</button>
               </td>
             </tr>
             <tr>
@@ -487,7 +491,7 @@ tailwind.config = {
               </td>
               <td class="px-4 py-3 text-right font-mono md:whitespace-nowrap" data-label="Thành tiền">38.500.000đ</td>
               <td class="px-4 py-3 text-right" data-label="Thao tác">
-                <button onclick="wfShow('statement-preview')" class="rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xem ca</button>
+                <button onclick="wfShow('statement-preview')" class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs">Xem ca</button>
               </td>
             </tr>
           </tbody>
@@ -513,11 +517,11 @@ tailwind.config = {
 
       <div>
         <button onclick="wfShow('contracts')" class="text-sm text-zinc-500 hover:text-zinc-900">← Hợp đồng</button>
-        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Tạo hợp đồng</h1>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Tạo hợp đồng</h1>
         <p class="mt-1 text-sm text-zinc-500">Nhập một lần — lịch ca tự sinh theo tần suất từng hạng mục.</p>
       </div>
 
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Khách hàng &amp; thời hạn</div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label class="flex flex-col gap-1.5">
@@ -539,7 +543,7 @@ tailwind.config = {
         </div>
       </div>
 
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="flex items-center justify-between">
           <span class="text-sm font-medium">Địa điểm &amp; hạng mục dịch vụ</span>
           <button onclick="wfToast('Đã thêm địa điểm mới')" class="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs">Thêm địa điểm</button>
@@ -581,12 +585,12 @@ tailwind.config = {
 <!-- ================= 6. ĐĂNG NHẬP ================= -->
 <section class="wf-screen" data-screen="login" data-title="Đăng nhập" hidden>
   <div class="flex min-h-screen items-center justify-center bg-zinc-100 p-4">
-    <div class="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6">
+    <div class="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 lh-card-shadow">
       <div class="flex items-center gap-2">
         <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-sm font-semibold text-white">L</div>
         <span class="text-base font-semibold">LichHD</span>
       </div>
-      <h1 class="mt-6 text-lg font-semibold">Đăng nhập</h1>
+      <h1 class="mt-6 text-2xl font-semibold tracking-tight sm:text-3xl">Đăng nhập</h1>
       <p class="mt-1 text-sm text-zinc-500">Quản lý hợp đồng dịch vụ định kỳ</p>
 
       <div class="mt-6 flex flex-col gap-3">
@@ -612,7 +616,7 @@ tailwind.config = {
     <div class="mx-auto flex max-w-[clamp(72rem,82vw,100rem)] flex-col gap-6 p-4 sm:p-6">
 
       <div>
-        <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Ca #22 — Golden Park</h1>
+        <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Ca #22 — Golden Park</h1>
         <p class="mt-1 font-mono text-sm text-zinc-500">HĐ-2024-115 · 14/10/2024 · Tổ 3</p>
       </div>
 
@@ -621,7 +625,7 @@ tailwind.config = {
       </div>
 
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm font-medium">Bằng chứng đã nộp</div>
           <div class="mt-3 grid grid-cols-3 gap-2">
             <div class="aspect-square rounded-lg bg-zinc-100"></div>
@@ -637,7 +641,7 @@ tailwind.config = {
         </div>
 
         <div class="flex flex-col gap-4">
-          <div class="rounded-xl border border-zinc-200 bg-white p-4">
+          <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
             <div class="text-sm font-medium">Kết luận</div>
             <textarea rows="4" class="mt-3 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Ghi lý do kết luận"></textarea>
           </div>
@@ -659,14 +663,14 @@ tailwind.config = {
     <div class="mx-auto flex max-w-[clamp(72rem,82vw,100rem)] flex-col gap-6 p-4 sm:p-6">
 
       <div>
-        <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Cảnh báo</h1>
+        <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Cảnh báo</h1>
         <p class="mt-1 text-sm text-zinc-500">7 việc cần xử lý</p>
       </div>
 
       <div class="flex flex-col gap-2">
         <div class="text-sm font-medium text-zinc-500">Hợp đồng sắp hết hạn</div>
 
-        <div class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div class="font-medium">Keangnam Landmark 72</div>
             <div class="mt-0.5 text-sm text-zinc-500">Hết hạn 15/11/2024 · còn 18 ngày</div>
@@ -677,7 +681,7 @@ tailwind.config = {
           </div>
         </div>
 
-        <div class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div class="font-medium">Discovery Complex</div>
             <div class="mt-0.5 text-sm text-zinc-500">Hết hạn 28/11/2024 · còn 31 ngày</div>
@@ -692,7 +696,7 @@ tailwind.config = {
       <div class="flex flex-col gap-2">
         <div class="text-sm font-medium text-zinc-500">Ca chậm tần suất</div>
 
-        <div class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div class="font-medium">Chung cư Golden Park</div>
             <div class="mt-0.5 text-sm text-zinc-500">Hạn 20/10 · chậm 2 ngày · Tổ 3</div>
@@ -703,7 +707,7 @@ tailwind.config = {
           </div>
         </div>
 
-        <div class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div class="font-medium">Vinhomes Skylake</div>
             <div class="mt-0.5 text-sm text-zinc-500">Hạn 26/10 · còn 3 ngày · Tổ 1</div>
@@ -726,7 +730,7 @@ tailwind.config = {
 
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Khách hàng</h1>
+          <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Khách hàng</h1>
           <p class="mt-1 text-sm text-zinc-500">32 khách đang có hợp đồng</p>
         </div>
         <button onclick="wfToast('Mở biểu mẫu thêm khách hàng')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Thêm khách hàng</button>
@@ -735,7 +739,7 @@ tailwind.config = {
       <input type="text" placeholder="Tìm khách hàng"
              class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none">
 
-      <div class="overflow-x-auto md:rounded-xl md:border md:border-zinc-200 md:bg-white">
+      <div class="overflow-x-auto md:rounded-2xl md:border md:border-zinc-200 md:bg-white md:lh-card-shadow">
         <table class="stack w-full text-left text-sm">
           <thead class="border-b border-zinc-200 text-xs font-medium text-zinc-500">
             <tr>
@@ -814,7 +818,7 @@ tailwind.config = {
 
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Nhân viên &amp; Tổ</h1>
+          <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Nhân viên &amp; Tổ</h1>
           <p class="mt-1 text-sm text-zinc-500">24 nhân viên · 4 tổ</p>
         </div>
         <button onclick="wfToast('Mở biểu mẫu thêm tài khoản')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Thêm tài khoản</button>
@@ -823,7 +827,7 @@ tailwind.config = {
       <input type="text" placeholder="Tìm nhân viên"
              class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none">
 
-      <div class="overflow-x-auto md:rounded-xl md:border md:border-zinc-200 md:bg-white">
+      <div class="overflow-x-auto md:rounded-2xl md:border md:border-zinc-200 md:bg-white md:lh-card-shadow">
         <table class="stack w-full text-left text-sm">
           <thead class="border-b border-zinc-200 text-xs font-medium text-zinc-500">
             <tr>
@@ -898,18 +902,39 @@ tailwind.config = {
   <div class="app-shell" data-nav="dashboard">
     <div class="mx-auto flex max-w-[clamp(72rem,82vw,100rem)] flex-col gap-6 p-4 sm:p-6">
 
-      <div>
-        <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Tổng quan</h1>
-        <p class="mt-1 text-sm text-zinc-500">Tháng 10/2024</p>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Tổng quan</h1>
+          <p class="mt-1 text-sm text-zinc-500">Tháng 10/2024</p>
+        </div>
+        <div class="flex flex-col items-end gap-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1">
+              <button data-mode="month" class="period-mode-chip shrink-0 rounded-md bg-zinc-900 px-2.5 py-1 text-xs text-white">Theo tháng</button>
+              <button data-mode="range" class="period-mode-chip shrink-0 rounded-md border border-transparent px-2.5 py-1 text-xs text-zinc-600">Tùy chọn</button>
+            </div>
+            <input type="month" value="2024-10" data-period-picker="month" class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-mono text-zinc-700 focus:border-indigo-500 focus:outline-none">
+            <div data-period-picker="range" hidden style="display:none" class="flex items-center gap-1.5">
+              <input type="date" value="2024-10-01" class="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs font-mono text-zinc-700 focus:border-indigo-500 focus:outline-none">
+              <span class="text-xs text-zinc-400">&ndash;</span>
+              <input type="date" value="2024-10-31" class="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs font-mono text-zinc-700 focus:border-indigo-500 focus:outline-none">
+            </div>
+            <button onclick="wfToast('Đã làm mới dữ liệu')" class="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50">
+              <span class="material-symbols-outlined" style="font-size:16px">refresh</span>
+              Làm mới
+            </button>
+          </div>
+          <span class="text-xs text-zinc-400">08:00, 16/09/2026</span>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 
         <!-- Contract status breakdown — donut -->
-        <div onclick="wfShow('contracts')" class="cursor-pointer rounded-xl border border-zinc-200 bg-white p-4 hover:border-zinc-300">
+        <div onclick="wfShow('contracts')" class="flex cursor-pointer flex-col rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
           <div class="text-sm text-zinc-500">Trạng thái hợp đồng</div>
-          <div class="mt-3 flex items-center gap-4">
-            <svg viewBox="0 0 100 100" class="h-24 w-24 shrink-0">
+          <div class="mt-3 flex flex-1 items-center gap-4">
+            <svg viewBox="0 0 100 100" class="h-32 w-32 shrink-0">
               <circle cx="50" cy="50" r="40" fill="none" stroke="#f4f4f5" stroke-width="14"/>
               <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="14"
                 stroke-dasharray="209.4 251.3" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
@@ -920,7 +945,7 @@ tailwind.config = {
               <circle cx="50" cy="50" r="40" fill="none" stroke="#ef4444" stroke-width="14"
                 stroke-dasharray="5.2 251.3" stroke-dashoffset="-246.1" transform="rotate(-90 50 50)"/>
               <text x="50" y="47" text-anchor="middle" class="fill-zinc-900" style="font-size:20px;font-weight:600;font-family:ui-monospace,monospace">48</text>
-              <text x="50" y="61" text-anchor="middle" class="fill-zinc-400" style="font-size:8px">hợp đồng</text>
+              <text x="50" y="61" text-anchor="middle" class="fill-zinc-400" style="font-size:8px;font-family:ui-sans-serif,system-ui,sans-serif">hợp đồng</text>
             </svg>
             <ul class="flex flex-1 flex-col gap-1 text-xs">
               <li class="flex items-center justify-between"><span class="flex items-center gap-1.5 text-zinc-600"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Đang thực hiện</span><span class="font-mono text-zinc-900">40</span></li>
@@ -929,135 +954,362 @@ tailwind.config = {
               <li class="flex items-center justify-between"><span class="flex items-center gap-1.5 text-zinc-600"><span class="h-2 w-2 rounded-full bg-red-500"></span>Khiếu nại</span><span class="font-mono text-zinc-900">1</span></li>
             </ul>
           </div>
+          <div class="sr-only">48 hợp đồng: 40 đang thực hiện, 5 sắp hết hạn, 2 hết hạn, 1 khiếu nại.</div>
         </div>
 
-        <!-- Evidence completeness — gauge ring -->
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
-          <div class="text-sm text-zinc-500">Ca có đủ bằng chứng</div>
-          <div class="mt-3 flex items-center gap-4">
-            <svg viewBox="0 0 100 100" class="h-24 w-24 shrink-0">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="#f4f4f5" stroke-width="14"/>
-              <line x1="30.6" y1="23.3" x2="22.4" y2="12.0" stroke="#a1a1aa" stroke-width="2"/>
-              <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="14" stroke-linecap="round"
-                stroke-dasharray="236.3 251.3" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
-              <text x="50" y="47" text-anchor="middle" class="fill-emerald-700" style="font-size:18px;font-weight:600;font-family:ui-monospace,monospace">94%</text>
-              <text x="50" y="61" text-anchor="middle" class="fill-zinc-400" style="font-size:8px">81/86 ca</text>
+        <!-- Gia hạn + hủy — cùng 1 mẫu số (hợp đồng hết hạn 12 tháng qua: renewed +
+             expired + cancelled), 2 bullet bar cho 2 lát khác nhau của cùng nhóm đó.
+             Tách hủy khỏi gia hạn vì 2 tín hiệu rủi ro khác nhau: "hết hạn tự nhiên
+             không gia hạn" khác "khách chủ động hủy giữa chừng" — FR17. -->
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
+          <div class="flex items-baseline justify-between">
+            <div class="text-sm text-zinc-500">Gia hạn &amp; hủy hợp đồng</div>
+          </div>
+
+          <div class="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <span class="font-mono text-2xl font-semibold text-emerald-700">82%</span>
+              <div class="text-xs text-zinc-500">Gia hạn</div>
+            </div>
+            <div>
+              <span class="font-mono text-2xl font-semibold text-red-700">9%</span>
+              <div class="text-xs text-zinc-500">Hủy trước hạn</div>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="relative h-2.5 w-full rounded-full bg-zinc-100">
+              <div class="h-full rounded-full bg-emerald-500" style="width:82%"></div>
+              <div class="absolute inset-y-0 w-0.5 bg-zinc-900" style="left:80%" title="Mục tiêu gia hạn ≥80%"></div>
+            </div>
+            <div class="mt-1 flex items-center justify-between text-xs text-zinc-400">
+              <span>18/22 hợp đồng</span>
+              <span>Mục tiêu &ge;80%</span>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div class="relative h-2.5 w-full rounded-full bg-zinc-100">
+              <div class="h-full rounded-full bg-red-500" style="width:9%"></div>
+            </div>
+            <div class="mt-1 text-xs text-zinc-400">2/22 hợp đồng</div>
+          </div>
+          <div class="sr-only">12 tháng qua có 22 hợp đồng hết hạn: 18 gia hạn đúng hạn (82%, mục tiêu từ 80% trở lên), 2 bị khách hủy giữa chừng (9%), 2 hết hạn không gia hạn.</div>
+        </div>
+
+        <!-- New contracts signed — tiêu đề → số KPI + delta chip → sparkline chạm
+             mép dưới card (full-bleed: âm margin bù p-5, card overflow-hidden để bo
+             góc cắt chart). preserveAspectRatio="none" cho chart kéo hết chiều ngang
+             thay vì tự chèn khoảng trắng 2 bên; vector-effect="non-scaling-stroke"
+             giữ nét không bị méo khi kéo. Trailing window theo kỳ đang chọn ở period
+             picker (6 tháng khi xem theo tháng; toàn khoảng from-to khi tùy chọn). -->
+        <div onclick="wfShow('contracts')" class="flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
+          <div class="text-sm text-zinc-500">Hợp đồng ký mới</div>
+
+          <!-- Delta badge dùng đúng mẫu badge chuẩn của file (rounded-md, bg-{c}-50,
+               px-2 py-0.5, text-xs font-medium, text-{c}-700) thay vì pill riêng một
+               kiểu; icon Material đồng bộ icon set toàn file, ép 14px cho vừa badge.
+               Căn items-center (không phải baseline) để badge cân giữa cạnh số lớn. -->
+          <div class="mt-2 flex items-center gap-2">
+            <span class="font-mono text-4xl font-semibold leading-none text-indigo-700">2</span>
+            <span class="inline-flex items-center gap-0.5 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700" title="Giảm 50% so với cùng kỳ trước (4 hợp đồng)">
+              <span class="material-symbols-outlined" style="font-size:14px">arrow_downward</span>
+              <span class="font-mono">50%</span>
+            </span>
+          </div>
+
+          <div class="-mx-5 -mb-5 mt-6">
+            <svg viewBox="0 0 300 44" preserveAspectRatio="none" class="block h-11 w-full" aria-hidden="true">
+              <defs>
+                <linearGradient id="lhNewContractsFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#6366f1" stop-opacity="0.22"/>
+                  <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M16,26 L83,16 L150,36 L217,6 L284,26 L284,44 L16,44 Z" fill="url(#lhNewContractsFill)"/>
+              <path d="M16,26 L83,16 L150,36 L217,6 L284,26" fill="none" stroke="#6366f1" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
             </svg>
-            <div class="flex flex-1 flex-col gap-1 text-xs text-zinc-500">
-              <div>Ngưỡng cảnh báo: <span class="font-mono text-zinc-700">&lt;90%</span></div>
-            </div>
           </div>
-        </div>
-
-        <!-- Statement closing progress -->
-        <div onclick="wfShow('reconcile')" class="cursor-pointer rounded-xl border border-zinc-200 bg-white p-4 hover:border-zinc-300">
-          <div class="text-sm text-zinc-500">Bảng kê đã chốt</div>
-          <div class="mt-3 flex items-baseline justify-between">
-            <span class="font-mono text-2xl font-semibold">41 / 48</span>
-            <span class="font-mono text-sm text-zinc-500">85%</span>
-          </div>
-          <div class="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-zinc-100">
-            <div class="h-full rounded-full bg-indigo-600" style="width:85%"></div>
-          </div>
-          <div class="mt-2 text-xs text-zinc-500">7 hợp đồng chờ bằng chứng</div>
+          <div class="sr-only">Hợp đồng ký mới kỳ đang xem: 2 hợp đồng, giảm 50% so với cùng kỳ trước (4 hợp đồng). Xu hướng theo kỳ đang chọn: tháng 6 có 2, tháng 7 có 3, tháng 8 có 1, tháng 9 có 4, tháng 10 có 2.</div>
         </div>
 
       </div>
 
-      <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <!-- ===== BENTO: TÀI CHÍNH =====
+           Hero tile (2/3) = doanh thu, số liệu quyết định trước tiên; cột phải (1/3)
+           xếp chồng các sub metric bổ trợ. Không để mọi tile bằng nhau — bằng nhau
+           thì thành card layout chứ không phải bento; hierarchy đến từ kích thước
+           theo mức quan trọng của dữ liệu. Mobile: 1 cột, hero trước, sub theo sau. -->
+      <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
 
-        <!-- Revenue trend — line/area vs projected -->
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
-          <div class="flex items-baseline justify-between">
-            <div class="text-sm text-zinc-500">Xu hướng doanh thu</div>
-            <div class="flex items-center gap-3 text-[10px] text-zinc-400">
-              <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-indigo-600"></span>Thực tế</span>
-              <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full border border-indigo-600 bg-white"></span>Dự kiến</span>
+        <!-- HERO — Doanh thu theo kỳ đang chọn. Không gắn nhãn "theo tháng": nhãn
+             trục và mốc so sánh chạy theo period picker — xem theo tháng thì so với
+             tháng trước, xem khoảng tùy chọn thì so với cùng kỳ liền trước cùng độ
+             dài. Line trend không zero-based: thang thu hẹp
+             để nhìn rõ dao động, khác bar buộc phải bắt đầu từ 0. Tách khỏi biên lợi
+             nhuận (không gộp 1 chart 2 trục): 2 đại lượng khác nhau, ghép 2 trục dễ
+             gây hiểu lầm tương quan giả (Datawrapper, ONS). -->
+        <div class="flex flex-col rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow lg:col-span-2">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <div class="text-sm text-zinc-500">Doanh thu</div>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="font-mono text-4xl font-semibold leading-none text-indigo-700">245tr</span>
+                <span class="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700" title="Vượt kế hoạch 220 triệu">
+                  <span class="material-symbols-outlined" style="font-size:14px">arrow_upward</span>
+                  <span class="font-mono">11%</span>
+                </span>
+              </div>
+              <div class="mt-1 text-xs text-zinc-400">Kỳ đang xem</div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-[10px] text-zinc-400">
+              <span class="flex items-center gap-1"><span class="h-1.5 w-3 rounded-full bg-indigo-600"></span>Thực tế</span>
+              <span class="flex items-center gap-1"><span class="h-1.5 w-3 rounded-full border border-indigo-600 bg-white"></span>Dự kiến</span>
             </div>
           </div>
-          <svg viewBox="0 0 600 200" class="mt-2 w-full">
-            <text x="4" y="14" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">250tr</text>
-            <text x="4" y="174" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">180tr</text>
-            <line x1="30" y1="170" x2="590" y2="170" stroke="#e4e4e7" stroke-width="1"/>
-            <path d="M30,170 L30,101.4 L142,67.1 L254,128.9 L366,55.7 L478,37.4 L478,170 Z" fill="#4f46e5" opacity="0.08"/>
-            <path d="M30,101.4 L142,67.1 L254,128.9 L366,55.7 L478,37.4" fill="none" stroke="#4f46e5" stroke-width="2"/>
-            <path d="M478,37.4 L590,21.4" fill="none" stroke="#4f46e5" stroke-width="2" stroke-dasharray="4,3"/>
-            <circle cx="30" cy="101.4" r="3" fill="#4f46e5"/>
-            <circle cx="142" cy="67.1" r="3" fill="#4f46e5"/>
-            <circle cx="254" cy="128.9" r="3" fill="#4f46e5"/>
-            <circle cx="366" cy="55.7" r="3" fill="#4f46e5"/>
-            <circle cx="478" cy="37.4" r="3" fill="#4f46e5"/>
-            <circle cx="590" cy="21.4" r="3.5" fill="white" stroke="#4f46e5" stroke-width="2"/>
-            <text x="590" y="14" text-anchor="end" class="fill-indigo-700" style="font-size:10px;font-weight:600;font-family:ui-monospace,monospace">245tr</text>
-            <text x="30" y="187" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T5</text>
-            <text x="142" y="187" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T6</text>
-            <text x="254" y="187" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T7</text>
-            <text x="366" y="187" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T8</text>
-            <text x="478" y="187" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T9</text>
-            <text x="590" y="187" text-anchor="end" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T10 (DK)</text>
+
+          <svg viewBox="0 0 600 150" class="mt-4 w-full flex-1" preserveAspectRatio="xMidYMid meet">
+            <line x1="20" y1="120" x2="590" y2="120" stroke="#e4e4e7" stroke-width="1"/>
+            <line x1="20" y1="76.8" x2="590" y2="76.8" stroke="#a1a1aa" stroke-width="1.5" stroke-dasharray="5,4"/>
+            <text x="24" y="72" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">220</text>
+            <path d="M40,90.6 L144,64.7 L248,111.4 L352,56.1 L456,42.3" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M456,42.3 L560,33.6" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-dasharray="5,4" stroke-linecap="round"/>
+            <circle cx="40"  cy="90.6"  r="3.5" fill="#4f46e5"/>
+            <circle cx="144" cy="64.7"  r="3.5" fill="#4f46e5"/>
+            <circle cx="248" cy="111.4" r="3.5" fill="#4f46e5"/>
+            <circle cx="352" cy="56.1"  r="3.5" fill="#4f46e5"/>
+            <circle cx="456" cy="42.3"  r="3.5" fill="#4f46e5"/>
+            <circle cx="560" cy="33.6"  r="4.5" fill="white" stroke="#4f46e5" stroke-width="2.5"/>
+            <text x="560" y="22" text-anchor="middle" class="fill-indigo-700" style="font-size:11px;font-weight:600;font-family:ui-monospace,monospace">245</text>
+
+            <text x="40"  y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T5</text>
+            <text x="144" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T6</text>
+            <text x="248" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T7</text>
+            <text x="352" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T8</text>
+            <text x="456" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T9</text>
+            <text x="560" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T10</text>
           </svg>
+          <div class="sr-only">Doanh thu theo kỳ: tháng 5 khoảng 212 triệu, tháng 6 227 triệu, tháng 7 200 triệu, tháng 8 232 triệu, tháng 9 240 triệu, tháng 10 dự kiến 245 triệu, vượt kế hoạch 220 triệu 11%.</div>
         </div>
 
-        <!-- Disputed shifts by site — where problems cluster -->
-        <div onclick="wfShow('alerts')" class="cursor-pointer rounded-xl border border-zinc-200 bg-white p-4 hover:border-zinc-300">
-          <div class="flex items-baseline justify-between">
-            <div class="text-sm text-zinc-500">Ca khiếu nại</div>
-            <div class="font-mono text-lg font-semibold text-red-700">3</div>
-          </div>
-          <div class="mt-3 flex flex-col gap-3">
-            <div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="truncate">Chung cư Golden Park</span>
-                <span class="font-mono text-xs text-zinc-500">2 ca</span>
-              </div>
-              <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100">
-                <div class="h-full rounded-full bg-red-500" style="width:100%"></div>
-              </div>
-            </div>
-            <div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="truncate">Keangnam Landmark 72</span>
-                <span class="font-mono text-xs text-zinc-500">1 ca</span>
-              </div>
-              <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100">
-                <div class="h-full rounded-full bg-red-500" style="width:50%"></div>
-              </div>
-            </div>
-            <div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="truncate">Vinhomes Skylake</span>
-                <span class="font-mono text-xs text-zinc-500">0 ca</span>
-              </div>
-              <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100">
-                <div class="h-full rounded-full bg-zinc-300" style="width:2%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- SUB column — metric bổ trợ, xếp chồng, thấp hơn hero. -->
+        <div class="flex flex-col gap-3">
 
+          <!-- Lợi nhuận tuyệt đối tháng đang xem — đọc kèm biên, cùng cột tài chính. -->
+          <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
+            <div class="text-sm text-zinc-500">Lợi nhuận</div>
+            <div class="mt-2 flex items-baseline justify-between">
+              <span class="font-mono text-2xl font-semibold text-zinc-900">54,9tr</span>
+              <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">Ước tính</span>
+            </div>
+            <div class="mt-2 flex items-center justify-between text-xs text-zinc-500">
+              <span>Doanh thu <span class="font-mono text-zinc-700">245tr</span></span>
+              <span>Chi phí <span class="font-mono text-zinc-700">190,1tr</span></span>
+            </div>
+            <div class="sr-only">Lợi nhuận kỳ đang xem ước tính 54,9 triệu: doanh thu 245 triệu trừ chi phí ước tính 190,1 triệu.</div>
+          </div>
+
+          <!-- Biên lợi nhuận (%) — ratio nên tách trục riêng khỏi trục tiền. Line liền
+               mạch vì FR28 đã lấp mọi tháng; điểm ước tính vẽ rỗng để phân biệt số thật. -->
+          <div class="flex flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
+            <div class="text-sm text-zinc-500">Biên lợi nhuận</div>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="font-mono text-2xl font-semibold leading-none text-emerald-700">22,4%</span>
+              <span class="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700" title="Tăng 3,2 điểm so với cùng kỳ trước">
+                <span class="material-symbols-outlined" style="font-size:14px">arrow_upward</span>
+                <span class="font-mono">3,2%</span>
+              </span>
+            </div>
+            <svg viewBox="0 0 300 60" class="mt-3 w-full flex-1" preserveAspectRatio="xMidYMid meet">
+              <path d="M16,40.9 L69.6,37.7 L123.2,45.7 L176.8,32.9 L230.4,25.9 L284,10.8" fill="none" stroke="#10b981" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+              <circle cx="16"    cy="40.9" r="3.5" fill="white" stroke="#10b981" stroke-width="2"/>
+              <circle cx="69.6"  cy="37.7" r="2.5" fill="#10b981"/>
+              <circle cx="123.2" cy="45.7" r="2.5" fill="#10b981"/>
+              <circle cx="176.8" cy="32.9" r="3.5" fill="white" stroke="#10b981" stroke-width="2"/>
+              <circle cx="230.4" cy="25.9" r="2.5" fill="#10b981"/>
+              <circle cx="284"   cy="10.8" r="3.5" fill="white" stroke="#10b981" stroke-width="2"/>
+            </svg>
+            <div class="mt-2 flex items-center gap-1 text-[10px] text-zinc-400">
+              <span class="inline-block h-2 w-2 rounded-full border border-emerald-500 bg-white"></span>
+              Uớc tính
+            </div>
+            <div class="sr-only">Biên lợi nhuận theo kỳ: tháng 5 ước tính 16,0%, tháng 6 16,7% số thật, tháng 7 15,0% số thật, tháng 8 ước tính 17,7%, tháng 9 19,2% số thật, tháng 10 ước tính 22,4% — xu hướng tăng dần.</div>
+          </div>
+
+          <!-- Statement closing progress — dòng tiền chốt được bao nhiêu, cùng nhóm tài chính. -->
+          <div onclick="wfShow('reconcile')" class="cursor-pointer rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
+            <div class="text-sm text-zinc-500">Bảng kê đã chốt</div>
+            <div class="mt-2 flex items-baseline justify-between">
+              <span class="font-mono text-2xl font-semibold">41 / 48</span>
+              <span class="font-mono text-sm text-zinc-500">85%</span>
+            </div>
+            <div class="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-zinc-100">
+              <div class="h-full rounded-full bg-indigo-600" style="width:85%"></div>
+            </div>
+            <div class="mt-2 text-xs text-zinc-500">7 hợp đồng đang chờ</div>
+          </div>
+
+        </div>
       </div>
 
-      <div class="flex w-full flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 sm:w-1/2">
-        <div class="flex items-center justify-between">
-          <div class="text-sm font-medium text-zinc-500">Cần chú ý</div>
-          <button onclick="wfShow('alerts')" class="text-xs font-medium text-indigo-600 hover:text-indigo-700">Xem tất cả cảnh báo →</button>
+      <!-- ===== THỐNG KÊ CA — 3 tile ngang cấp =====
+           Mẫu số của mọi tỉ lệ ở đây là ca THEO LỊCH trong kỳ (104), tách làm 3 lát
+           không chồng nhau: đã làm / chưa đến lịch / trễ-lỡ. Hai tỉ lệ chất lượng
+           (hoàn thành, khiếu nại) lấy mẫu số nhỏ hơn là số ca ĐÃ LÀM (86), vì chấm
+           điểm chất lượng trên ca chưa tới lịch thì vô nghĩa — mỗi con số ghi rõ
+           mẫu số của nó ngay cạnh để không đọc nhầm giữa 2 mẫu số. -->
+      <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
+
+        <!-- Tổng quan ca trong kỳ — donut cùng mẫu với card trạng thái hợp đồng
+             (r=40, chu vi 251.3, 4 lát cộng đúng 100% mẫu số 104 ca theo lịch).
+             Trễ hẹn = lịch đã qua nhưng chưa xong. Hoàn thành = xong đúng hạn và
+             không khiếu nại. 3 dòng tỉ lệ bên dưới bỏ lát "chưa tới lịch" ra khỏi
+             mẫu số (104 - 13 = 91 ca đã đến lịch) nên cộng đúng 100%: chấm điểm một
+             ca chưa tới ngày là vô nghĩa, giữ nó trong mẫu số sẽ dìm mọi tỉ lệ. -->
+        <div onclick="wfShow('reconcile')" class="flex cursor-pointer flex-col rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
+          <div class="text-sm text-zinc-500">Thống kê ca kỳ này</div>
+
+          <div class="mt-3 flex items-center gap-4">
+            <svg viewBox="0 0 100 100" class="h-32 w-32 shrink-0">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#f4f4f5" stroke-width="14"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="14"
+                stroke-dasharray="188.5 251.3" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="14"
+                stroke-dasharray="19.3 251.3" stroke-dashoffset="-188.5" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#a1a1aa" stroke-width="14"
+                stroke-dasharray="31.4 251.3" stroke-dashoffset="-207.8" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#ef4444" stroke-width="14"
+                stroke-dasharray="12.1 251.3" stroke-dashoffset="-239.2" transform="rotate(-90 50 50)"/>
+              <text x="50" y="47" text-anchor="middle" class="fill-zinc-900" style="font-size:20px;font-weight:600;font-family:ui-monospace,monospace">104</text>
+              <text x="50" y="61" text-anchor="middle" class="fill-zinc-400" style="font-size:8px;font-family:ui-sans-serif,system-ui,sans-serif">ca theo lịch</text>
+            </svg>
+            <ul class="flex flex-1 flex-col gap-1 text-xs">
+              <li class="flex items-center justify-between"><span class="flex items-center gap-1.5 text-zinc-600"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Hoàn thành</span><span class="font-mono text-zinc-900">78</span></li>
+              <li class="flex items-center justify-between"><span class="flex items-center gap-1.5 text-zinc-600"><span class="h-2 w-2 rounded-full bg-amber-500"></span>Trễ hẹn</span><span class="font-mono text-zinc-900">8</span></li>
+              <li class="flex items-center justify-between"><span class="flex items-center gap-1.5 text-zinc-600"><span class="h-2 w-2 rounded-full bg-zinc-400"></span>Chưa tới lịch</span><span class="font-mono text-zinc-900">13</span></li>
+              <li class="flex items-center justify-between"><span class="flex items-center gap-1.5 text-zinc-600"><span class="h-2 w-2 rounded-full bg-red-500"></span>Bị khiếu nại</span><span class="font-mono text-zinc-900">5</span></li>
+            </ul>
+          </div>
+
+          <div class="mt-4 border-t border-zinc-100 pt-4">
+            <div class="text-xs text-zinc-400">Trên 91 ca đến lịch</div>
+
+            <div class="mt-2">
+              <div class="flex items-baseline justify-between">
+                <span class="text-sm text-zinc-500">Hoàn thành</span>
+                <span class="font-mono text-sm font-semibold text-emerald-700">85,7%</span>
+              </div>
+              <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+                <div class="h-full rounded-full bg-emerald-500" style="width:85.7%"></div>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <div class="flex items-baseline justify-between">
+                <span class="text-sm text-zinc-500">Trễ hẹn</span>
+                <span class="font-mono text-sm font-semibold text-amber-700">8,8%</span>
+              </div>
+              <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+                <div class="h-full rounded-full bg-amber-500" style="width:8.8%"></div>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <div class="flex items-baseline justify-between">
+                <span class="text-sm text-zinc-500">Bị khiếu nại</span>
+                <span class="font-mono text-sm font-semibold text-red-700">5,5%</span>
+              </div>
+              <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+                <div class="h-full rounded-full bg-red-500" style="width:5.5%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="sr-only">Kỳ này có 104 ca theo lịch: 78 ca hoàn thành, 8 ca trễ hẹn tức lịch đã qua nhưng chưa xong, 13 ca chưa đến lịch, 5 ca bị khiếu nại. Trên 91 ca đã đến lịch: hoàn thành 85,7%, trễ hẹn 8,8%, bị khiếu nại 5,5% — ba tỉ lệ cộng đúng 100%.</div>
         </div>
 
-        <div onclick="wfShow('contract-detail')" class="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-zinc-50">
-          <div class="flex min-w-0 items-center gap-2 text-sm">
-            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"></span>
-            <span class="truncate">Keangnam Landmark 72</span>
+        <!-- Cùng bộ chỉ số nhưng bổ theo điểm dịch vụ — thấy vấn đề tụ ở đâu.
+             Bar phủ 100% ca theo lịch của site (hoàn thành / khiếu nại / trễ hẹn /
+             chưa tới lịch); % bên phải là hoàn thành trên ca đã đến lịch, cùng mẫu
+             số với 3 dòng tỉ lệ ở card tổng quan. Cộng dọc khớp tổng: 78 hoàn
+             thành, 5 khiếu nại, 8 trễ hẹn, 13 chưa tới, 104 theo lịch. -->
+        <div onclick="wfShow('reconcile')" class="flex cursor-pointer flex-col rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
+          <div class="flex items-baseline justify-between">
+            <div class="text-sm text-zinc-500">Theo điểm dịch vụ</div>
           </div>
-          <span class="shrink-0 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Còn 18 ngày</span>
+
+          <div class="mt-3 flex flex-col gap-4">
+
+            <div>
+              <div class="flex items-baseline justify-between gap-2 text-sm">
+                <span class="truncate">Chung cư Golden Park</span>
+                <span class="shrink-0 font-mono font-semibold text-amber-700">81,6%</span>
+              </div>
+              <div class="mt-1.5 flex h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+                <div class="h-full bg-emerald-500" style="width:73.8%" title="Hoàn thành: 31 ca"></div>
+                <div class="h-full bg-red-500" style="width:7.1%" title="Bị khiếu nại: 3 ca"></div>
+                <div class="h-full bg-amber-500" style="width:9.5%" title="Trễ hẹn: 4 ca"></div>
+                <div class="h-full bg-zinc-300" style="width:9.5%" title="Chưa đến lịch: 4 ca"></div>
+              </div>
+              <div class="mt-1 text-xs text-zinc-400">31/38 ca đã đến lịch &middot; 3 khiếu nại &middot; 4 trễ hẹn</div>
+            </div>
+
+            <div>
+              <div class="flex items-baseline justify-between gap-2 text-sm">
+                <span class="truncate">Keangnam Landmark 72</span>
+                <span class="shrink-0 font-mono font-semibold text-emerald-700">88,2%</span>
+              </div>
+              <div class="mt-1.5 flex h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+                <div class="h-full bg-emerald-500" style="width:78.9%" title="Hoàn thành: 30 ca"></div>
+                <div class="h-full bg-red-500" style="width:5.3%" title="Bị khiếu nại: 2 ca"></div>
+                <div class="h-full bg-amber-500" style="width:5.3%" title="Trễ hẹn: 2 ca"></div>
+                <div class="h-full bg-zinc-300" style="width:10.5%" title="Chưa đến lịch: 4 ca"></div>
+              </div>
+              <div class="mt-1 text-xs text-zinc-400">30/34 ca đã đến lịch &middot; 2 khiếu nại &middot; 2 trễ hẹn</div>
+            </div>
+
+            <div>
+              <div class="flex items-baseline justify-between gap-2 text-sm">
+                <span class="truncate">Vinhomes Skylake</span>
+                <span class="shrink-0 font-mono font-semibold text-emerald-700">89,5%</span>
+              </div>
+              <div class="mt-1.5 flex h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+                <div class="h-full bg-emerald-500" style="width:70.8%" title="Hoàn thành: 17 ca"></div>
+                <div class="h-full bg-amber-500" style="width:8.3%" title="Trễ hẹn: 2 ca"></div>
+                <div class="h-full bg-zinc-300" style="width:20.9%" title="Chưa đến lịch: 5 ca"></div>
+              </div>
+              <div class="mt-1 text-xs text-zinc-400">17/19 ca đã đến lịch &middot; 0 khiếu nại &middot; 2 trễ hẹn</div>
+            </div>
+
+          </div>
+          <div class="sr-only">Theo điểm dịch vụ, tỉ lệ hoàn thành tính trên ca đã đến lịch. Chung cư Golden Park: 42 ca theo lịch, 31 ca hoàn thành trên 38 ca đã đến lịch tức 81,6%, 3 ca bị khiếu nại, 4 ca trễ hẹn, 4 ca chưa đến lịch. Keangnam Landmark 72: 38 ca theo lịch, 30 ca hoàn thành trên 34 ca đã đến lịch tức 88,2%, 2 ca bị khiếu nại, 2 ca trễ hẹn, 4 ca chưa đến lịch. Vinhomes Skylake: 24 ca theo lịch, 17 ca hoàn thành trên 19 ca đã đến lịch tức 89,5%, không có khiếu nại, 2 ca trễ hẹn, 5 ca chưa đến lịch.</div>
         </div>
 
-        <div onclick="wfShow('shift-detail')" class="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-zinc-50">
-          <div class="flex min-w-0 items-center gap-2 text-sm">
-            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500"></span>
-            <span class="truncate">Chung cư Golden Park</span>
+        <!-- Cần chú ý — giữ nguyên nội dung, đứng ngang cấp 2 card thống kê. -->
+        <div class="flex flex-col rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
+          <div class="flex items-baseline justify-between">
+            <div class="text-sm text-zinc-500">Cần chú ý</div>
+            <button onclick="wfShow('alerts')" class="text-xs font-medium text-indigo-600 hover:text-indigo-700">Xem tất cả →</button>
           </div>
-          <span class="shrink-0 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">Khiếu nại</span>
+
+          <div class="mt-3 flex flex-col gap-1">
+            <div onclick="wfShow('contract-detail')" class="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-zinc-50">
+              <div class="flex min-w-0 items-center gap-2 text-sm">
+                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"></span>
+                <span class="truncate">Keangnam Landmark 72</span>
+              </div>
+              <span class="shrink-0 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Còn 18 ngày</span>
+            </div>
+
+            <div onclick="wfShow('shift-detail')" class="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-1.5 hover:bg-zinc-50">
+              <div class="flex min-w-0 items-center gap-2 text-sm">
+                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500"></span>
+                <span class="truncate">Chung cư Golden Park</span>
+              </div>
+              <span class="shrink-0 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">Khiếu nại</span>
+            </div>
+          </div>
         </div>
+
       </div>
 
     </div>
@@ -1070,7 +1322,7 @@ tailwind.config = {
     <div class="mx-auto flex max-w-[clamp(72rem,82vw,100rem)] flex-col gap-6 p-4 sm:p-6">
 
       <div>
-        <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Ca của tôi</h1>
+        <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Ca của tôi</h1>
         <p class="mt-1 text-sm text-zinc-500">Nguyễn Văn Toàn · Tổ 1 — HVAC · tuần 43</p>
       </div>
 
@@ -1088,7 +1340,7 @@ tailwind.config = {
       <div class="flex flex-col gap-2">
         <div class="text-sm font-medium text-zinc-500">Sắp tới</div>
 
-        <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div>
             <div class="font-medium">Vinhomes Skylake</div>
             <div class="mt-0.5 text-sm text-zinc-500">Vệ sinh lưới lọc · T6 25/10 · 14:00</div>
@@ -1096,7 +1348,7 @@ tailwind.config = {
           <span class="rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">Chờ chạy</span>
         </div>
 
-        <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div>
             <div class="font-medium">Keangnam Landmark 72</div>
             <div class="mt-0.5 text-sm text-zinc-500">Bảo trì VRV đợt 2 · T2 28/10 · 08:30</div>
@@ -1107,7 +1359,7 @@ tailwind.config = {
 
       <div class="flex flex-col gap-2">
         <div class="text-sm font-medium text-zinc-500">Đã xong</div>
-        <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div>
             <div class="font-medium">BV ĐKQT Thu Cúc</div>
             <div class="mt-0.5 text-sm text-zinc-500">Khử khuẩn · T2 21/10 · đã gửi 3 ảnh + biên lai</div>
@@ -1128,20 +1380,20 @@ tailwind.config = {
     <div class="mx-auto flex max-w-[clamp(72rem,82vw,100rem)] flex-col gap-6 p-4 sm:p-6">
 
       <div>
-        <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Lịch tổ 1 — HVAC</h1>
+        <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Lịch tổ 1 — HVAC</h1>
         <p class="mt-1 font-mono text-sm text-zinc-500">Tuần 43 · 21/10 – 27/10</p>
       </div>
 
       <div class="grid grid-cols-3 gap-3">
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Ca tuần này</div>
           <div class="mt-2 font-mono text-2xl font-semibold">8</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Đã xong</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-emerald-700">3</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Chưa có người</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-amber-700">2</div>
         </div>
@@ -1159,7 +1411,7 @@ tailwind.config = {
           </div>
         </div>
 
-        <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div class="font-medium">Keangnam · Bảo trì VRV</div>
             <div class="mt-0.5 text-sm text-zinc-500">T2 21/10 · 08:30 · Nguyễn Văn Toàn</div>
@@ -1170,7 +1422,7 @@ tailwind.config = {
           </div>
         </div>
 
-        <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div class="font-medium">Skylake · Vệ sinh lưới lọc</div>
             <div class="mt-0.5 text-sm text-zinc-500">T6 25/10 · 14:00 · Nguyễn Văn Toàn</div>
@@ -1181,7 +1433,7 @@ tailwind.config = {
           </div>
         </div>
 
-        <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div class="font-medium">Discovery Complex · Vệ sinh kính</div>
             <div class="mt-0.5 text-sm text-zinc-500">T7 26/10 · 08:00 · Lê Văn Nam</div>
@@ -1205,26 +1457,26 @@ tailwind.config = {
     <div class="mx-auto flex max-w-[clamp(72rem,82vw,100rem)] flex-col gap-6 p-4 sm:p-6">
 
       <div>
-        <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Đối soát kỳ T10/2024</h1>
+        <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Đối soát kỳ T10/2024</h1>
         <p class="mt-1 text-sm text-zinc-500">So ca theo hợp đồng với ca thực tế đã có bằng chứng</p>
       </div>
 
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Khớp</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-emerald-700">41</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Lệch</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-amber-700">7</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Tiền chưa chốt</div>
           <div class="mt-2 font-mono text-2xl font-semibold">39tr</div>
         </div>
       </div>
 
-      <div class="overflow-x-auto md:rounded-xl md:border md:border-zinc-200 md:bg-white">
+      <div class="overflow-x-auto md:rounded-2xl md:border md:border-zinc-200 md:bg-white md:lh-card-shadow">
         <table class="stack w-full text-left text-sm">
           <thead class="border-b border-zinc-200 text-xs font-medium text-zinc-500">
             <tr>
@@ -1314,7 +1566,7 @@ tailwind.config = {
         <button onclick="wfShow('contracts')" class="text-sm text-zinc-500 hover:text-zinc-900">← Hợp đồng</button>
         <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Keangnam Landmark 72</h1>
+            <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Keangnam Landmark 72</h1>
             <p class="mt-1 font-mono text-sm text-zinc-500">HĐ-2024-089 · 15/01/2024 – 15/11/2024</p>
           </div>
           <div class="flex gap-2">
@@ -1325,21 +1577,21 @@ tailwind.config = {
       </div>
 
       <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Hạn hợp đồng</div>
           <div class="mt-2 font-mono text-2xl font-semibold text-amber-700">18</div>
           <div class="mt-1 text-sm text-zinc-500">ngày còn lại</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Giá trị / tháng</div>
           <div class="mt-2 font-mono text-2xl font-semibold">42tr</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Ca đã sinh</div>
           <div class="mt-2 font-mono text-2xl font-semibold">20</div>
           <div class="mt-1 text-sm text-zinc-500">cả kỳ hợp đồng</div>
         </div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm text-zinc-500">Kỳ này</div>
           <div class="mt-2 font-mono text-2xl font-semibold">1 / 2</div>
         </div>
@@ -1347,7 +1599,7 @@ tailwind.config = {
 
       <div class="flex flex-col gap-2">
         <div class="text-sm font-medium text-zinc-500">Địa điểm &amp; hạng mục dịch vụ</div>
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="font-medium">Tòa A — Phạm Hùng, Nam Từ Liêm</div>
           <table class="stack mt-3 w-full text-left text-sm">
             <thead class="border-b border-zinc-200 text-xs font-medium text-zinc-500">
@@ -1371,7 +1623,7 @@ tailwind.config = {
       <div class="flex flex-col gap-2">
         <div class="text-sm font-medium text-zinc-500">Ca làm</div>
 
-        <button onclick="wfShow('shift-detail')" class="flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 text-left hover:border-zinc-300">
+        <button onclick="wfShow('shift-detail')" class="flex w-full items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow text-left hover:border-zinc-300">
           <div>
             <div class="font-medium">Ca #22 — Bảo trì VRV đợt 1</div>
             <div class="mt-0.5 text-sm text-zinc-500">14/10/2024 · Nguyễn Văn Toàn</div>
@@ -1379,7 +1631,7 @@ tailwind.config = {
           <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Đã xong</span>
         </button>
 
-        <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div>
             <div class="font-medium">Ca #23 — Bảo trì VRV đợt 2</div>
             <div class="mt-0.5 text-sm text-zinc-500">28/10/2024 · Nguyễn Văn Toàn</div>
@@ -1394,7 +1646,7 @@ tailwind.config = {
 
       <div class="flex flex-col gap-2">
         <div class="text-sm font-medium text-zinc-500">Bảng kê</div>
-        <button onclick="wfShow('statement-preview')" class="flex w-full items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 text-left hover:border-zinc-300">
+        <button onclick="wfShow('statement-preview')" class="flex w-full items-center justify-between rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow text-left hover:border-zinc-300">
           <div>
             <div class="font-medium">Kỳ T10/2024</div>
             <div class="mt-0.5 text-sm text-zinc-500">1/2 ca có bằng chứng · 21.000.000đ</div>
@@ -1416,7 +1668,7 @@ tailwind.config = {
         <button onclick="wfBack()" class="text-sm text-zinc-500 hover:text-zinc-900">← Quay lại</button>
         <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Ca #22 — Keangnam Landmark 72</h1>
+            <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Ca #22 — Keangnam Landmark 72</h1>
             <p class="mt-1 font-mono text-sm text-zinc-500">HĐ-2024-089 · 14/10/2024 · Tòa A</p>
           </div>
           <span class="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Đã hoàn thành</span>
@@ -1424,7 +1676,7 @@ tailwind.config = {
       </div>
 
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div class="rounded-xl border border-zinc-200 bg-white p-4">
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
           <div class="text-sm font-medium">Bằng chứng</div>
           <div class="mt-3 grid grid-cols-3 gap-2">
             <div class="aspect-square rounded-lg bg-zinc-100"></div>
@@ -1438,7 +1690,7 @@ tailwind.config = {
         </div>
 
         <div class="flex flex-col gap-4">
-          <div class="rounded-xl border border-zinc-200 bg-white p-4">
+          <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
             <div class="text-sm font-medium">Ghi nhận tự động</div>
             <div class="mt-3 flex flex-col gap-1 text-sm text-zinc-600">
               <div class="flex justify-between"><span>Vị trí GPS</span><span class="font-mono">21.0176, 105.7833</span></div>
@@ -1468,7 +1720,7 @@ tailwind.config = {
         <button onclick="wfShow('billing')" class="text-sm text-zinc-500 hover:text-zinc-900">← Bảng kê</button>
         <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Bảng kê T10/2024</h1>
+            <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Bảng kê T10/2024</h1>
             <p class="mt-1 font-mono text-sm text-zinc-500">Keangnam Landmark 72 · HĐ-2024-089</p>
           </div>
           <div class="flex gap-2">
@@ -1482,7 +1734,7 @@ tailwind.config = {
         Kỳ chưa chốt được: ca 28/10 chưa có bằng chứng. Bảng kê tạm tính theo ca đã hoàn thành.
       </div>
 
-      <div class="overflow-x-auto md:rounded-xl md:border md:border-zinc-200 md:bg-white">
+      <div class="overflow-x-auto md:rounded-2xl md:border md:border-zinc-200 md:bg-white md:lh-card-shadow">
         <table class="stack w-full text-left text-sm">
           <thead class="border-b border-zinc-200 text-xs font-medium text-zinc-500">
             <tr>
@@ -1510,7 +1762,7 @@ tailwind.config = {
       </div>
 
       <div class="flex justify-end">
-        <div class="w-full rounded-xl border border-zinc-200 bg-white p-4 sm:w-64">
+        <div class="w-full rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:w-64">
           <div class="flex justify-between text-sm text-zinc-600"><span>Ca tính tiền</span><span class="font-mono">1 / 2</span></div>
           <div class="mt-2 flex items-baseline justify-between border-t border-zinc-100 pt-2">
             <span class="text-sm font-medium">Tạm tính</span>
@@ -1532,10 +1784,10 @@ tailwind.config = {
     <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
       <div>
         <button onclick="wfShow('schedule')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Lịch &amp; Điều phối</button>
-        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Phân công ca</h1>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Phân công ca</h1>
         <p class="mt-1 text-sm text-zinc-500">Giao ca cho nhân viên trong tổ, hoặc dời sang ngày khác.</p>
       </div>
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Ca làm</div>
         <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
           <div class="flex justify-between gap-4 border-b border-zinc-100 py-1.5"><dt class="text-zinc-500">Khách hàng</dt><dd>Keangnam Landmark 72</dd></div>
@@ -1545,7 +1797,7 @@ tailwind.config = {
         </dl>
       </div>
 
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Phân công</div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label class="flex flex-col gap-1.5">
@@ -1593,10 +1845,10 @@ tailwind.config = {
     <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
       <div>
         <button onclick="wfShow('shift-detail')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Chi tiết ca</button>
-        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Ghi nhận khiếu nại</h1>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Ghi nhận khiếu nại</h1>
         <p class="mt-1 text-sm text-zinc-500">Khách báo qua điện thoại; nhân sự ghi nhận thay. Ca bị loại khỏi bảng kê cho tới khi xử lý xong.</p>
       </div>
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Ca bị khiếu nại</div>
         <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
           <div class="flex justify-between gap-4 border-b border-zinc-100 py-1.5"><dt class="text-zinc-500">Ca</dt><dd>#2418 &middot; 14/10/2024</dd></div>
@@ -1604,7 +1856,7 @@ tailwind.config = {
         </dl>
       </div>
 
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Nội dung khiếu nại</div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label class="flex flex-col gap-1.5">
@@ -1652,10 +1904,10 @@ tailwind.config = {
     <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
       <div>
         <button onclick="wfShow('customers')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Khách hàng</button>
-        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Thêm khách hàng</h1>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Thêm khách hàng</h1>
         <p class="mt-1 text-sm text-zinc-500">Hồ sơ khách dùng chung cho mọi hợp đồng sau này.</p>
       </div>
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Thông tin khách</div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label class="flex flex-col gap-1.5">
@@ -1698,10 +1950,10 @@ tailwind.config = {
     <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
       <div>
         <button onclick="wfShow('employees')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Nhân viên &amp; Tổ</button>
-        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Thêm nhân viên</h1>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Thêm nhân viên</h1>
         <p class="mt-1 text-sm text-zinc-500">Tài khoản đăng nhập cho khối văn phòng; nhân sự hiện trường nhận ca qua link, không cần đăng nhập.</p>
       </div>
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Nhân sự</div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label class="flex flex-col gap-1.5">
@@ -1732,7 +1984,7 @@ tailwind.config = {
         </div>
       </div>
 
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Tổ</div>
         <label class="flex flex-col gap-1.5 sm:max-w-xs">
           <span class="text-sm text-zinc-600">Thuộc tổ</span>
@@ -1746,7 +1998,7 @@ tailwind.config = {
         <p class="text-xs text-zinc-500">Tổ quyết định nhân sự này thấy ca của ai. Quản lý trực tiếp là đường báo cáo, không quyết định tổ.</p>
       </div>
 
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Tài khoản</div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label class="flex flex-col gap-1.5">
@@ -1773,10 +2025,10 @@ tailwind.config = {
     <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
       <div>
         <button onclick="wfShow('employees')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Nhân viên &amp; Tổ</button>
-        <h1 class="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Tạo tổ</h1>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Tạo tổ</h1>
         <p class="mt-1 text-sm text-zinc-500">Tổ hiện trường. Tổ trưởng là thành viên giữ vai trò tổ trưởng.</p>
       </div>
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Thông tin tổ</div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label class="flex flex-col gap-1.5">
@@ -1790,7 +2042,7 @@ tailwind.config = {
         </div>
       </div>
 
-      <div class="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
         <div class="text-sm font-medium">Thành viên</div>
         <div class="flex flex-col gap-2">
           <label class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm">
@@ -1817,6 +2069,187 @@ tailwind.config = {
   </div>
 </section>
 
+<!-- ================= 20. TỔNG QUAN NỀN TẢNG (Platform Admin) ================= -->
+<section class="wf-screen" data-screen="platform-dashboard" data-title="Tổng quan nền tảng" hidden>
+  <div class="app-shell" data-nav="platform-dashboard">
+    <div class="mx-auto flex max-w-[clamp(72rem,82vw,100rem)] flex-col gap-6 p-4 sm:p-6">
+
+      <div class="flex items-baseline justify-between">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Tổng quan nền tảng</h1>
+          <p class="mt-1 text-sm text-zinc-500">Toàn bộ tenant &mdash; không đọc dữ liệu nghiệp vụ của tenant nào</p>
+        </div>
+        <div class="text-xs text-zinc-400">Cập nhật lúc 08:00, 16/09/2026</div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div onclick="wfShow('tenants')" class="cursor-pointer rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
+          <div class="text-sm text-zinc-500">Tổng số tenant</div>
+          <div class="mt-2 font-mono text-3xl font-semibold text-zinc-900">24</div>
+        </div>
+        <div onclick="wfShow('tenants')" class="cursor-pointer rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
+          <div class="text-sm text-zinc-500">Đang hoạt động</div>
+          <div class="mt-2 font-mono text-3xl font-semibold text-emerald-600">21</div>
+        </div>
+        <div onclick="wfShow('tenants')" class="cursor-pointer rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
+          <div class="text-sm text-zinc-500">Đang khóa</div>
+          <div class="mt-2 font-mono text-3xl font-semibold text-red-600">3</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+
+        <!-- Tenant growth — monthly bar chart, discrete buckets not a continuous trend -->
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
+          <div class="flex items-baseline justify-between">
+            <div class="text-sm text-zinc-500">Tenant mới</div>
+            <div class="font-mono text-xs text-zinc-400">3 tháng này</div>
+          </div>
+          <svg viewBox="0 0 300 140" class="mt-3 w-full">
+            <line x1="20" y1="110" x2="290" y2="110" stroke="#e4e4e7" stroke-width="1"/>
+            <rect x="30"  y="70" width="28" height="40" rx="3" fill="#c7d2fe"/>
+            <rect x="90"  y="86" width="28" height="24" rx="3" fill="#c7d2fe"/>
+            <rect x="150" y="54" width="28" height="56" rx="3" fill="#c7d2fe"/>
+            <rect x="210" y="94" width="28" height="16" rx="3" fill="#c7d2fe"/>
+            <rect x="248" y="46" width="28" height="64" rx="3" fill="#4f46e5"/>
+            <text x="44"  y="126" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T6</text>
+            <text x="104" y="126" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T7</text>
+            <text x="164" y="126" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T8</text>
+            <text x="224" y="126" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T9</text>
+            <text x="262" y="126" text-anchor="middle" class="fill-indigo-700" style="font-size:10px;font-weight:600;font-family:ui-sans-serif,system-ui,sans-serif">T10</text>
+            <text x="262" y="40" text-anchor="middle" class="fill-indigo-700" style="font-size:11px;font-weight:600;font-family:ui-monospace,monospace">3</text>
+          </svg>
+          <div class="sr-only">Tenant mới tạo theo kỳ: tháng 6 có 4, tháng 7 có 2, tháng 8 có 5, tháng 9 có 1, tháng 10 (đến nay) có 3.</div>
+        </div>
+
+        <!-- Recently onboarded tenants -->
+        <div class="rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow">
+          <div class="flex items-baseline justify-between">
+            <div class="text-sm text-zinc-500">Tenant mới tạo gần đây</div>
+            <button onclick="wfShow('tenants')" class="text-xs font-medium text-indigo-600 hover:text-indigo-700">Xem tất cả &rarr;</button>
+          </div>
+          <table class="mt-3 w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs text-zinc-400">
+                <th class="pb-1.5 font-normal">Tenant</th>
+                <th class="pb-1.5 font-normal">Trạng thái</th>
+                <th class="pb-1.5 font-normal text-right">Ngày tạo</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-100">
+              <tr>
+                <td class="py-1.5 truncate">Vệ sinh công nghiệp Thành Đạt</td>
+                <td class="py-1.5"><span class="rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">Hoạt động</span></td>
+                <td class="py-1.5 text-right font-mono text-xs text-zinc-500">02/10/2026</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 truncate">Dịch vụ sạch An Phú</td>
+                <td class="py-1.5"><span class="rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">Hoạt động</span></td>
+                <td class="py-1.5 text-right font-mono text-xs text-zinc-500">28/09/2026</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 truncate">Vệ sinh Miền Nam</td>
+                <td class="py-1.5"><span class="rounded-md bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-700">Đang khóa</span></td>
+                <td class="py-1.5 text-right font-mono text-xs text-zinc-500">15/09/2026</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= 21. CÔNG TY / TENANT (Platform Admin) ================= -->
+<section class="wf-screen" data-screen="tenants" data-title="Công ty (Tenant)" hidden>
+  <div class="app-shell" data-nav="tenants">
+    <div class="mx-auto flex max-w-[clamp(72rem,82vw,100rem)] flex-col gap-4 p-4 sm:p-6">
+
+      <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">Công ty (Tenant)</h1>
+        <button onclick="wfShow('new-tenant')" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">+ Tạo tenant</button>
+      </div>
+
+      <div class="overflow-x-auto rounded-2xl border border-zinc-200 bg-white lh-card-shadow">
+        <table class="w-full min-w-[560px] text-sm">
+          <thead>
+            <tr class="border-b border-zinc-200 text-left text-xs text-zinc-400">
+              <th class="px-4 py-2.5 font-normal">Tên công ty</th>
+              <th class="px-4 py-2.5 font-normal">Director đầu tiên</th>
+              <th class="px-4 py-2.5 font-normal">Trạng thái</th>
+              <th class="px-4 py-2.5 font-normal">Ngày tạo</th>
+              <th class="px-4 py-2.5 font-normal text-right">Hành động</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100">
+            <tr>
+              <td class="px-4 py-2.5">Vệ sinh công nghiệp Thành Đạt</td>
+              <td class="px-4 py-2.5 text-zinc-500">hoang.tm</td>
+              <td class="px-4 py-2.5"><span class="rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">Hoạt động</span></td>
+              <td class="px-4 py-2.5 font-mono text-xs text-zinc-500">02/10/2026</td>
+              <td class="px-4 py-2.5 text-right"><button onclick="wfToast('Đã khóa tenant')" class="text-xs font-medium text-red-600 hover:text-red-700">Khóa</button></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2.5">Dịch vụ sạch An Phú</td>
+              <td class="px-4 py-2.5 text-zinc-500">an.pt</td>
+              <td class="px-4 py-2.5"><span class="rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700">Hoạt động</span></td>
+              <td class="px-4 py-2.5 font-mono text-xs text-zinc-500">28/09/2026</td>
+              <td class="px-4 py-2.5 text-right"><button onclick="wfToast('Đã khóa tenant')" class="text-xs font-medium text-red-600 hover:text-red-700">Khóa</button></td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2.5">Vệ sinh Miền Nam</td>
+              <td class="px-4 py-2.5 text-zinc-500">nam.vs</td>
+              <td class="px-4 py-2.5"><span class="rounded-md bg-red-50 px-1.5 py-0.5 text-xs font-medium text-red-700">Đang khóa</span></td>
+              <td class="px-4 py-2.5 font-mono text-xs text-zinc-500">15/09/2026</td>
+              <td class="px-4 py-2.5 text-right"><button onclick="wfToast('Đã mở lại tenant')" class="text-xs font-medium text-indigo-600 hover:text-indigo-700">Mở lại</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="wf-screen" data-screen="new-tenant" data-title="Tạo tenant" hidden>
+  <div class="app-shell" data-nav="tenants">
+    <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
+      <div>
+        <button onclick="wfShow('tenants')" class="text-sm text-zinc-500 hover:text-zinc-900">&larr; Công ty (Tenant)</button>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Tạo tenant</h1>
+        <p class="mt-1 text-sm text-zinc-500">Tạo công ty vận hành mới cùng tài khoản Director đầu tiên &mdash; FR23.</p>
+      </div>
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
+        <div class="text-sm font-medium">Công ty</div>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm text-zinc-600">Tên công ty</span>
+          <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="Vệ sinh công nghiệp Thành Đạt">
+        </label>
+      </div>
+      <div class="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow sm:p-5">
+        <div class="text-sm font-medium">Tài khoản Director đầu tiên</div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Tên đăng nhập</span>
+            <input class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="hoang.tm">
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-sm text-zinc-600">Mật khẩu</span>
+            <input type="password" class="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+          </label>
+        </div>
+        <p class="text-xs text-zinc-500">Tenant mới chỉ có đúng một tài khoản này &mdash; mọi nhân viên, khách hàng, hợp đồng khác do chính Director đó tạo sau.</p>
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <button onclick="wfShow('tenants')" class="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">H&#7911;y</button>
+        <button onclick="wfSave('Đã tạo tenant','tenants')" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Tạo tenant</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <div id="wf-toast" class="pointer-events-none fixed bottom-6 left-1/2 z-[1000] -translate-x-1/2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm text-white opacity-0 transition-opacity" hidden></div>
 
 <script>
@@ -1831,7 +2264,9 @@ var NAV = {
   reconcile:     { icon: 'fact_check',      label: 'Đối soát' },
   alerts:        { icon: 'notifications',   label: 'Cảnh báo', badge: '7' },
   customers:     { icon: 'apartment',       label: 'Khách hàng' },
-  employees:     { icon: 'group',           label: 'Nhân viên & Tổ' }
+  employees:     { icon: 'group',           label: 'Nhân viên & Tổ' },
+  'platform-dashboard': { icon: 'monitoring', label: 'Tổng quan nền tảng' },
+  tenants:       { icon: 'domain',          label: 'Công ty (Tenant)' }
 };
 
 // Nhóm menu theo khu vực nghiệp vụ — chỉ hiện tiêu đề nhóm khi vai trò đó có
@@ -1865,7 +2300,10 @@ var ROLES = {
                nav: ['team-shifts', 'alerts'] },
   employee:  { name: 'Nguyễn Văn Toàn', initials: 'NT', user: 'toan.nv', title: 'Nhân viên · Tổ 1',
                home: 'my-shifts',
-               nav: ['my-shifts'] }
+               nav: ['my-shifts'] },
+  platform_admin: { name: 'Đỗ Anh Khoa', initials: 'DK', user: 'khoa.da', title: 'Platform Admin',
+               home: 'platform-dashboard',
+               nav: ['platform-dashboard', 'tenants'] }
 };
 
 // Màn hình nào vai trò nào được mở — gồm cả màn không nằm trên sidebar (tạo hợp đồng, khiếu nại, hiện trường)
@@ -1891,7 +2329,10 @@ var SCREEN_ROLES = {
   'new-customer':     ['director', 'manager'],
   'new-employee':     ['director'],
   'new-team':         ['director'],
-  login:              ['director', 'manager', 'accountant', 'team_lead', 'employee']
+  'platform-dashboard': ['platform_admin'],
+  tenants:            ['platform_admin'],
+  'new-tenant':       ['platform_admin'],
+  login:              ['director', 'manager', 'accountant', 'team_lead', 'employee', 'platform_admin']
 };
 
 var SCREENS = [];
@@ -1909,11 +2350,11 @@ function navButton(id, active, mobile) {
     ? 'flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm whitespace-nowrap '
     : 'flex items-center justify-between rounded-lg px-3 py-2 text-sm ';
   var tone = on
-    ? 'border-blue-600 bg-blue-50 text-blue-700'
-    : 'border-transparent text-slate-600 hover:bg-blue-50 hover:text-blue-700';
+    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+    : 'border-transparent text-zinc-600 hover:bg-indigo-50 hover:text-indigo-700';
   base += mobile ? '' : 'border-l-2 ';
   var badge = item.badge
-    ? '<span class="rounded bg-blue-600 px-1.5 py-0.5 font-mono text-[11px] text-white">' + item.badge + '</span>'
+    ? '<span class="rounded bg-indigo-600 px-1.5 py-0.5 font-mono text-[11px] text-white">' + item.badge + '</span>'
     : '';
   return '<button class="' + base + tone + '" onclick="wfShow(\'' + id + '\')">'
     + '<span class="flex items-center gap-2.5"><span class="material-symbols-outlined">' + item.icon + '</span>'
@@ -1934,7 +2375,7 @@ function navMarkup(active, mobile) {
   }
 
   return groups.map(function (g) {
-    return '<div class="mt-3 first:mt-0 px-3 pb-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">' + g.label + '</div>'
+    return '<div class="mt-3 first:mt-0 px-3 pb-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-zinc-500">' + g.label + '</div>'
       + g.items.map(function (id) { return navButton(id, active, false); }).join('');
   }).join('');
 }
@@ -1945,27 +2386,48 @@ function buildShell(el) {
   var content = el._content;
   var role = ROLES[ROLE];
 
+  // Platform Admin sits outside every tenant (04-architecture.md §8.1) and only has
+  // two destinations — a top-rail bar fits better than a sidebar built for switching
+  // between many tenant-scoped screens.
+  if (ROLE === 'platform_admin') {
+    el.className = 'app-shell min-h-screen bg-zinc-50';
+    el.innerHTML =
+      '<div class="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-indigo-100 bg-indigo-50 px-4 py-2.5">'
+      + '<div class="flex items-center gap-2">'
+      + '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-xs font-semibold text-white">L</div>'
+      + '<div class="text-sm font-semibold leading-tight text-zinc-900">LichHD Platform</div></div>'
+      + '<nav class="flex items-center gap-1 overflow-x-auto">' + navMarkup(active, true) + '</nav>'
+      + '<div class="ml-auto flex items-center gap-2">'
+      + '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs text-white">' + role.initials + '</div>'
+      + '<div class="hidden text-sm text-zinc-900 sm:block">' + role.name + '</div>'
+      + '<button onclick="wfLogout()" title="Đăng xuất" class="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-indigo-100 hover:text-indigo-700">'
+      + '<span class="material-symbols-outlined">logout</span></button></div>'
+      + '</div>'
+      + '<div>' + content + '</div>';
+    return;
+  }
+
   el.className = 'app-shell min-h-screen bg-zinc-50';
   el.innerHTML =
     // Sidebar — chỉ hiện từ lg trở lên; rộng theo % màn hình, kẹp trong [15rem, 18rem]
-    '<aside class="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-w)] flex-col border-r border-blue-100 bg-blue-50 p-3 lg:flex">'
+    '<aside class="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-w)] flex-col border-r border-indigo-100 bg-indigo-50 p-3 lg:flex">'
     + '<div class="flex items-center gap-2 px-2 py-3">'
-    + '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-blue-600 text-xs font-semibold text-white">L</div>'
-    + '<div class="min-w-0"><div class="text-sm font-semibold leading-tight text-slate-900">LichHD</div>'
-    + '<div class="truncate text-[11px] leading-tight text-slate-500">' + TENANT.name + '</div></div></div>'
+    + '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-xs font-semibold text-white">L</div>'
+    + '<div class="min-w-0"><div class="text-sm font-semibold leading-tight text-zinc-900">LichHD</div>'
+    + '<div class="truncate text-[11px] leading-tight text-zinc-500">' + TENANT.name + '</div></div></div>'
     + '<nav class="mt-2 flex flex-col gap-0.5 overflow-y-auto">' + navMarkup(active, false) + '</nav>'
-    + '<div class="mt-auto flex items-center gap-2 border-t border-blue-100 px-2 py-3">'
-    + '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs text-white">' + role.initials + '</div>'
-    + '<div class="min-w-0 flex-1"><div class="truncate text-sm text-slate-900">' + role.name + '</div>'
-    + '<div class="truncate text-xs text-slate-500">' + role.title + '</div></div>'
-    + '<button onclick="wfLogout()" title="Đăng xuất" class="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-blue-100 hover:text-blue-700">'
+    + '<div class="mt-auto flex items-center gap-2 border-t border-indigo-100 px-2 py-3">'
+    + '<div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs text-white">' + role.initials + '</div>'
+    + '<div class="min-w-0 flex-1"><div class="truncate text-sm text-zinc-900">' + role.name + '</div>'
+    + '<div class="truncate text-xs text-zinc-500">' + role.title + '</div></div>'
+    + '<button onclick="wfLogout()" title="Đăng xuất" class="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-indigo-100 hover:text-indigo-700">'
     + '<span class="material-symbols-outlined">logout</span></button></div>'
     + '</aside>'
 
     // Thanh điều hướng ngang — thay sidebar dưới lg
-    + '<div class="sticky top-0 z-30 flex items-center gap-2 overflow-x-auto border-b border-blue-100 bg-blue-50 px-3 py-2 lg:hidden">'
+    + '<div class="sticky top-0 z-30 flex items-center gap-2 overflow-x-auto border-b border-indigo-100 bg-indigo-50 px-3 py-2 lg:hidden">'
     + navMarkup(active, true)
-    + '<button onclick="wfLogout()" class="ml-auto shrink-0 rounded-lg px-2 py-1.5 text-slate-400 hover:text-blue-700">'
+    + '<button onclick="wfLogout()" class="ml-auto shrink-0 rounded-lg px-2 py-1.5 text-zinc-400 hover:text-indigo-700">'
     + '<span class="material-symbols-outlined">logout</span></button>'
     + '</div>'
 
@@ -2060,6 +2522,29 @@ function bindChips() {
   });
 }
 
+// Bộ lọc kỳ trên Tổng quan — GET /dashboard?month= hoặc ?from=&to= (05-api.yaml);
+// prototype chỉ đổi picker hiển thị/toast, không tính lại số liệu.
+function bindPeriodModeChips() {
+  document.querySelectorAll('.period-mode-chip').forEach(function (chip) {
+    chip.onclick = function () {
+      chip.parentElement.querySelectorAll('.period-mode-chip').forEach(function (c) {
+        c.className = 'period-mode-chip shrink-0 rounded-md border border-transparent px-2.5 py-1 text-xs text-zinc-600';
+      });
+      chip.className = 'period-mode-chip shrink-0 rounded-md bg-zinc-900 px-2.5 py-1 text-xs text-white';
+      var mode = chip.getAttribute('data-mode');
+      document.querySelectorAll('[data-period-picker]').forEach(function (p) {
+        var show = p.getAttribute('data-period-picker') === mode;
+        p.hidden = !show;
+        // Set inline style too: Tailwind's own "flex" utility class has the same
+        // CSS specificity as [hidden] and can load after it in the CDN stylesheet,
+        // silently overriding it — inline style always wins regardless of load order.
+        p.style.display = show ? '' : 'none';
+      });
+      wfToast(mode === 'month' ? 'Xem theo tháng' : 'Xem theo khoảng tùy chọn');
+    };
+  });
+}
+
 // Đổi vai trò: nav, danh tính và danh sách màn đổi theo quyền, mở màn mặc định của vai trò đó.
 function wfRole(id) {
   ROLE = id;
@@ -2067,6 +2552,7 @@ function wfRole(id) {
   HISTORY = [];
   document.querySelectorAll('.app-shell').forEach(buildShell);
   bindChips();
+  bindPeriodModeChips();
   wfShow(ROLES[id].home);
 }
 
@@ -2091,6 +2577,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('.app-shell').forEach(buildShell);
   bindChips();
+  bindPeriodModeChips();
   wfShow(!SIGNED_IN ? 'login' : (hash[1] && canSee(hash[1]) ? hash[1] : ROLES[ROLE].home));
 
   // Deep link đổi sau khi trang đã tải (điều hướng bằng thanh địa chỉ, back/forward)

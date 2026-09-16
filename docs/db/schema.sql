@@ -83,6 +83,16 @@ INSERT INTO shift_statuses (code) VALUES ('late');
 INSERT INTO shift_statuses (code) VALUES ('completed');
 INSERT INTO shift_statuses (code) VALUES ('disputed');
 
+-- Loại chi phí hợp đồng
+CREATE TABLE cost_categories (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(20) NOT NULL UNIQUE
+);
+
+INSERT INTO cost_categories (code) VALUES ('labor');
+INSERT INTO cost_categories (code) VALUES ('materials');
+INSERT INTO cost_categories (code) VALUES ('other');
+
 -- Loại ảnh ca làm
 CREATE TABLE photo_types (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -270,3 +280,25 @@ CREATE TABLE statements (
 CREATE INDEX idx_statements_tenant ON statements(tenant_id);
 CREATE INDEX idx_statements_contract ON statements(contract_id);
 CREATE INDEX idx_statements_status ON statements(status_id);
+
+-- Chi phí hợp đồng theo tháng — Accountant nhập tay (nhân công/vật tư/khác);
+-- đối chiếu với doanh thu contract_items để tính lãi/lỗ theo hợp đồng — FR26
+CREATE TABLE contract_costs (
+    id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tenant_id       INTEGER NOT NULL,
+    contract_id     INTEGER NOT NULL,
+    category_id     INTEGER NOT NULL,
+    period          DATE NOT NULL,
+    amount          NUMERIC(14, 2) NOT NULL,
+    created_by      INTEGER NOT NULL,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contract_costs_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    CONSTRAINT fk_contract_costs_contract FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_contract_costs_category FOREIGN KEY (category_id) REFERENCES cost_categories(id),
+    CONSTRAINT fk_contract_costs_created_by FOREIGN KEY (created_by) REFERENCES employees(id),
+    CONSTRAINT uq_contract_costs_period UNIQUE (contract_id, category_id, period)
+);
+
+CREATE INDEX idx_contract_costs_tenant ON contract_costs(tenant_id);
+CREATE INDEX idx_contract_costs_contract ON contract_costs(contract_id);
+CREATE INDEX idx_contract_costs_period ON contract_costs(period);

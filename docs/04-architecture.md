@@ -62,8 +62,9 @@ needs a decision recorded in §9, not a silent shortcut.
 
 Five roles use the system inside one tenant — director, manager, accountant, team
 lead, employee. A sixth role, **Platform Admin**, sits outside every tenant and
-exists only to create and suspend them (FR23, FR24) — it never reads a contract,
-shift or statement. The **customer is outside the system boundary**: they sign the
+exists only to create and suspend them (FR23, FR24) and view an aggregate platform
+dashboard over the `tenants` table (FR25) — it never reads a contract, shift or
+statement. The **customer is outside the system boundary**: they sign the
 contract and the paper receipt in person and raise complaints by phone, all of
 which tenant staff record on their behalf. Two external services are integrated:
 Zalo ZNS and/or SMS for reminders (FR14), and VietQR for payment (Could-have, not
@@ -87,7 +88,7 @@ flowchart TB
     employee -->|"opens shift link,<br/>submits photos"| lichhd
     accountant -->|"creates contracts,<br/>exports statements"| lichhd
     director -->|"views dashboard"| lichhd
-    platformadmin -->|"creates / suspends tenants"| lichhd
+    platformadmin -->|"creates / suspends tenants,<br/>views platform dashboard"| lichhd
 
     lichhd -->|"sends reminder"| zalo
     lichhd -->|"requests payment"| vietqr
@@ -283,8 +284,10 @@ Three distinct mechanisms, checked in order:
   `shift_id` already pins a `tenant_id` transitively, so no separate tenant check is needed there.
 
 **Platform Admin** is a fourth, disjoint mechanism: `platform_admins` is not `employees`, carries no
-`tenant_id`, and its credential can only reach `05-api.md` §10 — it cannot present a token that
-resolves to any tenant's contracts, shifts or statements. There is no role that spans both worlds.
+`tenant_id`, and its credential can only reach `05-api.md` §10 and §11 — it cannot present a token
+that resolves to any tenant's contracts, shifts or statements. Its dashboard (FR25) is bound by the
+same rule: the aggregate it reads is computed from the `tenants` table alone and never joins into any
+tenant-scoped table. There is no role that spans both worlds.
 
 The two desk scopes rest on different columns: `team` resolves through `employees.team_id`, so a team
 lead sees the shifts of the team they belong to; `unit` resolves through `employees.manager_id`, so a

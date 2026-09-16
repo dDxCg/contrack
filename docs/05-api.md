@@ -171,7 +171,7 @@ when any shift in the period lacks evidence or is disputed
 |---|---|---|---|
 | GET | `/alerts` | Expiring contracts and overdue shifts, with per-alert delivery status. | FR12, FR13 |
 | POST | `/alerts/{id}/send` | Re-send through Zalo ZNS or SMS. | FR14 |
-| GET | `/dashboard` | Active, expiring and disputed contract counts; projected revenue. **Director.** | FR17 |
+| GET | `/dashboard?month=` or `?from=&to=` | Active, expiring and disputed contract counts; projected revenue; disputed-shift counts grouped by site; shift statistics for the period (`shifts_summary`, and the same figures per site in `shifts_by_site`: `scheduled` split into `completed` / `overdue` / `disputed` / `not_due`, with the three rates taken over `due` (= scheduled − not_due) so they sum to 100, plus `missing_evidence` for follow-up — two denominators, each reported alongside its own count); new contracts signed (`new_contracts_trend`, trailing 6); on-time renewal rate and cancellation rate (both trailing 12 months, same cohort — contracts whose `expires_at` fell in that window, split into `renewed` / `cancelled` / `expired`); revenue and profit-margin trend (`profit_trend`, trailing 6 buckets carrying `revenue`, `profit`, `margin_pct` and `is_estimated` each, per FR28, so a bucket never renders blank — drawn as two separate charts rather than one two-axis chart). Trend buckets are period-agnostic: each carries `period_start`, `period_end` and a server-supplied `label`, with `bucket_unit` saying how they were grouped, so no widget is labelled "by month". `comparison` returns the same-length preceding period (previous month in month mode; the equally long window ending the day before `from` in custom mode) and every delta badge reads from it, so a custom range is compared like-for-like. `month` defaults to the current month; `from`/`to` (dates) are a mutually exclusive alternative for a custom range, `400` `dashboard.conflicting_period` if both are given. **Director.** | FR17 |
 | GET POST PATCH DELETE | `/customers` , `/customers/{id}` | Customer records. | FR21 |
 | GET POST PATCH DELETE | `/employees` , `/employees/{id}` | Accounts with `role_id`, `manager_id` and `team_id`. **Director only.** | FR18 |
 | GET POST PATCH DELETE | `/teams` , `/teams/{id}` | Teams with `name` and `code`; the response derives `lead` and `member_count` from `employees`. Create, update and delete are **Director only**. | FR18 |
@@ -195,10 +195,12 @@ that `SCREEN_ROLES` in [`prototype.html`](ui/prototype.html) must agree with.
 | Reconciliation | R · all | — | R · all | — | — | — |
 | Alerts | R U · all | R U · unit | — | R · team | — | — |
 | Dashboard | R · all | — | — | — | — | — |
+| Contract costs / profit-loss | R · all | — | R C U · all | — | — | — |
 | Customers | R C U D · all | R C · all | R · all | — | — | — |
 | Employees | R C U D · all | — | — | — | — | — |
 | Teams | R C U D · all | R · all | — | R · own team | — | — |
 | Tenants | — | — | — | — | — | R C U · all |
+| Platform dashboard | — | — | — | — | — | R · all |
 
 R read · C create · U update · D delete. Every row and column above is additionally scoped to the
 caller's own tenant — a `Director`'s `all` on `Contracts` means all contracts **in their tenant**, never
@@ -301,5 +303,33 @@ writes a `contract`, `shift`, `statement`, `customer`, `employee` or `team` row;
 | GET | `/platform/tenants` | List tenants. Filters: `status`. |
 | POST | `/platform/tenants` | Create a tenant (`name`) and its first employee in one call (`director_username`, `director_password`) — FR23. Returns the new `tenant_id` and `employee_id`. |
 | PATCH | `/platform/tenants/{id}` | Set `status` to `suspended` or `active` — FR24. A suspended tenant's `POST /auth/login` starts failing with `tenant.suspended` immediately; a session already issued before suspension is not retroactively revoked — an open risk tracked alongside [`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R6's token-lifetime work. |
+
+---
+
+## 11. Platform Dashboard — FR25
+
+Platform Admin's landing screen. Reached only via `/platform/*`, same credential as §10. Computed
+from the `tenants` table alone — it never joins into `contracts`, `shifts`, `statements` or any other
+tenant-scoped table, same boundary as every other `/platform/*` endpoint.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/platform/dashboard` | Aggregate tenant counts by status, this month's new-tenant count, a monthly tenant-growth trend, and the most recently created tenants. Computed on read, not stored — FR25. |
+
+---
+
+## 12. Contract Profitability — FR26, FR27, FR28
+
+Revenue side reuses `contract_items.unit_price` (already priced per service item); cost side is
+recorded by hand, one row per contract per category per month (`contract_costs`, unique on
+`(contract_id, category_id, period)`). A month with no recorded cost is never left blank: FR28
+fills it with an estimate, computed on read, never written to `contract_costs` — so an
+Accountant's later real entry simply takes over.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/contracts/{id}/costs?period=` | List recorded costs for a contract, optionally filtered to one month. |
+| PUT | `/contracts/{id}/costs` | Upsert one month's cost for a category (`category`, `period`, `amount`) — replaces any existing entry for that `(category, period)` rather than duplicating it. **Accountant only.** — FR26 |
+| GET | `/contracts/{id}/profitability?months=` | Revenue vs. recorded-or-estimated cost per month, trailing N months (default 6). Each month carries `is_estimated`: `false` once the Accountant has recorded that month's cost, `true` while FR28's estimate stands in for it — cost/profit are never null and never silently default to zero. — FR27 |
 
 ---

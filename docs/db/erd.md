@@ -28,6 +28,10 @@ erDiagram
     photo_types ||--o{ shift_photos : "type of"
     contracts ||--o{ statements : "has"
     statement_statuses ||--o{ statements : "status of"
+    tenants ||--o{ contract_costs : "owns"
+    contracts ||--o{ contract_costs : "incurs"
+    cost_categories ||--o{ contract_costs : "category of"
+    employees ||--o{ contract_costs : "recorded by"
 
     tenant_statuses {
         int id PK
@@ -179,6 +183,22 @@ erDiagram
         numeric total_amount
         int status_id FK
         varchar pdf_url
+        timestamp created_at
+    }
+
+    cost_categories {
+        int id PK
+        varchar code
+    }
+
+    contract_costs {
+        int id PK
+        int tenant_id FK
+        int contract_id FK
+        int category_id FK
+        date period
+        numeric amount
+        int created_by FK
         timestamp created_at
     }
 ```

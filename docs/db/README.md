@@ -4,7 +4,7 @@ Data model for LichHD.
 
 | File | Contents |
 |---|---|
-| [`schema.sql`](schema.sql) | 19 tables, DDL with constraints and indexes |
+| [`schema.sql`](schema.sql) | 21 tables, DDL with constraints and indexes |
 | [`erd.md`](erd.md) | Entity-relationship diagram (mermaid) |
 
 ## Tables
@@ -14,12 +14,15 @@ Data model for LichHD.
 that can create or suspend a `tenants` row.
 
 **Lookup** — `roles`, `customer_segments`, `employee_statuses`, `contract_statuses`,
-`shift_statuses`, `photo_types`, `statement_statuses`.
+`shift_statuses`, `photo_types`, `statement_statuses`, `cost_categories`.
 
 **Core** — `customers` → `contracts` → `contract_sites` → `contract_items` → `shifts`
-→ `shift_photos`, plus `teams`, `employees` and `statements` (one per contract per
-period, unique on `(contract_id, period)`). Every core table carries `tenant_id` —
-a tenant's rows never join across into another tenant's.
+→ `shift_photos`, plus `teams`, `employees`, `statements` (one per contract per
+period, unique on `(contract_id, period)`) and `contract_costs` (one per contract
+per cost category per month, unique on `(contract_id, category_id, period)` — FR26,
+labor/materials/other costs an Accountant records to compute profit/loss per
+contract). Every core table carries `tenant_id` — a tenant's rows never join across
+into another tenant's.
 
 **Teams.** `employees.team_id` is the only record of membership and is `NULL` for
 desk staff. `manager_id` is the reporting line and is not read to resolve a team.
