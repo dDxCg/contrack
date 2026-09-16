@@ -83,6 +83,18 @@ INSERT INTO shift_statuses (code) VALUES ('late');
 INSERT INTO shift_statuses (code) VALUES ('completed');
 INSERT INTO shift_statuses (code) VALUES ('disputed');
 
+-- Đơn vị tần suất hạng mục hợp đồng
+CREATE TABLE frequency_units (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(20) NOT NULL UNIQUE
+);
+
+INSERT INTO frequency_units (code) VALUES ('day');
+INSERT INTO frequency_units (code) VALUES ('week');
+INSERT INTO frequency_units (code) VALUES ('month');
+INSERT INTO frequency_units (code) VALUES ('quarter');
+INSERT INTO frequency_units (code) VALUES ('year');
+
 -- Loại chi phí hợp đồng
 CREATE TABLE cost_categories (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -202,17 +214,22 @@ CREATE TABLE contract_sites (
 CREATE INDEX idx_contract_sites_tenant ON contract_sites(tenant_id);
 CREATE INDEX idx_contract_sites_contract ON contract_sites(contract_id);
 
--- Hạng mục hợp đồng
+-- Hạng mục hợp đồng — tần suất tách 3 phần: số lần (frequency_count), đơn vị
+-- (frequency_unit_id, lookup) và quy tắc chính xác nếu có (frequency_rule, ví
+-- dụ "thứ 7 hàng tuần", "ngày 15 hàng tháng") — NULL khi không cần chốt ngày cụ thể
 CREATE TABLE contract_items (
-    id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    tenant_id   INTEGER NOT NULL,
-    site_id     INTEGER NOT NULL,
-    name        VARCHAR(255) NOT NULL,
-    frequency   VARCHAR(100) NOT NULL,
-    unit_price  NUMERIC(14, 2) NOT NULL,
-    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id                  INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tenant_id           INTEGER NOT NULL,
+    site_id             INTEGER NOT NULL,
+    name                VARCHAR(255) NOT NULL,
+    frequency_count     INTEGER NOT NULL,
+    frequency_unit_id   INTEGER NOT NULL,
+    frequency_rule      VARCHAR(255),
+    unit_price          NUMERIC(14, 2) NOT NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_contract_items_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_contract_items_site FOREIGN KEY (site_id) REFERENCES contract_sites(id) ON DELETE CASCADE
+    CONSTRAINT fk_contract_items_site FOREIGN KEY (site_id) REFERENCES contract_sites(id) ON DELETE CASCADE,
+    CONSTRAINT fk_contract_items_frequency_unit FOREIGN KEY (frequency_unit_id) REFERENCES frequency_units(id)
 );
 
 CREATE INDEX idx_contract_items_tenant ON contract_items(tenant_id);

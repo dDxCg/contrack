@@ -280,7 +280,7 @@ paths:
                     - name: "Tòa A — Phạm Hùng, Nam Từ Liêm"
                       work_requirements: "Bảo trì VRV & Chiller theo lịch"
                       items:
-                        - { name: "Bảo trì VRV & Chiller", frequency: "2/thang", unit_price: 42000000 }
+                        - { name: "Bảo trì VRV & Chiller", frequency_count: 2, frequency_unit: month, frequency_rule: null, unit_price: 42000000 }
       responses:
         '201':
           description: Contract created; shifts generated for the full term
@@ -305,7 +305,6 @@ paths:
           content:
             application/json:
               examples:
-                frequency_unparsable: { $ref: '#/components/examples/ContractFrequencyUnparsable' }
                 no_shifts_generated: { $ref: '#/components/examples/ScheduleNoShiftsGenerated' }
               schema: { $ref: '#/components/schemas/Error' }
 
@@ -1486,15 +1485,29 @@ components:
 
     ServiceItemCreate:
       type: object
-      required: [name, frequency, unit_price]
+      required: [name, frequency_count, frequency_unit, unit_price]
       properties:
         name: { type: string, example: "Bảo trì VRV & Chiller" }
-        frequency:
+        frequency_count:
+          type: integer
+          minimum: 1
+          description: How many occurrences per `frequency_unit` — drives shift generation directly, no parsing involved
+          example: 2
+        frequency_unit:
           type: string
+          enum: [day, week, month, quarter, year]
+          example: month
+        frequency_rule:
+          type: string
+          nullable: true
           description: >
-            Free text today — no grammar yet (`04-architecture.md` §11 R2);
-            the generator's accepted forms are not yet fixed
-          example: "2/thang"
+            Free text, optional. The exact agreement when one exists (e.g. "thứ 7 hàng tuần",
+            "ngày 15 hàng tháng") — kept as a note for staff, deliberately not parsed by the
+            generator, since real contracts negotiate placements too varied to force into a
+            fixed grammar (`04-architecture.md` §11 R2). The generator schedules purely off
+            `frequency_count`/`frequency_unit`; a director can move individual shifts afterward
+            to match the rule.
+          example: "thứ 7 hàng tuần"
         unit_price: { type: number, example: 42000000 }
     ServiceItem:
       allOf:
@@ -1866,13 +1879,11 @@ components:
     TokenRateLimited:
       value: { error: { code: token.rate_limited, message: "Thử lại sau ít phút", details: { retry_after_seconds: 60 } } }
     ContractItemInvalid:
-      value: { error: { code: contract.item_invalid, message: "Hạng mục thiếu tần suất hoặc đơn giá không hợp lệ", details: { items: [{ index: 0, field: frequency }] } } }
+      value: { error: { code: contract.item_invalid, message: "Hạng mục thiếu tần suất hoặc đơn giá không hợp lệ", details: { items: [{ index: 0, field: frequency_count }] } } }
     ContractTermInvalid:
       value: { error: { code: contract.term_invalid, message: "Ngày hết hạn phải sau ngày ký", details: { signed_at: "2024-01-15", expires_at: "2024-01-01" } } }
     ContractCustomerNotFound:
       value: { error: { code: contract.customer_not_found, message: "Không tìm thấy khách hàng", details: { customer_id: 999 } } }
-    ContractFrequencyUnparsable:
-      value: { error: { code: contract.frequency_unparsable, message: "Không đọc được tần suất", details: { item_id: 4, frequency: "thỉnh thoảng" } } }
     ScheduleNoShiftsGenerated:
       value: { error: { code: schedule.no_shifts_generated, message: "Không sinh được ca nào trong thời hạn hợp đồng", details: { item_id: 4 } } }
     ScheduleRegenerateBlocked:

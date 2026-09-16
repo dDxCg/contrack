@@ -997,39 +997,45 @@ tailwind.config = {
           <div class="sr-only">12 tháng qua có 22 hợp đồng hết hạn: 18 gia hạn đúng hạn (82%, mục tiêu từ 80% trở lên), 2 bị khách hủy giữa chừng (9%), 2 hết hạn không gia hạn.</div>
         </div>
 
-        <!-- New contracts signed — tiêu đề → số KPI + delta chip → sparkline chạm
-             mép dưới card (full-bleed: âm margin bù p-5, card overflow-hidden để bo
-             góc cắt chart). preserveAspectRatio="none" cho chart kéo hết chiều ngang
-             thay vì tự chèn khoảng trắng 2 bên; vector-effect="non-scaling-stroke"
-             giữ nét không bị méo khi kéo. Trailing window theo kỳ đang chọn ở period
-             picker (6 tháng khi xem theo tháng; toàn khoảng from-to khi tùy chọn). -->
-        <div onclick="wfShow('contracts')" class="flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
+        <!-- New contracts signed — tiêu đề → số KPI + delta chip → line trend.
+             Trailing window theo kỳ đang chọn ở period picker (6 tháng khi xem theo
+             tháng; toàn khoảng from-to khi tùy chọn). -->
+        <div onclick="wfShow('contracts')" class="flex cursor-pointer flex-col rounded-2xl border border-zinc-200 bg-white p-5 lh-card-shadow hover:border-zinc-300">
           <div class="text-sm text-zinc-500">Hợp đồng ký mới</div>
 
-          <!-- Delta badge dùng đúng mẫu badge chuẩn của file (rounded-md, bg-{c}-50,
-               px-2 py-0.5, text-xs font-medium, text-{c}-700) thay vì pill riêng một
-               kiểu; icon Material đồng bộ icon set toàn file, ép 14px cho vừa badge.
-               Căn items-center (không phải baseline) để badge cân giữa cạnh số lớn. -->
+          <!-- Delta badge = biến thể đậm hơn của badge chuẩn: giữ nguyên rounded-md
+               px-2 py-0.5 text-xs, nhưng bg-{c}-100 + text-{c}-800 + font-semibold
+               thay cho bg-50/text-700 của badge trạng thái trong bảng. Lý do: nó
+               đứng ngay cạnh số KPI cỡ lớn, mức tương phản của badge trạng thái bị
+               chìm. Ba delta badge (doanh thu, biên lợi nhuận, hợp đồng mới) dùng
+               chung biến thể này. Icon Material đồng bộ icon set toàn file, ép 14px;
+               căn items-center (không phải baseline) để badge cân giữa cạnh số. -->
           <div class="mt-2 flex items-center gap-2">
             <span class="font-mono text-4xl font-semibold leading-none text-indigo-700">2</span>
-            <span class="inline-flex items-center gap-0.5 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700" title="Giảm 50% so với cùng kỳ trước (4 hợp đồng)">
+            <span class="inline-flex items-center gap-0.5 rounded-md bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800" title="Giảm 50% so với cùng kỳ trước (4 hợp đồng)">
               <span class="material-symbols-outlined" style="font-size:14px">arrow_downward</span>
               <span class="font-mono">50%</span>
             </span>
           </div>
 
-          <div class="-mx-5 -mb-5 mt-6">
-            <svg viewBox="0 0 300 44" preserveAspectRatio="none" class="block h-11 w-full" aria-hidden="true">
-              <defs>
-                <linearGradient id="lhNewContractsFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#6366f1" stop-opacity="0.22"/>
-                  <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path d="M16,26 L83,16 L150,36 L217,6 L284,26 L284,44 L16,44 Z" fill="url(#lhNewContractsFill)"/>
-              <path d="M16,26 L83,16 L150,36 L217,6 L284,26" fill="none" stroke="#6366f1" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-            </svg>
-          </div>
+          <!-- Cùng kiểu với chart biên lợi nhuận: line trần + marker tròn + baseline
+               + nhãn trục, không gradient fill, không full-bleed. Ba chart nhỏ trên
+               dashboard nhờ đó đọc như một bộ. Marker cuối to hơn = kỳ đang xem. -->
+          <svg viewBox="0 0 300 78" class="mt-3 w-full" preserveAspectRatio="xMidYMid meet">
+            <line x1="10" y1="54" x2="290" y2="54" stroke="#e4e4e7" stroke-width="1"/>
+            <path d="M16,33.3 L83,20.7 L150,46 L217,8 L284,33.3" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle cx="16"  cy="33.3" r="2.5" fill="#4f46e5"/>
+            <circle cx="83"  cy="20.7" r="2.5" fill="#4f46e5"/>
+            <circle cx="150" cy="46"   r="2.5" fill="#4f46e5"/>
+            <circle cx="217" cy="8"    r="2.5" fill="#4f46e5"/>
+            <circle cx="284" cy="33.3" r="3.5" fill="#4f46e5"/>
+
+            <text x="16"  y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T6</text>
+            <text x="83"  y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T7</text>
+            <text x="150" y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T8</text>
+            <text x="217" y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T9</text>
+            <text x="284" y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T10</text>
+          </svg>
           <div class="sr-only">Hợp đồng ký mới kỳ đang xem: 2 hợp đồng, giảm 50% so với cùng kỳ trước (4 hợp đồng). Xu hướng theo kỳ đang chọn: tháng 6 có 2, tháng 7 có 3, tháng 8 có 1, tháng 9 có 4, tháng 10 có 2.</div>
         </div>
 
@@ -1055,7 +1061,7 @@ tailwind.config = {
               <div class="text-sm text-zinc-500">Doanh thu</div>
               <div class="mt-2 flex items-center gap-2">
                 <span class="font-mono text-4xl font-semibold leading-none text-indigo-700">245tr</span>
-                <span class="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700" title="Vượt kế hoạch 220 triệu">
+                <span class="inline-flex items-center gap-0.5 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800" title="Vượt kế hoạch 220 triệu">
                   <span class="material-symbols-outlined" style="font-size:14px">arrow_upward</span>
                   <span class="font-mono">11%</span>
                 </span>
@@ -1068,26 +1074,32 @@ tailwind.config = {
             </div>
           </div>
 
-          <svg viewBox="0 0 600 150" class="mt-4 w-full flex-1" preserveAspectRatio="xMidYMid meet">
-            <line x1="20" y1="120" x2="590" y2="120" stroke="#e4e4e7" stroke-width="1"/>
-            <line x1="20" y1="76.8" x2="590" y2="76.8" stroke="#a1a1aa" stroke-width="1.5" stroke-dasharray="5,4"/>
-            <text x="24" y="72" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">220</text>
-            <path d="M40,90.6 L144,64.7 L248,111.4 L352,56.1 L456,42.3" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-            <path d="M456,42.3 L560,33.6" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-dasharray="5,4" stroke-linecap="round"/>
-            <circle cx="40"  cy="90.6"  r="3.5" fill="#4f46e5"/>
-            <circle cx="144" cy="64.7"  r="3.5" fill="#4f46e5"/>
-            <circle cx="248" cy="111.4" r="3.5" fill="#4f46e5"/>
-            <circle cx="352" cy="56.1"  r="3.5" fill="#4f46e5"/>
-            <circle cx="456" cy="42.3"  r="3.5" fill="#4f46e5"/>
-            <circle cx="560" cy="33.6"  r="4.5" fill="white" stroke="#4f46e5" stroke-width="2.5"/>
-            <text x="560" y="22" text-anchor="middle" class="fill-indigo-700" style="font-size:11px;font-weight:600;font-family:ui-monospace,monospace">245</text>
+          <!-- Bỏ flex-1: hàng lưới bị cột phải (3 card xếp chồng) kéo cao, flex-1
+               làm khung SVG cao theo nhưng preserveAspectRatio="meet" vẫn giữ tỉ lệ
+               nội dung nên chart chỉ nằm lọt giữa một vùng trắng lớn. Thay bằng
+               viewBox cao hơn (600x290, tỉ lệ ~2:1 thay vì 4:1) để chart tự chiếm
+               gần hết chiều cao hàng bằng chính tỉ lệ của nó — cao thật, không phải
+               bị kéo giãn hay bị đẩy chỗ. -->
+          <svg viewBox="0 0 600 290" class="mt-4 w-full" preserveAspectRatio="xMidYMid meet">
+            <line x1="20" y1="250" x2="590" y2="250" stroke="#e4e4e7" stroke-width="1"/>
+            <line x1="20" y1="159.1" x2="590" y2="159.1" stroke="#a1a1aa" stroke-width="1.5" stroke-dasharray="5,4"/>
+            <text x="24" y="154" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">220</text>
+            <path d="M40,188.2 L144,133.6 L248,231.8 L352,115.5 L456,86.4" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M456,86.4 L560,68.2" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-dasharray="5,4" stroke-linecap="round"/>
+            <circle cx="40"  cy="188.2" r="3.5" fill="#4f46e5"/>
+            <circle cx="144" cy="133.6" r="3.5" fill="#4f46e5"/>
+            <circle cx="248" cy="231.8" r="3.5" fill="#4f46e5"/>
+            <circle cx="352" cy="115.5" r="3.5" fill="#4f46e5"/>
+            <circle cx="456" cy="86.4" r="3.5" fill="#4f46e5"/>
+            <circle cx="560" cy="68.2" r="4.5" fill="white" stroke="#4f46e5" stroke-width="2.5"/>
+            <text x="560" y="57" text-anchor="middle" class="fill-indigo-700" style="font-size:11px;font-weight:600;font-family:ui-monospace,monospace">245</text>
 
-            <text x="40"  y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T5</text>
-            <text x="144" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T6</text>
-            <text x="248" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T7</text>
-            <text x="352" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T8</text>
-            <text x="456" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T9</text>
-            <text x="560" y="142" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T10</text>
+            <text x="40"  y="274" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T5</text>
+            <text x="144" y="274" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T6</text>
+            <text x="248" y="274" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T7</text>
+            <text x="352" y="274" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T8</text>
+            <text x="456" y="274" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T9</text>
+            <text x="560" y="274" text-anchor="middle" class="fill-zinc-400" style="font-size:10px;font-family:ui-sans-serif,system-ui,sans-serif">T10</text>
           </svg>
           <div class="sr-only">Doanh thu theo kỳ: tháng 5 khoảng 212 triệu, tháng 6 227 triệu, tháng 7 200 triệu, tháng 8 232 triệu, tháng 9 240 triệu, tháng 10 dự kiến 245 triệu, vượt kế hoạch 220 triệu 11%.</div>
         </div>
@@ -1115,12 +1127,15 @@ tailwind.config = {
             <div class="text-sm text-zinc-500">Biên lợi nhuận</div>
             <div class="mt-2 flex items-center gap-2">
               <span class="font-mono text-2xl font-semibold leading-none text-emerald-700">22,4%</span>
-              <span class="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700" title="Tăng 3,2 điểm so với cùng kỳ trước">
+              <span class="inline-flex items-center gap-0.5 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800" title="Tăng 3,2 điểm so với cùng kỳ trước">
                 <span class="material-symbols-outlined" style="font-size:14px">arrow_upward</span>
                 <span class="font-mono">3,2%</span>
               </span>
             </div>
-            <svg viewBox="0 0 300 60" class="mt-3 w-full flex-1" preserveAspectRatio="xMidYMid meet">
+            <!-- Cùng mốc trục tháng với chart doanh thu bên cạnh: 2 chart đọc song
+                 song theo cặp nên thiếu nhãn ở một bên là line trôi không neo được. -->
+            <svg viewBox="0 0 300 78" class="mt-3 w-full" preserveAspectRatio="xMidYMid meet">
+              <line x1="10" y1="54" x2="290" y2="54" stroke="#e4e4e7" stroke-width="1"/>
               <path d="M16,40.9 L69.6,37.7 L123.2,45.7 L176.8,32.9 L230.4,25.9 L284,10.8" fill="none" stroke="#10b981" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
               <circle cx="16"    cy="40.9" r="3.5" fill="white" stroke="#10b981" stroke-width="2"/>
               <circle cx="69.6"  cy="37.7" r="2.5" fill="#10b981"/>
@@ -1128,6 +1143,13 @@ tailwind.config = {
               <circle cx="176.8" cy="32.9" r="3.5" fill="white" stroke="#10b981" stroke-width="2"/>
               <circle cx="230.4" cy="25.9" r="2.5" fill="#10b981"/>
               <circle cx="284"   cy="10.8" r="3.5" fill="white" stroke="#10b981" stroke-width="2"/>
+
+              <text x="16"    y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T5</text>
+              <text x="69.6"  y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T6</text>
+              <text x="123.2" y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T7</text>
+              <text x="176.8" y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T8</text>
+              <text x="230.4" y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T9</text>
+              <text x="284"   y="70" text-anchor="middle" class="fill-zinc-400" style="font-size:9px;font-family:ui-sans-serif,system-ui,sans-serif">T10</text>
             </svg>
             <div class="mt-2 flex items-center gap-1 text-[10px] text-zinc-400">
               <span class="inline-block h-2 w-2 rounded-full border border-emerald-500 bg-white"></span>

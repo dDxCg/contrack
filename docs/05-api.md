@@ -95,16 +95,22 @@ evidence ([`04-architecture.md`](04-architecture.md#82-evidence-integrity-and-re
 | PATCH | `/contracts/{id}` | Update term or status. **Director only.** |
 | DELETE | `/contracts/{id}` | Cascades to sites, items, shifts, photos, statements. **Director only.** |
 | POST | `/contracts/{id}/sites` · PATCH · DELETE `/sites/{siteId}` | Sites. Update and delete are Director only. |
-| POST | `/sites/{siteId}/items` · PATCH · DELETE `/items/{itemId}` | Service items — `name`, `frequency`, `unit_price`. Update and delete are Director only. |
+| POST | `/sites/{siteId}/items` · PATCH · DELETE `/items/{itemId}` | Service items — `name`, `frequency_count`, `frequency_unit`, `frequency_rule` (optional), `unit_price`. Update and delete are Director only. |
 
-`POST /contracts` returns `400` with `contract.item_invalid` when an item is missing a frequency or
-carries a non-positive `unit_price`, matching the `alt validation failed` branch of sequence 1.
+`POST /contracts` returns `400` with `contract.item_invalid` when an item is missing `frequency_count`/
+`frequency_unit` or carries a non-positive `unit_price`, matching the `alt validation failed` branch of
+sequence 1.
 
 ### 3.1 Schedule generation — FR4
 
-Creating a contract generates `shifts` for every item across the term from the item's `frequency`.
-Frequency currently has **no grammar** — see [`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R2;
-this endpoint cannot be finished until that is resolved.
+Creating a contract generates `shifts` for every item across the term from `frequency_count` occurrences
+per `frequency_unit` — both are structured fields (integer, and an enum backed by the `frequency_units`
+lookup table), not free text, so the generator never has to parse anything to find the cadence
+(resolves [`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R2). `frequency_rule` is
+a separate, optional free-text field for the exact agreed placement (e.g. "thứ 7 hàng tuần") when the
+contract specifies one; real agreements vary too much to force into a fixed grammar, so it is kept as a
+note for staff and is not parsed — the generator schedules off count/unit alone, and a director can move
+individual shifts afterward to match the rule.
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -244,11 +250,10 @@ there is nothing to add.
 
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
-| `contract.item_invalid` | 400 | An item is missing `frequency` or carries a non-positive `unit_price` — sequence 1's `alt validation failed`. | `items[]` with the offending index and field |
+| `contract.item_invalid` | 400 | An item is missing `frequency_count`/`frequency_unit` or carries a non-positive `unit_price` — sequence 1's `alt validation failed`. | `items[]` with the offending index and field |
 | `contract.term_invalid` | 400 | `expires_at` is not after `signed_at`. | `signed_at`, `expires_at` |
 | `contract.customer_not_found` | 400 | `customer_id` names no customer. | `customer_id` |
-| `contract.frequency_unparsable` | 422 | `frequency` does not match the generator's grammar — blocked on [`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R2. | `item_id`, `frequency` |
-| `schedule.no_shifts_generated` | 422 | The frequency parses but yields no occurrence inside the term. | `item_id` |
+| `schedule.no_shifts_generated` | 422 | `frequency_count`/`frequency_unit` yield no occurrence inside the term. | `item_id` |
 | `schedule.regenerate_blocked` | 409 | Regeneration would move a completed or disputed shift. | `shift_ids[]` |
 
 ### Shifts and evidence
