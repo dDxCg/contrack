@@ -26,7 +26,11 @@ describe('RoleResolver — 05-api.md §8', () => {
     });
 
     it('teams: R C U D for director, R for manager and team lead', () => {
-      expect(resolver.rolesFor(Resource.Teams, Operation.Read)).toEqual([Role.Director, Role.Manager, Role.TeamLead]);
+      expect(resolver.rolesFor(Resource.Teams, Operation.Read)).toEqual([
+        Role.Director,
+        Role.Manager,
+        Role.TeamLead,
+      ]);
       expect(resolver.rolesFor(Resource.Teams, Operation.Create)).toEqual([Role.Director]);
       expect(resolver.rolesFor(Resource.Teams, Operation.Update)).toEqual([Role.Director]);
       expect(resolver.rolesFor(Resource.Teams, Operation.Delete)).toEqual([Role.Director]);
@@ -43,6 +47,23 @@ describe('RoleResolver — 05-api.md §8', () => {
       expect(resolver.rolesFor(Resource.Contracts, Operation.Delete)).toEqual([Role.Director]);
     });
 
+    it('shifts: R U for director/manager/team lead, R for accountant/employee', () => {
+      expect(resolver.rolesFor(Resource.Shifts, Operation.Read)).toEqual([
+        Role.Director,
+        Role.Manager,
+        Role.Accountant,
+        Role.TeamLead,
+        Role.Employee,
+      ]);
+      expect(resolver.rolesFor(Resource.Shifts, Operation.Update)).toEqual([
+        Role.Director,
+        Role.Manager,
+        Role.TeamLead,
+      ]);
+      expect(resolver.rolesFor(Resource.Shifts, Operation.Create)).toEqual([Role.Director]);
+      expect(resolver.rolesFor(Resource.Shifts, Operation.Delete)).toEqual([Role.Director]);
+    });
+
     it('has no granting role for a role the matrix leaves blank', () => {
       expect(resolver.rolesFor(Resource.Employees, Operation.Read)).not.toContain(Role.TeamLead);
       expect(resolver.rolesFor(Resource.Teams, Operation.Create)).not.toContain(Role.Manager);
@@ -57,6 +78,9 @@ describe('RoleResolver — 05-api.md §8', () => {
       expect(resolver.scopeFor(Resource.Teams, Role.Manager)).toBe(RowScope.All);
       expect(resolver.scopeFor(Resource.Teams, Role.TeamLead)).toBe(RowScope.Team);
       expect(resolver.scopeFor(Resource.Employees, Role.Director)).toBe(RowScope.All);
+      expect(resolver.scopeFor(Resource.Shifts, Role.TeamLead)).toBe(RowScope.Team);
+      expect(resolver.scopeFor(Resource.Shifts, Role.Employee)).toBe(RowScope.Own);
+      expect(resolver.scopeFor(Resource.Shifts, Role.Manager)).toBe(RowScope.All);
     });
 
     it('answers none where the role has no grant at all', () => {
@@ -74,7 +98,9 @@ describe('RoleResolver — 05-api.md §8', () => {
     });
 
     it('names every role that would have been accepted', () => {
-      const error = captureDomainError(() => resolver.requireRole(Resource.Customers, Operation.Create, Role.Accountant));
+      const error = captureDomainError(() =>
+        resolver.requireRole(Resource.Customers, Operation.Create, Role.Accountant),
+      );
 
       expect(error.code).toBe('auth.forbidden_role');
       expect(error.getStatus()).toBe(403);
@@ -82,7 +108,9 @@ describe('RoleResolver — 05-api.md §8', () => {
     });
 
     it('refuses a role the matrix marks as no access', () => {
-      const error = captureDomainError(() => resolver.requireRole(Resource.Employees, Operation.Read, Role.Manager));
+      const error = captureDomainError(() =>
+        resolver.requireRole(Resource.Employees, Operation.Read, Role.Manager),
+      );
 
       expect(error.code).toBe('auth.forbidden_role');
       expect(error.details).toEqual({ required_role: 'director' });
@@ -91,7 +119,9 @@ describe('RoleResolver — 05-api.md §8', () => {
     it('refuses a deactivated employee before any scope is resolved', () => {
       const terminated = anEmployee({ role: Role.Manager, status: EmployeeStatus.Terminated });
 
-      const error = captureDomainError(() => resolver.requireRole(Resource.Employees, Operation.Read, terminated.role));
+      const error = captureDomainError(() =>
+        resolver.requireRole(Resource.Employees, Operation.Read, terminated.role),
+      );
 
       // The caller's status is the guard's business; requireRole only reads the role it is handed.
       expect(error.code).toBe('auth.forbidden_role');

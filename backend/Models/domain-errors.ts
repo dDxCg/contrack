@@ -124,6 +124,62 @@ export class TeamLeadConflictException extends DomainException {
   }
 }
 
+export class ShiftAlreadyCompletedException extends DomainException {
+  readonly code = 'shift.already_completed';
+
+  constructor(completedAt: Date | null) {
+    super(HttpStatus.CONFLICT, 'Ca đã hoàn thành', completedAt === null ? {} : { completed_at: completedAt });
+  }
+}
+
+export class ShiftAssigneeOutOfTeamException extends DomainException {
+  readonly code = 'shift.assignee_out_of_team';
+
+  constructor(assigneeId: number) {
+    super(HttpStatus.FORBIDDEN, 'Nhân viên không thuộc tổ của bạn', { assignee_id: assigneeId });
+  }
+}
+
+export class ShiftAlreadyDisputedException extends DomainException {
+  readonly code = 'shift.already_disputed';
+
+  constructor() {
+    super(HttpStatus.CONFLICT, 'Ca đã bị khiếu nại');
+  }
+}
+
+export class ShiftNotDisputedException extends DomainException {
+  readonly code = 'shift.not_disputed';
+
+  constructor(status: string) {
+    super(HttpStatus.CONFLICT, 'Ca này không ở trạng thái khiếu nại', { status });
+  }
+}
+
+export class ShiftEvidenceIncompleteException extends DomainException {
+  readonly code = 'shift.evidence_incomplete';
+
+  constructor(missing: readonly string[]) {
+    super(HttpStatus.BAD_REQUEST, 'Thiếu ảnh hoặc biên lai', { missing: [...missing] });
+  }
+}
+
+export class FieldTokenExpiredException extends DomainException {
+  readonly code = 'token.expired';
+
+  constructor() {
+    super(HttpStatus.UNAUTHORIZED, 'Liên kết đã hết hạn');
+  }
+}
+
+export class FieldTokenInvalidException extends DomainException {
+  readonly code = 'token.invalid';
+
+  constructor() {
+    super(HttpStatus.UNAUTHORIZED, 'Liên kết không hợp lệ');
+  }
+}
+
 export class ValidationFailedException extends DomainException {
   readonly code = VALIDATION_FAILED_CODE;
 

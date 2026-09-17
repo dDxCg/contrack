@@ -6,6 +6,8 @@ import { AuthController } from './Controllers/auth.controller';
 import { ContractsController } from './Controllers/contracts.controller';
 import { CustomersController } from './Controllers/customers.controller';
 import { EmployeesController } from './Controllers/employees.controller';
+import { FieldController } from './Controllers/field.controller';
+import { ShiftsController } from './Controllers/shifts.controller';
 import { TeamsController } from './Controllers/teams.controller';
 import { DATA_SOURCE, createDataSource } from './Data/DbContext/data-source';
 import { ContractItemRepository } from './Repositories/contract-item.repository';
@@ -13,6 +15,7 @@ import { ContractRepository } from './Repositories/contract.repository';
 import { ContractSiteRepository } from './Repositories/contract-site.repository';
 import { CustomerRepository } from './Repositories/customer.repository';
 import { EmployeeRepository } from './Repositories/employee.repository';
+import { ShiftPhotoRepository } from './Repositories/shift-photo.repository';
 import { ShiftRepository } from './Repositories/shift.repository';
 import { TeamRepository } from './Repositories/team.repository';
 import { TenantRepository } from './Repositories/tenant.repository';
@@ -29,7 +32,12 @@ import { TenantResolver } from './Services/AccessControl/tenant-resolver';
 import { AuthService } from './Services/auth.service';
 import { ContractService } from './Services/contract.service';
 import { CustomerService } from './Services/customer.service';
+import { DispatchService } from './Services/dispatch.service';
+import { DisputeService } from './Services/dispute.service';
 import { EmployeeService } from './Services/employee.service';
+import { FieldLinkService } from './Services/field-link.service';
+import { FieldSubmissionService } from './Services/field-submission.service';
+import { FieldTokenService } from './Services/field-token.service';
 import { BcryptPasswordHasher, PASSWORD_HASHER } from './Services/password-hasher.service';
 import { ScheduleGeneratorService } from './Services/schedule-generator.service';
 import { TeamService } from './Services/team.service';
@@ -41,6 +49,8 @@ import { TokenService } from './Services/token.service';
     ContractsController,
     CustomersController,
     EmployeesController,
+    FieldController,
+    ShiftsController,
     TeamsController,
   ],
   providers: [
@@ -67,16 +77,22 @@ import { TokenService } from './Services/token.service';
     ContractSiteRepository,
     ContractItemRepository,
     ShiftRepository,
+    ShiftPhotoRepository,
     TenantResolver,
     RoleResolver,
     ScopeResolver,
     TokenService,
+    FieldTokenService,
     AuthService,
     CustomerService,
     EmployeeService,
     TeamService,
     ContractService,
     ScheduleGeneratorService,
+    DispatchService,
+    DisputeService,
+    FieldLinkService,
+    FieldSubmissionService,
   ],
 })
 export class AppModule {}

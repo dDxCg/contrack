@@ -63,7 +63,7 @@ export async function seedContractItemChain(
 
 export async function seedShift(
   dataSource: DataSource,
-  params: { tenantId: number; contractItemId: number; assigneeId: number; scheduledDate: string },
+  params: { tenantId: number; contractItemId: number; assigneeId: number | null; scheduledDate: string },
 ): Promise<number> {
   const [scheduled] = (await dataSource.query(`SELECT id FROM shift_statuses WHERE code = 'scheduled'`)) as {
     id: number;

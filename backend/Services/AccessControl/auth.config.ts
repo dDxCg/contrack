@@ -2,6 +2,7 @@ export interface AuthConfig {
   readonly jwtSecret: string;
   readonly accessTtlSeconds: number;
   readonly refreshTtlSeconds: number;
+  readonly fieldTtlSeconds: number;
   readonly bcryptRounds: number;
 }
 
@@ -9,6 +10,7 @@ export const AUTH_CONFIG = Symbol('AUTH_CONFIG');
 
 const DEFAULT_ACCESS_TTL_SECONDS = 1800;
 const DEFAULT_REFRESH_TTL_SECONDS = 43200;
+const DEFAULT_FIELD_TTL_SECONDS = 86400;
 const DEFAULT_BCRYPT_ROUNDS = 10;
 
 export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env): AuthConfig {
@@ -21,6 +23,7 @@ export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env): AuthConfig
     jwtSecret,
     accessTtlSeconds: readPositiveInt(env, 'JWT_ACCESS_TTL_SECONDS', DEFAULT_ACCESS_TTL_SECONDS),
     refreshTtlSeconds: readPositiveInt(env, 'JWT_REFRESH_TTL_SECONDS', DEFAULT_REFRESH_TTL_SECONDS),
+    fieldTtlSeconds: readPositiveInt(env, 'JWT_FIELD_TTL_SECONDS', DEFAULT_FIELD_TTL_SECONDS),
     bcryptRounds: readPositiveInt(env, 'BCRYPT_ROUNDS', DEFAULT_BCRYPT_ROUNDS),
   };
 }

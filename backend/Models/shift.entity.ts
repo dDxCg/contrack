@@ -1,4 +1,15 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  ShiftAlreadyCompletedException,
+  ShiftAlreadyDisputedException,
+  ShiftNotDisputedException,
+} from './domain-errors';
+
+export interface ShiftEvidence {
+  receiptPhotoUrl: string;
+  latitude: number | null;
+  longitude: number | null;
+}
 
 export enum ShiftStatus {
   Scheduled = 'scheduled',
@@ -46,4 +57,45 @@ export class Shift {
   createdAt!: Date;
 
   status!: ShiftStatus;
+
+  /** Write-once evidence (D7): a completed or disputed shift rejects a second submission. */
+  complete(evidence: ShiftEvidence, now: Date): void {
+    if (this.status === ShiftStatus.Completed || this.status === ShiftStatus.Disputed) {
+      throw new ShiftAlreadyCompletedException(this.completedAt);
+    }
+
+    this.completedAt = now;
+    this.capturedAt = now;
+    this.receiptPhotoUrl = evidence.receiptPhotoUrl;
+    this.latitude = evidence.latitude;
+    this.longitude = evidence.longitude;
+    this.status = ShiftStatus.Completed;
+  }
+
+  dispute(): void {
+    if (this.status === ShiftStatus.Disputed) {
+      throw new ShiftAlreadyDisputedException();
+    }
+
+    this.status = ShiftStatus.Disputed;
+  }
+
+  resolveDispute(): void {
+    if (this.status !== ShiftStatus.Disputed) {
+      throw new ShiftNotDisputedException(this.status);
+    }
+
+    this.status = ShiftStatus.Completed;
+  }
+
+  reassign(assigneeId: number | null, scheduledDate?: Date): void {
+    if (this.status === ShiftStatus.Completed) {
+      throw new ShiftAlreadyCompletedException(this.completedAt);
+    }
+
+    this.assigneeId = assigneeId;
+    if (scheduledDate !== undefined) {
+      this.scheduledDate = scheduledDate;
+    }
+  }
 }

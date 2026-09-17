@@ -20,6 +20,7 @@ const config: AuthConfig = {
   jwtSecret: 'test-secret',
   accessTtlSeconds: 1800,
   refreshTtlSeconds: 43200,
+  fieldTtlSeconds: 86400,
   bcryptRounds: 4,
 };
 

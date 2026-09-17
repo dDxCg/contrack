@@ -8,6 +8,7 @@ export enum Resource {
   Employees = 'employees',
   Teams = 'teams',
   Contracts = 'contracts',
+  Shifts = 'shifts',
 }
 
 export enum Operation {
@@ -55,6 +56,13 @@ const GRANTS: Readonly<Record<Resource, Partial<Record<Role, Grant>>>> = {
     [Role.Director]: { operations: ALL_OPERATIONS, scope: RowScope.All },
     [Role.Manager]: { operations: [Operation.Read, Operation.Create], scope: RowScope.All },
     [Role.Accountant]: { operations: [Operation.Read], scope: RowScope.All },
+  },
+  [Resource.Shifts]: {
+    [Role.Director]: { operations: ALL_OPERATIONS, scope: RowScope.All },
+    [Role.Manager]: { operations: [Operation.Read, Operation.Update], scope: RowScope.All },
+    [Role.Accountant]: { operations: [Operation.Read], scope: RowScope.All },
+    [Role.TeamLead]: { operations: [Operation.Read, Operation.Update], scope: RowScope.Team },
+    [Role.Employee]: { operations: [Operation.Read], scope: RowScope.Own },
   },
 };
 
