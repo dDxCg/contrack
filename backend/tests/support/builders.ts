@@ -1,6 +1,9 @@
 import { AccessContext } from '../../Services/AccessControl/access-context';
 import { RowScope } from '../../Services/AccessControl/row-scope';
 import { TokenClaims } from '../../Services/token.service';
+import { Contract, ContractStatus } from '../../Models/contract.entity';
+import { ContractItem, FrequencyUnit } from '../../Models/contract-item.entity';
+import { ContractSite } from '../../Models/contract-site.entity';
 import { Customer, CustomerSegment } from '../../Models/customer.entity';
 import { Employee, EmployeeStatus, Role } from '../../Models/employee.entity';
 import { Team } from '../../Models/team.entity';
@@ -62,6 +65,64 @@ export function aTeam(overrides: Partial<Team> = {}): Team {
       code: 'T1',
       createdAt: new Date('2024-01-15T00:00:00.000Z'),
       members: [],
+    },
+    overrides,
+  );
+}
+
+export function aContract(overrides: Partial<Contract> = {}): Contract {
+  const contract = new Contract();
+
+  return Object.assign(
+    contract,
+    {
+      id: 1,
+      tenantId: 1,
+      customerId: 1,
+      signedAt: new Date('2024-01-01'),
+      expiresAt: new Date('2024-12-31'),
+      statusId: 1,
+      createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      status: ContractStatus.Active,
+    },
+    overrides,
+  );
+}
+
+export function aContractSite(overrides: Partial<ContractSite> = {}): ContractSite {
+  const site = new ContractSite();
+
+  return Object.assign(
+    site,
+    {
+      id: 1,
+      tenantId: 1,
+      contractId: 1,
+      name: 'Toà A',
+      workRequirements: null,
+      notes: null,
+      createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    },
+    overrides,
+  );
+}
+
+export function aContractItem(overrides: Partial<ContractItem> = {}): ContractItem {
+  const item = new ContractItem();
+
+  return Object.assign(
+    item,
+    {
+      id: 1,
+      tenantId: 1,
+      siteId: 1,
+      name: 'Vệ sinh sảnh',
+      frequencyCount: 1,
+      frequencyUnitId: 1,
+      frequencyRule: null,
+      unitPrice: 500000,
+      createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      frequencyUnit: FrequencyUnit.Week,
     },
     overrides,
   );

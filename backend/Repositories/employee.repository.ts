@@ -90,6 +90,7 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
       .andWhere('s.assignee_id = :employeeId', { employeeId })
       .andWhere('s.scheduled_date >= CURRENT_DATE')
       .andWhere('s.completed_at IS NULL')
+      .orderBy('s.id', 'ASC')
       .getRawMany<{ id: number }>();
 
     return rows.map((row) => row.id);
@@ -115,7 +116,7 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
         'e.role_id AS role_id',
         'e.status_id AS status_id',
         'e.created_at AS created_at',
-        'r.name AS role',
+        'r.code AS role',
         's.code AS status',
       ]);
   }

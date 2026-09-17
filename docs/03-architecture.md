@@ -214,11 +214,14 @@ than by the shared scope check.
 
 The five scenarios, each with its failure branch, are diagrammed in
 [sequence-diagram.md](08-sequence-diagram.md): [create
-contract](08-sequence-diagram.md#1-create-contract-with-sites-and-service-items),
-[field submission](08-sequence-diagram.md#2-weekly-dispatch-and-field-shift-execution),
-[dispute](08-sequence-diagram.md#3-dispute-a-shift),
-[alerts](08-sequence-diagram.md#4-alerts-expiring-contract-and-missed-shift),
-[month-end close](08-sequence-diagram.md#5-month-end-statement-export).
+contract](08-sequence-diagram.md#3-create-contract-with-sites-and-service-items),
+[field submission](08-sequence-diagram.md#4-weekly-dispatch-and-field-shift-execution),
+[dispute](08-sequence-diagram.md#5-dispute-a-shift),
+[alerts](08-sequence-diagram.md#6-alerts-expiring-contract-and-missed-shift),
+[month-end close](08-sequence-diagram.md#7-month-end-statement-export).
+Login and Access Control are diagrams
+[1](08-sequence-diagram.md#1-login) and
+[2](08-sequence-diagram.md#2-access-control--a-protected-request).
 
 ---
 
@@ -316,6 +319,7 @@ before upload. The remaining mechanics — resumable upload, offline queue — a
 | D5 | **Customer is not a system actor** | The customer signs in person and complains by phone. | No customer login, no portal, no notification to customers in MVP. A manager records disputes manually (FR8). | Customers ask for self-service visibility into schedule or statements — a Should/Could-have already named in the PRD roadmap. |
 | D6 | **Statements exclude disputed and evidence-less shifts** | A period cannot close while a shift is unresolved. | The accountant sees a blocked close with the offending shifts listed rather than an understated total. (FR10, seq. 5) | A customer needs a statement issued before every shift's dispute is resolved, which would require partial statements — not currently a use case. |
 | D7 | **Evidence is write-once** | NFR2. Enforced in the API, not by database permissions. | A completed shift rejects a second submission; evidence columns and `shift_photos` rows are never updated after insert. Deletion follows contract cascade only. | A legitimate need for correction surfaces (wrong photo attached to the wrong shift) with no path but re-doing the whole shift. |
+| D8 | **`shifts.assignee_id` is nullable** | FR22 generates a shift's full schedule at contract creation, before anyone is assigned; assignment is a separate act (FR15, Team Lead, dispatch). Alternative: require an assignee at generation time — rejected, nothing in FR5–FR7/FR22 names who that would be. | A generated shift starts unassigned; `GET /shifts` and the dispatch view must handle `assignee_id: null` as a normal, expected state, not an error. | Dispatch design lands with a default-assignee rule (e.g. site's team lead) that makes an unassigned shift avoidable — revisit whether NOT NULL becomes enforceable again. |
 
 ---
 

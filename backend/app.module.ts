@@ -3,12 +3,17 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ValidationFailedException } from './Models/domain-errors';
 import { AuthController } from './Controllers/auth.controller';
+import { ContractsController } from './Controllers/contracts.controller';
 import { CustomersController } from './Controllers/customers.controller';
 import { EmployeesController } from './Controllers/employees.controller';
 import { TeamsController } from './Controllers/teams.controller';
 import { DATA_SOURCE, createDataSource } from './Data/DbContext/data-source';
+import { ContractItemRepository } from './Repositories/contract-item.repository';
+import { ContractRepository } from './Repositories/contract.repository';
+import { ContractSiteRepository } from './Repositories/contract-site.repository';
 import { CustomerRepository } from './Repositories/customer.repository';
 import { EmployeeRepository } from './Repositories/employee.repository';
+import { ShiftRepository } from './Repositories/shift.repository';
 import { TeamRepository } from './Repositories/team.repository';
 import { TenantRepository } from './Repositories/tenant.repository';
 import { AccessControlGuard } from './Services/AccessControl/access-control.guard';
@@ -22,14 +27,22 @@ import { RoleResolver } from './Services/AccessControl/role-resolver';
 import { ScopeResolver } from './Services/AccessControl/scope-resolver';
 import { TenantResolver } from './Services/AccessControl/tenant-resolver';
 import { AuthService } from './Services/auth.service';
+import { ContractService } from './Services/contract.service';
 import { CustomerService } from './Services/customer.service';
 import { EmployeeService } from './Services/employee.service';
 import { BcryptPasswordHasher, PASSWORD_HASHER } from './Services/password-hasher.service';
+import { ScheduleGeneratorService } from './Services/schedule-generator.service';
 import { TeamService } from './Services/team.service';
 import { TokenService } from './Services/token.service';
 
 @Module({
-  controllers: [AuthController, CustomersController, EmployeesController, TeamsController],
+  controllers: [
+    AuthController,
+    ContractsController,
+    CustomersController,
+    EmployeesController,
+    TeamsController,
+  ],
   providers: [
     { provide: AUTH_CONFIG, useFactory: () => loadAuthConfig(process.env) },
     { provide: DATA_SOURCE, useFactory: () => createDataSource(process.env) },
@@ -50,6 +63,10 @@ import { TokenService } from './Services/token.service';
     CustomerRepository,
     EmployeeRepository,
     TeamRepository,
+    ContractRepository,
+    ContractSiteRepository,
+    ContractItemRepository,
+    ShiftRepository,
     TenantResolver,
     RoleResolver,
     ScopeResolver,
@@ -58,6 +75,8 @@ import { TokenService } from './Services/token.service';
     CustomerService,
     EmployeeService,
     TeamService,
+    ContractService,
+    ScheduleGeneratorService,
   ],
 })
 export class AppModule {}

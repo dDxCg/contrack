@@ -26,14 +26,14 @@ CREATE TABLE platform_admins (
 
 CREATE TABLE roles (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name    VARCHAR(50) NOT NULL UNIQUE
+    code    VARCHAR(50) NOT NULL UNIQUE
 );
 
-INSERT INTO roles (name) VALUES ('director');
-INSERT INTO roles (name) VALUES ('accountant');
-INSERT INTO roles (name) VALUES ('manager');
-INSERT INTO roles (name) VALUES ('team_lead');
-INSERT INTO roles (name) VALUES ('employee');
+INSERT INTO roles (code) VALUES ('director');
+INSERT INTO roles (code) VALUES ('accountant');
+INSERT INTO roles (code) VALUES ('manager');
+INSERT INTO roles (code) VALUES ('team_lead');
+INSERT INTO roles (code) VALUES ('employee');
 
 CREATE TABLE customer_segments (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -216,7 +216,7 @@ CREATE TABLE shifts (
     id                      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id               INTEGER NOT NULL,
     contract_item_id        INTEGER NOT NULL,
-    assignee_id             INTEGER NOT NULL,
+    assignee_id             INTEGER,
     scheduled_date          DATE NOT NULL,
     completed_at            TIMESTAMP,
     status_id               INTEGER NOT NULL DEFAULT 1,

@@ -87,6 +87,28 @@ Contrack replaces that with one system: a contract's schedules are generated, fi
 
 ### Use Cases
 
+The use-case view of the user stories and FRs above. Each use case carries a `UC-nn` id and is
+traced back to its user story and FR in [§ Use case traceability](#use-case-traceability) —
+FR1–FR29 and US-01–US-24 all appear there.
+
+How to read it:
+
+- **One area per actor**: every actor outside the boundary has exactly one association line, into
+  the area holding the use cases that role performs. A use case two roles share (`UC-01`, `UC-09`,
+  `UC-10`, `UC-11`, `UC-14`, `UC-15`, `UC-17`) carries the same id in both areas; the requirement
+  tables above and the traceability table below name who may perform it, and under which rule.
+- **`«include»`** (dashed) means the base use case always performs the included one: a contract is
+  never saved without its sites, items and generated schedule (FR5–FR7, FR22); evidence is never
+  submitted without photos, receipt and GPS/timestamp (FR17, FR18, FR24); a statement is never
+  exported without its data (FR10, FR11); a dashboard never leaves an unclosed month blank — it
+  estimates it (FR28).
+- **`System-triggered`** is the one area no role owns — and the only one with two association lines:
+  `Scheduler` for the clock-driven use cases (FR23, FR25, FR26) and `Zalo ZNS / SMS` as the delivery
+  gateway (FR27). The role areas reach its use cases with `«include»` instead: the schedule is
+  generated at contract save (FR22) and an unclosed month is estimated on read (FR28).
+- **Role rules** live in the traceability table: where a role owns only part of a use case, the
+  table names the boundary (Manager creates and edits a contract, only Director deletes it, FR5).
+
 ```mermaid
 ---
 config:
@@ -97,85 +119,167 @@ config:
     subGraphTitleMargin: { top: 4, bottom: 4 }
 ---
 flowchart LR
+    PlatformAdmin((Platform<br/>Admin))
+    Director((Director))
+    Manager((Manager))
+    Accountant((Accountant))
+    TeamLead((Team<br/>Lead))
     Employee((Employee))
-    TeamLead((Team Lead))
+    Scheduler((Scheduler<br/><i>time-driven</i>))
+    Zalo((Zalo ZNS / SMS<br/><i>gateway</i>))
 
     subgraph Contrack["Contrack"]
-        direction LR
-        subgraph DirectorBox[" "]
-            D_Login([Login])
-            D_View([View shifts])
-            D_Contract([Manage contract])
-            D_Schedule([Generate schedule])
-            D_Customer([Manage customer])
-            D_Dispute([Mark disputed])
-            D_Evidence([Review evidence])
-            D_Reconcile([Reconcile])
-            D_Account([Manage account])
-            D_Dashboard([View dashboard])
+        subgraph PlatformAdminBox["Platform Admin — outside every tenant"]
+            PA_Login(["UC-01 · Sign in"])
+            PA_Onboard(["UC-02 · Onboard tenant"])
+            PA_FirstDirector(["UC-03 · Create first Director account"])
+            PA_TenantStatus(["UC-04 · Suspend / reactivate tenant"])
+            PA_PlatformDash(["UC-05 · View platform dashboard"])
         end
-        subgraph AccountantBox[" "]
-            A_Login([Login])
-            A_Export([Export statement])
-            A_GenStmt([Generate statement data])
-            A_Send([Send statement])
-            A_Reconcile([Reconcile])
+        subgraph DirectorBox["Director"]
+            D_Login(["UC-01 · Sign in"])
+            D_Dashboard(["UC-06 · View dashboard"])
+            D_Accounts(["UC-07 · Manage employee accounts"])
+            D_Teams(["UC-08 · Manage teams"])
+            D_ProfitLoss(["UC-09 · View profit / loss"])
+            D_Customers(["UC-10 · Manage customers"])
+            D_Contract(["UC-11 · Manage contract"])
+            D_Sites(["UC-12 · Manage sites"])
+            D_Items(["UC-13 · Manage service items"])
+            D_ViewShifts(["UC-14 · View shifts and evidence"])
+            D_Dispute(["UC-15 · Flag shift disputed"])
+            D_Review(["UC-16 · Review shift evidence"])
+            D_Reconcile(["UC-17 · View reconciliation"])
         end
-        subgraph ManagerBox[" "]
-            M_Login([Login])
-            M_View([View shifts])
-            M_Contract([Manage contract])
-            M_Schedule([Generate schedule])
-            M_Customer([Manage customer])
-            M_Dispute([Mark disputed])
-            M_Evidence([Review evidence])
+
+        subgraph ManagerBox["Manager"]
+            M_Login(["UC-01 · Sign in"])
+            M_Customers(["UC-10 · Manage customers"])
+            M_Contract(["UC-11 · Manage contract"])
+            M_Sites(["UC-12 · Manage sites"])
+            M_Items(["UC-13 · Manage service items"])
+            M_ViewShifts(["UC-14 · View shifts and evidence"])
+            M_Dispute(["UC-15 · Flag shift disputed"])
+            M_Review(["UC-16 · Review shift evidence"])
         end
-        subgraph TeamLeadBox[" "]
-            T_Login([Login])
-            T_View([View shifts])
-            T_Reassign([Reassign / reschedule])
+        subgraph AccountantBox["Accountant"]
+            A_Login(["UC-01 · Sign in"])
+            A_ProfitLoss(["UC-09 · View profit / loss"])
+            A_Reconcile(["UC-17 · View reconciliation"])
+            A_Cost(["UC-25 · Record monthly cost"])
+            A_StmtData(["UC-26 · Generate statement data"])
+            A_Export(["UC-27 · Export statement as PDF"])
+            A_Send(["UC-28 · Send statement to customer"])
         end
-        subgraph EmployeeBox[" "]
-            E_Login([Login])
-            E_View([View shifts])
-            E_Complete([Complete shift])
-            E_Photos([Before / after photos])
-            E_Receipt([Signed receipt photo])
-            E_GPS([Capture GPS &amp; timestamp])
+        subgraph TeamLeadBox["Team Lead"]
+            T_Login(["UC-01 · Sign in"])
+            T_Week(["UC-18 · View this week's shifts"])
+            T_Reschedule(["UC-19 · Reassign / reschedule shift"])
+        end
+        subgraph EmployeeBox["Employee — no nav, each shift arrives as a link"]
+            E_Login(["UC-01 · Sign in"])
+            E_OpenShift(["UC-20 · Open shift from phone link"])
+            E_Submit(["UC-21 · Submit shift evidence"])
+            E_Photos(["UC-22 · Capture before / after photos"])
+            E_Receipt(["UC-23 · Capture signed-receipt photo"])
+            E_GPS(["UC-24 · Capture GPS and timestamp"])
+        end
+        subgraph SystemBox["System-triggered"]
+            S_Push(["UC-30 · Push this week's shifts"])
+            S_Expiry(["UC-31 · Alert: contract within 30 days of expiry"])
+            S_Missed(["UC-32 · Alert: shift past due and not completed"])
+            S_Schedule(["UC-29 · Generate shift schedule"])
+            S_Estimate(["UC-34 · Estimate month cost"])
+            S_Alert(["UC-33 · Send alert via Zalo (ZNS) / SMS"])
         end
     end
 
-    Manager((Manager))
-    Accountant((Accountant))
-    Director((Director))
-
-    Employee --- EmployeeBox
-    TeamLead --- TeamLeadBox
-    ManagerBox --- Manager
-    AccountantBox --- Accountant
-    DirectorBox --- Director
-
-    E_Complete -.->|"&laquo;include&raquo;"| E_Photos
-    E_Complete -.->|"&laquo;include&raquo;"| E_Receipt
-    E_Complete -.->|"&laquo;include&raquo;"| E_GPS
-    D_Login ~~~ D_Reconcile
-    D_View ~~~ D_Account
-    D_Customer ~~~ D_Dashboard
-
-    M_Contract -.->|"&laquo;include&raquo;"| M_Schedule
-    M_Dispute -.->|"&laquo;include&raquo;"| M_Evidence
-    D_Contract -.->|"&laquo;include&raquo;"| D_Schedule
-    D_Dispute -.->|"&laquo;include&raquo;"| D_Evidence
-    A_Export -.->|"&laquo;include&raquo;"| A_GenStmt
-
     classDef box fill:#f8fafc,stroke:#94a3b8,color:#0f172a
-    class Contrack,EmployeeBox,TeamLeadBox,ManagerBox,AccountantBox,DirectorBox box
     classDef actor fill:#f1f5f9,stroke:#64748b,color:#0f172a
     classDef uc fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
     classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
-    classDef incReq fill:#f8fafc,stroke:#1d4ed8,color:#0f172a
-    class Employee,TeamLead,Manager,Accountant,Director actor
-    class E_Login,E_View,E_Complete,T_Login,T_View,T_Reassign,M_Login,M_View,M_Contract,M_Customer,M_Dispute,A_Login,A_Export,A_Send,A_Reconcile,D_Login,D_View,D_Contract,D_Customer,D_Dispute,D_Reconcile,D_Account,D_Dashboard uc
-    class M_Schedule,M_Evidence,D_Schedule,D_Evidence,A_GenStmt inc
-    class E_Photos,E_Receipt,E_GPS incReq
+    class Contrack,PlatformAdminBox,DirectorBox,ManagerBox,AccountantBox,TeamLeadBox,EmployeeBox,SystemBox box
+    class PlatformAdmin,Director,Manager,Accountant,TeamLead,Employee,Scheduler,Zalo actor
+    class PA_Login,PA_Onboard,PA_TenantStatus,PA_PlatformDash,D_Login,D_Dashboard,D_Accounts,D_Teams,D_ProfitLoss,D_Customers,D_Contract,D_ViewShifts,D_Dispute,D_Reconcile,M_Login,M_Customers,M_Contract,M_ViewShifts,M_Dispute,A_Login,A_ProfitLoss,A_Reconcile,A_Cost,A_Export,A_Send,T_Login,T_Week,T_Reschedule,E_Login,E_OpenShift,E_Submit,S_Push,S_Expiry,S_Missed uc
+    class PA_FirstDirector,D_Sites,D_Items,D_Review,M_Sites,M_Items,M_Review,A_StmtData,E_Photos,E_Receipt,E_GPS,S_Schedule,S_Estimate,S_Alert inc
+
+    %% Actor-to-use-case — one association per actor, into that actor's own area
+    PlatformAdmin --- PlatformAdminBox
+    Director --- DirectorBox
+    Manager --- ManagerBox
+    Accountant --- AccountantBox
+    TeamLead --- TeamLeadBox
+    Employee --- EmployeeBox
+    Scheduler --- SystemBox
+    Zalo --- SystemBox
+
+    %% «include»
+    PA_Onboard -.->|"&laquo;include&raquo;"| PA_FirstDirector
+    D_Dashboard -.->|"&laquo;include&raquo;"| S_Estimate
+    D_ProfitLoss -.->|"&laquo;include&raquo;"| S_Estimate
+    D_Contract -.->|"&laquo;include&raquo;"| D_Sites
+    D_Contract -.->|"&laquo;include&raquo;"| D_Items
+    D_Contract -.->|"&laquo;include&raquo;"| S_Schedule
+    D_Dispute -.->|"&laquo;include&raquo;"| D_Review
+    M_Contract -.->|"&laquo;include&raquo;"| M_Sites
+    M_Contract -.->|"&laquo;include&raquo;"| M_Items
+    M_Contract -.->|"&laquo;include&raquo;"| S_Schedule
+    M_Dispute -.->|"&laquo;include&raquo;"| M_Review
+    A_Export -.->|"&laquo;include&raquo;"| A_StmtData
+    A_Send -.->|"&laquo;include&raquo;"| A_Export
+    A_ProfitLoss -.->|"&laquo;include&raquo;"| S_Estimate
+    E_Submit -.->|"&laquo;include&raquo;"| E_Photos
+    E_Submit -.->|"&laquo;include&raquo;"| E_Receipt
+    E_Submit -.->|"&laquo;include&raquo;"| E_GPS
+    S_Expiry -.->|"&laquo;include&raquo;"| S_Alert
+    S_Missed -.->|"&laquo;include&raquo;"| S_Alert
 ```
+
+#### Use case traceability
+
+Ids match the diagram above: a use case two roles perform keeps one id and appears in both role
+areas. A `—` in the FR column means the use case is the surface a screen
+`02-screens-heriarchy.md` gives a role rather than an FR of its own; every other row traces to
+both a US# and an FR#.
+
+| # | Use case | User story | FR | Actor(s) and rule |
+|---|---|---|---|---|
+| UC-01 | Sign in | US-01 | FR1 | Every role, Platform Admin included; the session carries the tenant, role and row scope of the account; an unknown email or a suspended tenant is refused before the password check (US-22) |
+| UC-02 | Onboard tenant | US-21 | FR19 | Platform Admin; saving creates exactly one active Director login for the new tenant (`«include»` UC-03) |
+| UC-03 | Create first Director account | US-21 | FR19 | Included by UC-02; scoped to the new tenant only |
+| UC-04 | Suspend / reactivate tenant | US-22 | FR20 | Platform Admin; a suspended tenant's accounts are refused before the password check, reactivation lets them sign in again |
+| UC-05 | View platform dashboard | US-23 | FR21 | Platform Admin; tenant counts by status, recent onboarding activity, tenant growth trend |
+| UC-06 | View dashboard | US-02, US-03, US-04, US-05 | FR2 | Director; contract counts, projected revenue, late/missed shifts by month, on-time renewal and cancellation rates, new contracts signed and the profit/loss trend — filterable by month, completion rates computed only against shifts actually due (`«include»` UC-34) |
+| UC-07 | Manage employee accounts | US-06 | FR3 | Director; create, read, update or deactivate with role and manager assignment; deactivation is a soft delete — the shift and cost history survive |
+| UC-08 | Manage teams | US-24 | FR29 | Director; code unique per tenant; delete blocked while the team still has members |
+| UC-09 | View profit / loss | US-08, US-09 | FR4 | Director, Accountant; per contract per month = `contract_items` revenue minus that month's recorded cost (`«include»` UC-34) |
+| UC-10 | Manage customers | US-14 | FR9 | Manager, Director create and update; delete is Director only and blocked while the customer holds an active contract |
+| UC-11 | Manage contract | US-10 | FR5 | Manager, Director create; update/delete Director only; a site or item missing frequency or unit price rejects the whole save, naming the field (`«include»` UC-12, UC-13, UC-29) |
+| UC-12 | Manage sites | US-10 | FR6 | Included by UC-11; update/delete Director only |
+| UC-13 | Manage service items | US-10 | FR7 | Included by UC-11; name, frequency and unit price per site |
+| UC-14 | View shifts and evidence | US-11 | — | Manager, Director; the *Shifts & Disputes* screens (`02-screens-heriarchy.md`) — no FR of its own |
+| UC-15 | Flag shift disputed | US-11 | FR8 | Manager, Director; the dispute keeps the shift's photos, receipt and GPS and shows the reason, separately from a normal completed shift (`«include»` UC-16) |
+| UC-16 | Review shift evidence | US-11 | — | Included by UC-15 (FR8); evidence is write-once (NFR2), so the review is read-only |
+| UC-17 | View reconciliation | US-07 | FR13 | Accountant, Director; shifts due by frequency next to shifts with complete evidence, for one contract and one period |
+| UC-18 | View this week's shifts | US-18 | FR23 | Team Lead, own team only; the list arrives pushed by the system (UC-30) |
+| UC-19 | Reassign / reschedule shift | US-19 | FR15 | Team Lead; rejected once the shift is completed |
+| UC-20 | Open shift from phone link | US-20 | FR16 | Employee; a shared web link, no app install (NFR7) |
+| UC-21 | Submit shift evidence | US-20 | FR17, FR18, FR24 | Employee; the shift reaches `completed` only when all three captures are present (`«include»` UC-22, UC-23, UC-24) |
+| UC-22 | Capture before / after photos | US-20 | FR17 | Included by UC-21 |
+| UC-23 | Capture signed-receipt photo | US-20 | FR18 | Included by UC-21; the photographed paper original stays the legal artifact (`03-architecture.md` D4) |
+| UC-24 | Capture GPS and timestamp | US-20 | FR24 | Included by UC-21; captured automatically on submission and non-editable afterwards (NFR2) |
+| UC-25 | Record monthly cost | US-17 | FR14 | Accountant; labor, materials or other, per contract per month — that contract's profit/loss for the month updates immediately |
+| UC-26 | Generate statement data | US-15 | FR10 | Included by UC-27; one monthly statement per contract from its completed shifts |
+| UC-27 | Export statement as PDF | US-15 | FR11 | Accountant; one action produces the full PDF with photos and signature; blocked while any shift in the period lacks evidence, with the missing shifts listed (`«include»` UC-26) |
+| UC-28 | Send statement to customer | US-16 | FR12 | Accountant; marks the statement sent with a timestamp and refuses a second send (`«include»` UC-27) |
+| UC-29 | Generate shift schedule | US-10 | FR22 | Included by UC-11; the whole schedule is generated at save, from each service item's frequency |
+| UC-30 | Push this week's shifts | US-18 | FR23 | Scheduler; each team lead's list arrives scoped to that lead's own team |
+| UC-31 | Alert: contract within 30 days of expiry | US-12 | FR25 | Scheduler; fires once per contract when the 30-day threshold on `expires_at` is crossed, never twice (`«include»` UC-33) |
+| UC-32 | Alert: shift past due and not completed | US-13 | FR26 | Scheduler; fires the moment a shift passes its due date for the contract's frequency (`«include»` UC-33) |
+| UC-33 | Send alert via Zalo (ZNS) / SMS | US-12, US-13 | FR27 | Included by UC-31 and UC-32; ZNS with SMS fallback |
+| UC-34 | Estimate month cost | US-09 | FR28 | Included by UC-06 and UC-09; trailing 3-month average of that contract's own recorded costs, else the tenant's average cost-to-revenue ratio — an unclosed month is never left blank |
+
+UC-14 and UC-16 are the only use cases without an FR of their own: they are the evidence-review
+surface the screens hierarchy names, which FR8 hangs a dispute on. Every other use case traces to
+at least one FR, and FR1–FR29 each appear above — the diagram restates the requirement tables, it
+adds nothing to them.

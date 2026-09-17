@@ -32,11 +32,6 @@ Specification: [docs/01-requirements-analysis.md](docs/01-requirements-analysis.
 ---
 
 ## User stories
-
-INVEST-checked and ID'd, all 23 — sorted by role: cross-cutting sign-in first, then
-Director, Manager, Accountant, Team Lead, Employee, Platform Admin. A multi-role row
-sorts under the first-listed role. FR trace: [Functional Requirements](docs/01-requirements-analysis.md#functional-requirements) table in the same doc.
-
 | ID | As a... | I want to... | So that... | Acceptance criteria |
 |---|---|---|---|---|
 | US-01 | employee (any role) | sign in with my email and password | I get a session scoped to my tenant, role and row-scope | Given a valid email/password, when I sign in, then I receive a token carrying tenant + role; given the email doesn't exist or the tenant is suspended, when I sign in, then I'm rejected before any password check |
@@ -315,7 +310,72 @@ classDiagram
 ```
 
 ### Sequence Diagrams
-**1. Create contract with sites and service items**
+**1. Login**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Employee
+    participant API
+    participant AuthService
+    participant DB as Database
+
+    Employee->>API: POST /auth/login (email, password)
+    API->>AuthService: login(email, password)
+    AuthService->>DB: Find employee by email
+    alt no matching employee, or inactive, or no password set
+        AuthService-->>Employee: 401 auth.invalid_credentials
+    else employee found
+        AuthService->>DB: Find employee's tenant
+        alt tenant suspended
+            AuthService-->>Employee: 401 auth.invalid_credentials — before password check
+        else tenant active
+            AuthService->>AuthService: Verify password hash
+            alt password wrong
+                AuthService-->>Employee: 401 auth.invalid_credentials
+            else password correct
+                AuthService->>AuthService: Sign access + refresh token (tenant_id, role, sub)
+                AuthService-->>Employee: 200 token, refresh_token, employee
+            end
+        end
+    end
+```
+
+**2. Access Control — a protected request**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Employee
+    participant API
+    participant Guard as AccessControlGuard
+    participant Resolvers as Tenant/Role/Scope Resolver
+    participant DB as Database
+
+    Employee->>API: Request with Authorization: Bearer <token>
+    API->>Guard: canActivate()
+    Guard->>Guard: Verify bearer token signature + expiry
+    alt token missing, malformed or expired
+        Guard-->>Employee: 401 auth.credential_expired
+    else token valid
+        Guard->>Resolvers: Resolve tenant_id from token claims
+        Guard->>DB: Find employee by (tenant_id, sub)
+        alt employee not found or deactivated since token issued
+            Guard-->>Employee: 401 auth.credential_expired
+        else employee active
+            Guard->>Resolvers: requireRole(resource, operation, role)
+            alt role not granted
+                Guard-->>Employee: 403 auth.forbidden_role
+            else role granted
+                Guard->>Resolvers: Resolve row scope — own/team/unit/all
+                Guard->>API: Attach AccessContext
+                API-->>Employee: Handler runs, scoped to tenant + row scope
+            end
+        end
+    end
+```
+
+**3. Create contract with sites and service items**
 
 ```mermaid
 sequenceDiagram
@@ -336,7 +396,7 @@ sequenceDiagram
     end
 ```
 
-**2. Weekly dispatch and field shift execution**
+**4. Weekly dispatch and field shift execution**
 
 ```mermaid
 sequenceDiagram
@@ -355,17 +415,16 @@ sequenceDiagram
     Employee->>System: Submit photo of signed receipt
     System->>System: Capture GPS + timestamp
     alt GPS signal available
-        System->>DB: UPDATE shifts SET status = completed, latitude, longitude, captured_at, receipt_photo_url
+        System->>DB: UPDATE shift — completed, with location
         System->>DB: INSERT shift_photos (before, after)
         System-->>Employee: Shift marked completed
     else no GPS signal
-        System->>DB: UPDATE shifts SET status = completed, latitude = NULL, longitude = NULL
+        System->>DB: UPDATE shift — completed, no location
         System-->>Employee: Shift completed, flagged for missing location
     end
-    Note over Employee: Keeps original paper receipt for filing
 ```
 
-**3. Dispute a shift**
+**5. Dispute a shift**
 
 ```mermaid
 sequenceDiagram
@@ -388,7 +447,7 @@ sequenceDiagram
     end
 ```
 
-**4. Alerts: expiring contract and missed shift**
+**6. Alerts: expiring contract and missed shift**
 
 ```mermaid
 sequenceDiagram
@@ -415,7 +474,7 @@ sequenceDiagram
     end
 ```
 
-**5. Month-end statement export**
+**7. Month-end statement export**
 
 ```mermaid
 sequenceDiagram
@@ -440,6 +499,110 @@ sequenceDiagram
     else a shift is missing evidence or still disputed
         System-->>Accountant: Cannot close period, list incomplete shifts
     end
+```
+
+**8. Platform Admin onboards a new tenant**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor PlatformAdmin as Platform Admin
+    participant System
+    participant DB as Database
+
+    PlatformAdmin->>System: Create tenant (company name, first Director email)
+    System->>System: Validate — FR19
+    alt tenant name and Director email are valid
+        System->>DB: INSERT tenants (status = active)
+        System->>DB: INSERT first Director account (role = director, temp password)
+        System-->>PlatformAdmin: Tenant created, one active Director login scoped to it
+    else Director email already in use
+        System-->>PlatformAdmin: Reject — employees.email is globally unique
+    end
+```
+
+**9. Platform Admin suspends or reactivates a tenant**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor PlatformAdmin as Platform Admin
+    participant System
+    participant DB as Database
+    actor Employee as Any tenant employee
+
+    PlatformAdmin->>System: Suspend tenant — FR20
+    System->>DB: UPDATE tenants SET status = suspended
+    System-->>PlatformAdmin: Tenant suspended
+    Employee->>System: Sign in (desk credential)
+    System->>DB: Resolve tenant from matched employee
+    alt tenant is suspended
+        System-->>Employee: Rejected before password check
+    else tenant reactivated
+        PlatformAdmin->>System: Reactivate tenant
+        System->>DB: UPDATE tenants SET status = active
+        Employee->>System: Sign in again
+        System-->>Employee: Session issued as normal
+    end
+```
+
+**10. Team lead reassigns or reschedules a shift**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor TeamLead as Team Lead
+    participant System
+    participant DB as Database
+
+    TeamLead->>System: Reassign shift to a different team member, or move its date
+    System->>DB: SELECT shift status
+    alt shift not yet completed
+        System->>DB: UPDATE shifts SET assignee / scheduled_date
+        System-->>TeamLead: Shift updated
+    else shift already completed
+        System-->>TeamLead: Reject — shift already completed
+    end
+```
+
+**11. Accountant records a cost, profitability updates**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Accountant
+    participant System
+    participant DB as Database
+    actor Director
+
+    Accountant->>System: Save cost entry (contract, category, month, amount) — FR14
+    System->>DB: UPSERT contract_costs for (category, period)
+    System-->>Accountant: Cost saved
+    Director->>System: Open profitability view for the contract
+    System->>DB: Query contract_items revenue and that month's recorded cost
+    alt month has recorded cost
+        DB-->>System: Actual profit/loss
+    else month has no recorded cost yet
+        DB-->>System: Estimated profit/loss
+    end
+    System-->>Director: Profit/loss, flagged actual or estimated
+```
+
+**12. Reconciliation: shifts due vs. shifts with evidence**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Accountant
+    participant System
+    participant DB as Database
+
+    Accountant->>System: Open reconciliation for a contract and period
+    System->>DB: Query shifts due by each item's frequency
+    System->>DB: Query shifts with complete evidence in the period
+    DB-->>System: Due list, evidenced list
+    System->>System: Compute variance — due but not evidenced
+    System-->>Accountant: Side-by-side due vs. evidenced, variance called out
 ```
 
 Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
@@ -478,7 +641,7 @@ Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 │   │   ├── PlatformAuthController
 │   │   ├── TenantsController
 │   │   ├── PlatformDashboardController
-│   │   ├── ContractsController
+│   │   ├── contracts.controller.ts
 │   │   ├── ShiftsController
 │   │   ├── FieldController
 │   │   ├── StatementsController
@@ -491,6 +654,7 @@ Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 │   │   └── teams.controller.ts
 │   ├── DTOs/
 │   │   ├── auth.dto.ts
+│   │   ├── contracts.dto.ts
 │   │   ├── customers.dto.ts
 │   │   ├── employees.dto.ts
 │   │   ├── teams.dto.ts
@@ -498,8 +662,6 @@ Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 │   ├── Services/
 │   │   ├── TenantService
 │   │   ├── PlatformDashboardService
-│   │   ├── ContractService
-│   │   ├── ScheduleGeneratorService
 │   │   ├── DispatchService
 │   │   ├── FieldSubmissionService
 │   │   ├── DisputeService
@@ -515,6 +677,8 @@ Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 │   │   ├── customer.service.ts
 │   │   ├── employee.service.ts
 │   │   ├── team.service.ts
+│   │   ├── contract.service.ts
+│   │   ├── schedule-generator.service.ts
 │   │   └── AccessControl/
 │   │       ├── access-context.ts
 │   │       ├── auth.config.ts
@@ -531,10 +695,10 @@ Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 │   │   ├── customer.repository.ts
 │   │   ├── employee.repository.ts
 │   │   ├── team.repository.ts
-│   │   ├── ContractRepository
-│   │   ├── ContractSiteRepository
-│   │   ├── ContractItemRepository
-│   │   ├── ShiftRepository
+│   │   ├── contract.repository.ts
+│   │   ├── contract-site.repository.ts
+│   │   ├── contract-item.repository.ts
+│   │   ├── shift.repository.ts
 │   │   ├── ShiftPhotoRepository
 │   │   ├── StatementRepository
 │   │   └── ContractCostRepository
@@ -544,11 +708,11 @@ Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 │   │   ├── employee.entity.ts
 │   │   ├── customer.entity.ts
 │   │   ├── team.entity.ts
+│   │   ├── contract.entity.ts
+│   │   ├── contract-site.entity.ts
+│   │   ├── contract-item.entity.ts
+│   │   ├── shift.entity.ts
 │   │   ├── PlatformAdmin
-│   │   ├── Contract
-│   │   ├── ContractSite
-│   │   ├── ContractItem
-│   │   ├── Shift
 │   │   ├── ShiftPhoto
 │   │   ├── Statement
 │   │   └── ContractCost
@@ -641,14 +805,14 @@ Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 
 | # | Document | Contents |
 |---|---|---|
-| 1 | [Requirements Analysis](docs/01-requirements-analysis.md) | Project overview, User stories (INVEST), Functional requirements, Non-fucntional requirements Use-case diagram |
+| 1 | [Requirements Analysis](docs/01-requirements-analysis.md) | Project overview, User stories (INVEST), Functional requirements, Non-fucntional requirements, Use-case diagram (UC-01…UC-34, one area per role) with a US/FR traceability table |
 | 2 | [Screens Hierarchy](docs/02-screens-heriarchy.md) | Screens hierarchy, per role |
 | 3 | [Architecture](docs/03-architecture.md) | arc42 + c4 |
 | 4 | [ERD](docs/04-erd.md) | Entity-relationship diagram |
 | 5 | [API Specification (OpenAPI)](docs/05-api.yaml) | OpenAPI 3.0 — paths, schemas, error examples |
 | 6 | [Repo Layout](docs/06-repo-layout.md) | Planned source tree for NestJS backend, ReactJS frontend |
 | 7 | [Class Diagram](docs/07-class-diagram.md) | Class diagram |
-| 8 | [Sequence Diagram](docs/08-sequence-diagram.md) | 10 sequence diagrams |
+| 8 | [Sequence Diagram](docs/08-sequence-diagram.md) |Sequence diagrams |
 | 9 | [Prototype](docs/ui/prototype.html) | UI Prototpye |
 | 10 | [SQL Schema](docs/04-schema.sql) | ANSI SQL |
 ---

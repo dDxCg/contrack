@@ -495,8 +495,8 @@ paths:
       operationId: regenerateSchedule
       summary: Regenerate future shifts after an item or term change
       description: >
-        Never touches a completed or disputed shift. Frequency currently has no
-        grammar (`05-architecture.md` §11 R2) — blocked until that is resolved.
+        Never touches a completed or disputed shift. Regenerates off frequency_count
+        + frequency_unit_id (`03-architecture.md` §11 R2, resolved).
       x-roles: [director, manager]
       x-scope: all
       responses:
@@ -1634,7 +1634,7 @@ components:
       properties:
         id: { type: integer }
         contract_item_id: { type: integer }
-        assignee_id: { type: integer }
+        assignee_id: { type: integer, nullable: true, description: "NULL until dispatch assigns it (FR15) — schedule generation (FR22) creates the shift unassigned" }
         scheduled_date: { type: string, format: date }
         completed_at: { type: string, format: date-time, nullable: true }
         status: { $ref: '#/components/schemas/ShiftStatus' }

@@ -1,14 +1,14 @@
 import { JwtService } from '@nestjs/jwt';
-import { anAccessContext, anEmployee, aTenant } from '../../support/builders';
+import { DataSource } from 'typeorm';
+import { anAccessContext } from '../../support/builders';
 import { FakeClock } from '../../support/clock';
 import { captureDomainError, captureDomainErrorAsync } from '../../support/domain-errors';
-import {
-  InMemoryDb,
-  InMemoryEmployeeRepository,
-  InMemoryTenantRepository,
-} from '../../support/in-memory-repositories';
+import { createTestDataSource } from '../../support/pg-mem-data-source';
+import { seedTenant } from '../../support/seed';
 import { Employee, EmployeeStatus, Role } from '../../../Models/employee.entity';
 import { Tenant, TenantStatus } from '../../../Models/tenant.entity';
+import { EmployeeRepository } from '../../../Repositories/employee.repository';
+import { TenantRepository } from '../../../Repositories/tenant.repository';
 import { AuthConfig } from '../../../Services/AccessControl/auth.config';
 import { AccessContext } from '../../../Services/AccessControl/access-context';
 import { RowScope } from '../../../Services/AccessControl/row-scope';
@@ -24,41 +24,49 @@ const config: AuthConfig = {
 };
 
 interface World {
-  db: InMemoryDb;
+  dataSource: DataSource;
   service: AuthService;
   hasher: BcryptPasswordHasher;
   tokenService: TokenService;
+  tenant: Tenant;
   employee: Employee;
 }
 
-async function loadWorld(setup: { tenant?: Partial<Tenant>; employee?: Partial<Employee> } = {}): Promise<World> {
-  const db = new InMemoryDb();
-  const tokenService = new TokenService(new JwtService({ secret: config.jwtSecret }), config, new FakeClock());
+async function loadWorld(
+  setup: { tenant?: { status?: TenantStatus }; employee?: Partial<Employee> } = {},
+): Promise<World> {
+  const dataSource = await createTestDataSource();
+  const employeeRepository = new EmployeeRepository(dataSource);
+  const tokenService = new TokenService(
+    new JwtService({ secret: config.jwtSecret }),
+    config,
+    new FakeClock(),
+  );
   const hasher = new BcryptPasswordHasher(config.bcryptRounds);
 
-  const tenant = aTenant({ id: 4, status: TenantStatus.Active, ...setup.tenant });
-  const employee = anEmployee({
-    id: 12,
-    tenantId: 4,
-    email: 'mai.lt@example.com',
-    role: Role.Manager,
-    passwordHash: await hasher.hash('secret'),
-    ...setup.employee,
-  });
-  db.tenants.push(tenant);
-  db.employees.push(employee);
+  const tenant = await seedTenant(dataSource, { status: setup.tenant?.status });
+
+  const draft = new Employee();
+  draft.tenantId = tenant.id;
+  draft.setName('Lê Thị Mai');
+  draft.setContact(null);
+  draft.email = 'mai.lt@example.com';
+  draft.setRole(Role.Manager);
+  draft.setTeam(null);
+  draft.setManager(null);
+  draft.status = EmployeeStatus.Active;
+  draft.setPasswordHash(await hasher.hash('secret'));
+  Object.assign(draft, setup.employee);
+
+  const employee = await employeeRepository.create(draft);
 
   return {
-    db,
+    dataSource,
     hasher,
     tokenService,
+    tenant,
     employee,
-    service: new AuthService(
-      new InMemoryTenantRepository(db),
-      new InMemoryEmployeeRepository(db),
-      tokenService,
-      hasher,
-    ),
+    service: new AuthService(new TenantRepository(dataSource), employeeRepository, tokenService, hasher),
   };
 }
 
@@ -72,22 +80,31 @@ function sessionContext(world: World, token: string): AccessContext {
 
 describe('AuthService.login — FR22', () => {
   it('exchanges an email and password for a credential pair', async () => {
-    const { service } = await loadWorld();
+    const { service, tenant, employee } = await loadWorld();
 
     const session = await service.login({ email: 'mai.lt@example.com', password: 'secret' });
 
-    expect(session.employee).toEqual({ id: 12, tenant_id: 4, name: 'Lê Thị Mai', role: Role.Manager });
+    expect(session.employee).toEqual({
+      id: employee.id,
+      tenant_id: tenant.id,
+      name: 'Lê Thị Mai',
+      role: Role.Manager,
+    });
     expect(session.expires_in).toBe(1800);
     expect(session.refresh_token).toEqual(expect.any(String));
     expect(session.token).toEqual(expect.any(String));
   });
 
   it('issues a credential the caller can present on the next request', async () => {
-    const { service, tokenService } = await loadWorld();
+    const { service, tokenService, tenant, employee } = await loadWorld();
 
     const session = await service.login({ email: 'mai.lt@example.com', password: 'secret' });
 
-    expect(tokenService.verifyAccess(session.token)).toMatchObject({ sub: 12, tenant_id: 4, role: Role.Manager });
+    expect(tokenService.verifyAccess(session.token)).toMatchObject({
+      sub: employee.id,
+      tenant_id: tenant.id,
+      role: Role.Manager,
+    });
   });
 
   it('does not distinguish an unknown email from a wrong password (05-api.md §9)', async () => {
@@ -181,9 +198,12 @@ describe('AuthService.refresh', () => {
   });
 
   it('refuses to refresh for an employee who has since been terminated', async () => {
-    const { service, employee } = await loadWorld();
+    const { service, dataSource, employee } = await loadWorld();
     const session = await service.login({ email: 'mai.lt@example.com', password: 'secret' });
-    employee.status = EmployeeStatus.Terminated;
+    await dataSource.query(
+      `UPDATE employees SET status_id = (SELECT id FROM employee_statuses WHERE code = 'terminated') WHERE id = $1`,
+      [employee.id],
+    );
 
     const error = await captureDomainErrorAsync(() => service.refresh(session.refresh_token));
 
@@ -256,7 +276,7 @@ describe('AuthService.me', () => {
     const { service, employee } = await loadWorld();
 
     expect(service.me(anAccessContext(employee))).toMatchObject({
-      id: 12,
+      id: employee.id,
       name: 'Lê Thị Mai',
       email: 'mai.lt@example.com',
       role: Role.Manager,

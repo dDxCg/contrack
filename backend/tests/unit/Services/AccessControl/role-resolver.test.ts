@@ -32,6 +32,17 @@ describe('RoleResolver — 05-api.md §8', () => {
       expect(resolver.rolesFor(Resource.Teams, Operation.Delete)).toEqual([Role.Director]);
     });
 
+    it('contracts: R C U D for director, R C for manager, R for accountant', () => {
+      expect(resolver.rolesFor(Resource.Contracts, Operation.Read)).toEqual([
+        Role.Director,
+        Role.Manager,
+        Role.Accountant,
+      ]);
+      expect(resolver.rolesFor(Resource.Contracts, Operation.Create)).toEqual([Role.Director, Role.Manager]);
+      expect(resolver.rolesFor(Resource.Contracts, Operation.Update)).toEqual([Role.Director]);
+      expect(resolver.rolesFor(Resource.Contracts, Operation.Delete)).toEqual([Role.Director]);
+    });
+
     it('has no granting role for a role the matrix leaves blank', () => {
       expect(resolver.rolesFor(Resource.Employees, Operation.Read)).not.toContain(Role.TeamLead);
       expect(resolver.rolesFor(Resource.Teams, Operation.Create)).not.toContain(Role.Manager);

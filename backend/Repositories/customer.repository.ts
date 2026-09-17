@@ -49,7 +49,7 @@ export class CustomerRepository extends TenantScopedRepository<Customer> {
     const rows = await this.scopedIds('contracts', tenantId, 'c')
       .innerJoin('contract_statuses', 's', 's.id = c.status_id')
       .andWhere('c.customer_id = :customerId', { customerId })
-      .andWhere("s.code IN ('active', 'expiring_soon')")
+      .andWhere("s.code = 'active'")
       .getRawMany<{ id: number }>();
 
     return rows.map((row) => row.id);

@@ -56,7 +56,7 @@ erDiagram
 
     roles {
         int id PK
-        varchar name
+        varchar code
     }
 
     customer_segments {
@@ -163,7 +163,7 @@ erDiagram
         int id PK
         int tenant_id FK
         int contract_item_id FK
-        int assignee_id FK
+        int assignee_id "FK, nullable"
         date scheduled_date
         timestamp completed_at
         int status_id FK

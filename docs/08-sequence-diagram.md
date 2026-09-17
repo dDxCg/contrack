@@ -1,5 +1,70 @@
 # Contrack — Sequence Diagrams
-### 1. Create contract with sites and service items
+### 1. Login
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Employee
+    participant API
+    participant AuthService
+    participant DB as Database
+
+    Employee->>API: POST /auth/login (email, password)
+    API->>AuthService: login(email, password)
+    AuthService->>DB: Find employee by email
+    alt no matching employee, or inactive, or no password set
+        AuthService-->>Employee: 401 auth.invalid_credentials
+    else employee found
+        AuthService->>DB: Find employee's tenant
+        alt tenant suspended
+            AuthService-->>Employee: 401 auth.invalid_credentials — before password check
+        else tenant active
+            AuthService->>AuthService: Verify password hash
+            alt password wrong
+                AuthService-->>Employee: 401 auth.invalid_credentials
+            else password correct
+                AuthService->>AuthService: Sign access + refresh token (tenant_id, role, sub)
+                AuthService-->>Employee: 200 token, refresh_token, employee
+            end
+        end
+    end
+```
+
+### 2. Access Control — a protected request
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Employee
+    participant API
+    participant Guard as AccessControlGuard
+    participant Resolvers as Tenant/Role/Scope Resolver
+    participant DB as Database
+
+    Employee->>API: Request with Authorization: Bearer <token>
+    API->>Guard: canActivate()
+    Guard->>Guard: Verify bearer token signature + expiry
+    alt token missing, malformed or expired
+        Guard-->>Employee: 401 auth.credential_expired
+    else token valid
+        Guard->>Resolvers: Resolve tenant_id from token claims
+        Guard->>DB: Find employee by (tenant_id, sub)
+        alt employee not found or deactivated since token issued
+            Guard-->>Employee: 401 auth.credential_expired
+        else employee active
+            Guard->>Resolvers: requireRole(resource, operation, role)
+            alt role not granted
+                Guard-->>Employee: 403 auth.forbidden_role
+            else role granted
+                Guard->>Resolvers: Resolve row scope — own/team/unit/all
+                Guard->>API: Attach AccessContext
+                API-->>Employee: Handler runs, scoped to tenant + row scope
+            end
+        end
+    end
+```
+
+### 3. Create contract with sites and service items
 
 ```mermaid
 sequenceDiagram
@@ -20,7 +85,7 @@ sequenceDiagram
     end
 ```
 
-### 2. Weekly dispatch and field shift execution
+### 4. Weekly dispatch and field shift execution
 
 ```mermaid
 sequenceDiagram
@@ -39,17 +104,16 @@ sequenceDiagram
     Employee->>System: Submit photo of signed receipt
     System->>System: Capture GPS + timestamp
     alt GPS signal available
-        System->>DB: UPDATE shifts SET status = completed, latitude, longitude, captured_at, receipt_photo_url
+        System->>DB: UPDATE shift — completed, with location
         System->>DB: INSERT shift_photos (before, after)
         System-->>Employee: Shift marked completed
     else no GPS signal
-        System->>DB: UPDATE shifts SET status = completed, latitude = NULL, longitude = NULL
+        System->>DB: UPDATE shift — completed, no location
         System-->>Employee: Shift completed, flagged for missing location
     end
-    Note over Employee: Keeps original paper receipt for filing
 ```
 
-### 3. Dispute a shift
+### 5. Dispute a shift
 
 ```mermaid
 sequenceDiagram
@@ -72,7 +136,7 @@ sequenceDiagram
     end
 ```
 
-### 4. Alerts: expiring contract and missed shift
+### 6. Alerts: expiring contract and missed shift
 
 ```mermaid
 sequenceDiagram
@@ -99,7 +163,7 @@ sequenceDiagram
     end
 ```
 
-### 5. Month-end statement export 
+### 7. Month-end statement export 
 
 ```mermaid
 sequenceDiagram
@@ -126,7 +190,7 @@ sequenceDiagram
     end
 ```
 
-### 6. Platform Admin onboards a new tenant
+### 8. Platform Admin onboards a new tenant
 
 ```mermaid
 sequenceDiagram
@@ -139,14 +203,14 @@ sequenceDiagram
     System->>System: Validate — FR19
     alt tenant name and Director email are valid
         System->>DB: INSERT tenants (status = active)
-        System->>DB: INSERT employees (role = Director, tenant_id, temp password)
+        System->>DB: INSERT first Director account (role = director, temp password)
         System-->>PlatformAdmin: Tenant created, one active Director login scoped to it
     else Director email already in use
         System-->>PlatformAdmin: Reject — employees.email is globally unique
     end
 ```
 
-### 7. Platform Admin suspends or reactivates a tenant
+### 9. Platform Admin suspends or reactivates a tenant
 
 ```mermaid
 sequenceDiagram
@@ -171,7 +235,7 @@ sequenceDiagram
     end
 ```
 
-### 8. Team lead reassigns or reschedules a shift
+### 10. Team lead reassigns or reschedules a shift
 
 ```mermaid
 sequenceDiagram
@@ -186,11 +250,11 @@ sequenceDiagram
         System->>DB: UPDATE shifts SET assignee / scheduled_date
         System-->>TeamLead: Shift updated
     else shift already completed
-        System-->>TeamLead: Reject — evidence is write-once (D7)
+        System-->>TeamLead: Reject — shift already completed
     end
 ```
 
-### 9. Accountant records a cost, profitability updates
+### 11. Accountant records a cost, profitability updates
 
 ```mermaid
 sequenceDiagram
@@ -206,14 +270,14 @@ sequenceDiagram
     Director->>System: Open profitability view for the contract
     System->>DB: Query contract_items revenue and that month's recorded cost
     alt month has recorded cost
-        DB-->>System: Actual profit/loss = revenue − recorded cost
+        DB-->>System: Actual profit/loss
     else month has no recorded cost yet
-        DB-->>System: Estimated profit/loss — trailing 3-month average or tenant cost ratio
+        DB-->>System: Estimated profit/loss
     end
     System-->>Director: Profit/loss, flagged actual or estimated
 ```
 
-### 10. Reconciliation: shifts due vs. shifts with evidence
+### 12. Reconciliation: shifts due vs. shifts with evidence
 
 ```mermaid
 sequenceDiagram

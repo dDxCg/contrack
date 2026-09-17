@@ -12,7 +12,7 @@ backend/
 │   ├── PlatformAuthController
 │   ├── TenantsController
 │   ├── PlatformDashboardController
-│   ├── ContractsController
+│   ├── contracts.controller.ts
 │   ├── ShiftsController
 │   ├── FieldController
 │   ├── StatementsController
@@ -25,6 +25,7 @@ backend/
 │   └── teams.controller.ts
 ├── DTOs/
 │   ├── auth.dto.ts
+│   ├── contracts.dto.ts
 │   ├── customers.dto.ts
 │   ├── employees.dto.ts
 │   ├── teams.dto.ts
@@ -32,8 +33,6 @@ backend/
 ├── Services/
 │   ├── TenantService
 │   ├── PlatformDashboardService
-│   ├── ContractService
-│   ├── ScheduleGeneratorService
 │   ├── DispatchService
 │   ├── FieldSubmissionService
 │   ├── DisputeService
@@ -49,6 +48,8 @@ backend/
 │   ├── customer.service.ts
 │   ├── employee.service.ts
 │   ├── team.service.ts
+│   ├── contract.service.ts
+│   ├── schedule-generator.service.ts
 │   └── AccessControl/
 │       ├── access-context.ts
 │       ├── auth.config.ts
@@ -65,10 +66,10 @@ backend/
 │   ├── customer.repository.ts
 │   ├── employee.repository.ts
 │   ├── team.repository.ts
-│   ├── ContractRepository
-│   ├── ContractSiteRepository
-│   ├── ContractItemRepository
-│   ├── ShiftRepository
+│   ├── contract.repository.ts
+│   ├── contract-site.repository.ts
+│   ├── contract-item.repository.ts
+│   ├── shift.repository.ts
 │   ├── ShiftPhotoRepository
 │   ├── StatementRepository
 │   └── ContractCostRepository
@@ -78,11 +79,11 @@ backend/
 │   ├── employee.entity.ts
 │   ├── customer.entity.ts
 │   ├── team.entity.ts
+│   ├── contract.entity.ts
+│   ├── contract-site.entity.ts
+│   ├── contract-item.entity.ts
+│   ├── shift.entity.ts
 │   ├── PlatformAdmin
-│   ├── Contract
-│   ├── ContractSite
-│   ├── ContractItem
-│   ├── Shift
 │   ├── ShiftPhoto
 │   ├── Statement
 │   └── ContractCost
