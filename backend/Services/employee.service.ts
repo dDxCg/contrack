@@ -29,11 +29,12 @@ export interface EmployeeCommand {
   name: string;
   contact?: string | null;
   email: string;
-  
+
   password?: string;
   role: Role;
   managerId?: number | null;
   teamId?: number | null;
+  status?: EmployeeStatus;
 }
 
 @Injectable()
@@ -100,14 +101,18 @@ export class EmployeeService {
       employee.setPasswordHash(await this.passwordHasher.hash(command.password));
     }
 
+    if (command.status !== undefined) {
+      employee.setStatus(command.status);
+    }
+
     return toEmployeeView(await this.employeeRepository.update(employee));
   }
 
-  async delete(access: AccessContext, id: number): Promise<void> {
+  async deactivate(access: AccessContext, id: number): Promise<EmployeeView> {
     const employee = await this.requireEmployee(access, id);
-    employee.assertDeletable(await this.employeeRepository.futureShiftIdsFor(access.tenantId, id));
+    employee.deactivate(await this.employeeRepository.futureShiftIdsFor(access.tenantId, id));
 
-    await this.employeeRepository.delete(access.tenantId, id);
+    return toEmployeeView(await this.employeeRepository.update(employee));
   }
 
   private async assertTeamLeadAllowed(access: AccessContext, candidate: Employee): Promise<void> {

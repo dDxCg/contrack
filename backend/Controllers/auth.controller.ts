@@ -3,7 +3,7 @@ import { AuthService, SessionView } from '../Services/auth.service';
 import { AccessContext } from '../Services/AccessControl/access-context';
 import { CurrentAccess, Public } from '../Services/AccessControl/access.decorator';
 import { EmployeeView } from '../Services/employee.service';
-import { LoginDto, LogoutDto, RefreshDto } from './auth.dto';
+import { LoginDto, LogoutDto, RefreshDto } from '../DTOs/auth.dto';
 
 @Controller('auth')
 export class AuthController {

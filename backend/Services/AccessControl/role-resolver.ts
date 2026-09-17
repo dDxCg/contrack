@@ -39,7 +39,7 @@ const ROLE_COLUMN_ORDER: readonly Role[] = [
 const GRANTS: Readonly<Record<Resource, Partial<Record<Role, Grant>>>> = {
   [Resource.Customers]: {
     [Role.Director]: { operations: ALL_OPERATIONS, scope: RowScope.All },
-    [Role.Manager]: { operations: [Operation.Read, Operation.Create], scope: RowScope.All },
+    [Role.Manager]: { operations: [Operation.Read, Operation.Create, Operation.Update], scope: RowScope.All },
     [Role.Accountant]: { operations: [Operation.Read], scope: RowScope.All },
   },
   [Resource.Employees]: {

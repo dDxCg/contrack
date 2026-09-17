@@ -15,7 +15,7 @@ describe('RoleResolver — 05-api.md §8', () => {
         Role.Accountant,
       ]);
       expect(resolver.rolesFor(Resource.Customers, Operation.Create)).toEqual([Role.Director, Role.Manager]);
-      expect(resolver.rolesFor(Resource.Customers, Operation.Update)).toEqual([Role.Director]);
+      expect(resolver.rolesFor(Resource.Customers, Operation.Update)).toEqual([Role.Director, Role.Manager]);
       expect(resolver.rolesFor(Resource.Customers, Operation.Delete)).toEqual([Role.Director]);
     });
 

@@ -286,33 +286,34 @@ describe('EmployeeService.update', () => {
   });
 });
 
-describe('EmployeeService.delete', () => {
+describe('EmployeeService.deactivate', () => {
   it('refuses while future shifts are assigned (employee.has_assigned_shifts, FR18)', async () => {
     const { service, access, db } = world();
     db.futureShifts.set(31, [40, 41]);
 
-    const error = await captureDomainErrorAsync(() => service.delete(access, 31));
+    const error = await captureDomainErrorAsync(() => service.deactivate(access, 31));
 
     expect(error.code).toBe('employee.has_assigned_shifts');
     expect(error.getStatus()).toBe(409);
     expect(error.details).toEqual({ shift_ids: [40, 41] });
-    expect(db.employees.some((employee) => employee.id === 31)).toBe(true);
+    expect(db.employees.find((employee) => employee.id === 31)!.status).toBe(EmployeeStatus.Active);
   });
 
-  it('deletes an employee with no future shift', async () => {
+  it('soft-deletes an employee with no future shift — status = terminated, row kept', async () => {
     const { service, access, db } = world();
 
-    await service.delete(access, 31);
+    const result = await service.deactivate(access, 31);
 
-    expect(db.employees.some((employee) => employee.id === 31)).toBe(false);
+    expect(result.status).toBe(EmployeeStatus.Terminated);
+    expect(db.employees.find((employee) => employee.id === 31)!.status).toBe(EmployeeStatus.Terminated);
   });
 
   it('answers 404 for another tenant’s employee', async () => {
     const { service, access, db } = world();
 
-    const error = await captureDomainErrorAsync(() => service.delete(access, 41));
+    const error = await captureDomainErrorAsync(() => service.deactivate(access, 41));
 
     expect(error.code).toBe('auth.out_of_scope');
-    expect(db.employees.some((employee) => employee.id === 41)).toBe(true);
+    expect(db.employees.find((employee) => employee.id === 41)!.status).toBe(EmployeeStatus.Active);
   });
 });

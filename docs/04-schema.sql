@@ -57,7 +57,6 @@ CREATE TABLE contract_statuses (
 );
 
 INSERT INTO contract_statuses (code) VALUES ('active');
-INSERT INTO contract_statuses (code) VALUES ('expiring_soon');
 INSERT INTO contract_statuses (code) VALUES ('expired');
 INSERT INTO contract_statuses (code) VALUES ('cancelled');
 INSERT INTO contract_statuses (code) VALUES ('renewed');

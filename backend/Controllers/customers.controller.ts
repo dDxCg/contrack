@@ -3,8 +3,8 @@ import { AccessContext } from '../Services/AccessControl/access-context';
 import { Access, CurrentAccess } from '../Services/AccessControl/access.decorator';
 import { Operation, Resource } from '../Services/AccessControl/role-resolver';
 import { CustomerCommand, CustomerPage, CustomerService, CustomerView } from '../Services/customer.service';
-import { CustomerBodyDto } from './customers.dto';
-import { PageQueryDto } from './page-query.dto';
+import { CustomerBodyDto } from '../DTOs/customers.dto';
+import { PageQueryDto } from '../DTOs/page-query.dto';
 
 @Controller('customers')
 export class CustomersController {

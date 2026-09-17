@@ -100,41 +100,121 @@ Full screen set: [`docs/screenshots/`](docs/screenshots/).
 
 ## Architecture
 
-### View 1 — System context
+### C4 — Level 1: System context
 
 ```mermaid
 flowchart TB
     customer["Customer<br/><i>outside the system</i>"]
-    employee["Field employee / team lead<br/><i>person, in one tenant</i>"]
-    accountant["Accountant / manager<br/><i>person, in one tenant</i>"]
-    director["Director<br/><i>person, in one tenant</i>"]
-    platformadmin["Platform Admin<br/><i>person, outside every tenant</i>"]
+    employee["Field employee / team lead"]
+    accountant["Accountant / manager"]
+    director["Director"]
+    platformadmin["Platform Admin"]
 
-    contrack["<b>Contrack</b><br/><i>the system, multi-tenant</i><br/>contracts, schedule,<br/>field proof, statements"]
+    contrack["<b>Contrack</b><br/><i>the system</i>"]:::system
 
-    zalo["Zalo ZNS / SMS<br/><i>external</i><br/>reminders"]
-    vietqr["VietQR<br/><i>external, planned</i><br/>payment"]
+    zalo["Zalo ZNS / SMS"]
+    vietqr["VietQR"]
 
     customer -.->|"signs contract in person"| director
     customer -.->|"signs paper receipt in person"| employee
     employee -->|"opens shift link,<br/>submits photos"| contrack
-    accountant -->|"creates contracts,<br/>exports statements"| contrack
-    director -->|"views dashboard"| contrack
-    platformadmin -->|"creates / suspends tenants"| contrack
+    accountant -->|"exports statements"| contrack
+    director -->|"views dashboard,<br/>manage contracts, employees"| contrack
+    platformadmin -->|"creates / suspends tenants,<br/>views platform dashboard"| contrack
 
     contrack -->|"sends reminder"| zalo
     contrack -->|"requests payment"| vietqr
+
+    classDef system fill:#bfdbfe,color:#1e3a8a,stroke:#60a5fa,stroke-width:2px
 ```
 
-Customer sits outside the system boundary: signatures and complaints are recorded
-offline by staff. Platform Admin sits outside every tenant: it provisions companies,
-never their contracts or shifts.
+### C4 — Level 2: Containers
 
-### View 2 — class diagram
+```mermaid
+flowchart LR
+    subgraph client["Client"]
+        tanent_ui["Tanent UI"]
+        platform_ui["Platform admin UI"]
+    end
 
-Same domain classes as
-[class-diagram.md](docs/06-class-diagram.md), design-level
-(typed attributes, typed methods).
+    subgraph server["Server"]
+        api["API"]
+        gen["Schedule generator"]
+        alerts["Alert job"]
+        pdf["PDF renderer"]
+    end
+
+    db[("Relational DB")]
+    store[("Object storage<br/>photos · receipts · PDFs")]
+    channel["Zalo ZNS / SMS"]
+
+    tanent_ui --> api
+    platform_ui --> api
+    api --> db
+    api --> store
+    gen --> db
+    alerts --> db
+    alerts --> channel
+    pdf --> store
+```
+
+NestJS (API), ReactJS (client), PostgreSQL (relational DB), S3 (object storage) —
+full stack rationale: [docs/03-architecture.md §5.1](docs/03-architecture.md#51-containers-c4---level-2).
+
+### C4 — Level 3: Components
+
+```mermaid
+flowchart TB
+    subgraph clients["Clients"]
+        subgraph tenant_ui2["Tenant UI"]
+            desk_ui2["Desk UI"]
+            field_ui2["Field UI<br/><i>token, no login</i>"]
+        end
+        platformadmin_ui2["Platform Admin UI"]
+    end
+
+    subgraph apic["API container"]
+        auth["Access Control<br/><i>[Component]</i>"]
+        contracts["Contracts & Schedule<br/><i>[Component]</i>"]
+        shifts["Shifts & Dispatch<br/><i>[Component]</i>"]
+        field["Field Submission<br/><i>[Component]</i>"]
+        statements["Statements & Reconciliation<br/><i>[Component]</i>"]
+        directory["Directory & Alerts<br/><i>[Component]</i>"]
+        platform["Platform Admin<br/><i>[Component]</i>"]
+    end
+
+    gen["Schedule Generator"]
+    alertjob["Alert Job"]
+    pdf["PDF Renderer"]
+    db[("Database")]
+    store[("Object storage")]
+    channel["Zalo ZNS / SMS"]
+
+    desk_ui2 --> auth
+    field_ui2 --> field
+    platformadmin_ui2 --> auth
+    auth -.->|"scope check"| contracts
+    auth -.->|"scope check"| shifts
+    auth -.->|"scope check"| statements
+    auth -.->|"scope check"| directory
+    auth -.->|"platform credential (§8.1)"| platform
+
+    contracts --> db
+    contracts --> gen
+    gen --> db
+    shifts --> db
+    field --> db
+    field --> store
+    statements --> db
+    statements --> pdf
+    pdf --> store
+    directory --> db
+    directory --> alertjob
+    platform --> db
+    alertjob --> channel
+```
+
+### Class diagram
 
 ```mermaid
 classDiagram
@@ -234,12 +314,7 @@ classDiagram
     Tenant "1" --> "0..*" Contract
 ```
 
-### View 3 — the core flows
-
-The same five sequence diagrams as
-[sequence-diagram.md](docs/07-sequence-diagram.md), each with
-its failure branch.
-
+### Sequence Diagrams
 **1. Create contract with sites and service items**
 
 ```mermaid
@@ -370,63 +445,210 @@ sequenceDiagram
 Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 
 ---
-
-## Success metrics
-
-| Metric | Baseline | Target |
-|---|---|---|
-| Month-end statement closing time | 1.5–3 days | Under 30 minutes |
-| Visits with complete photo and signature evidence | Not measurable | ≥ 90% |
-
----
-
 ## Repository layout
+
 ```
-docs/
-│
-backend/
-├── Controllers/
-├── Services/
-├── Repositories/
-├── Models/
-└── Data/
-│
-frontend/
-├── src/
-│   ├── assets/
-│   │   ├── images/
-│   │   ├── icons/
-│   │   └── fonts/
-│   ├── components/
-│   ├── layouts/
-│   ├── pages/
-│   ├── hooks/
-│   ├── services/
-│   ├── types/
-│   ├── routes/
-│   ├── context/
-│   └── utils/
-├── dist/
-└── public/
+.
+├── .gitignore
+├── README.md
+├── docs/
+│   ├── 00-mindmap.png
+│   ├── 01-requirements-analysis.md
+│   ├── 02-screens-heriarchy.md
+│   ├── 03-architecture.md
+│   ├── 04-erd.md
+│   ├── 04-schema.sql
+│   ├── 05-api.yaml
+│   ├── 06-repo-layout.md
+│   ├── 07-class-diagram.md
+│   ├── 08-sequence-diagram.md
+│   ├── README.md
+│   ├── screenshots/
+│   │   ├── README.md
+│   │   └── prototype/
+│   └── ui/
+│       └── prototype.html
+├── backend/
+│   ├── main.ts
+│   ├── app.module.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── Controllers/
+│   │   ├── auth.controller.ts
+│   │   ├── PlatformAuthController
+│   │   ├── TenantsController
+│   │   ├── PlatformDashboardController
+│   │   ├── ContractsController
+│   │   ├── ShiftsController
+│   │   ├── FieldController
+│   │   ├── StatementsController
+│   │   ├── ReconciliationController
+│   │   ├── ContractCostsController
+│   │   ├── AlertsController
+│   │   ├── DashboardController
+│   │   ├── customers.controller.ts
+│   │   ├── employees.controller.ts
+│   │   └── teams.controller.ts
+│   ├── DTOs/
+│   │   ├── auth.dto.ts
+│   │   ├── customers.dto.ts
+│   │   ├── employees.dto.ts
+│   │   ├── teams.dto.ts
+│   │   └── page-query.dto.ts
+│   ├── Services/
+│   │   ├── TenantService
+│   │   ├── PlatformDashboardService
+│   │   ├── ContractService
+│   │   ├── ScheduleGeneratorService
+│   │   ├── DispatchService
+│   │   ├── FieldSubmissionService
+│   │   ├── DisputeService
+│   │   ├── AlertJobService
+│   │   ├── StatementService
+│   │   ├── ReconciliationService
+│   │   ├── ContractProfitabilityService
+│   │   ├── CostEstimationService
+│   │   ├── DashboardService
+│   │   ├── auth.service.ts
+│   │   ├── token.service.ts
+│   │   ├── password-hasher.service.ts
+│   │   ├── customer.service.ts
+│   │   ├── employee.service.ts
+│   │   ├── team.service.ts
+│   │   └── AccessControl/
+│   │       ├── access-context.ts
+│   │       ├── auth.config.ts
+│   │       ├── clock.ts
+│   │       ├── access.decorator.ts
+│   │       ├── access-control.guard.ts
+│   │       ├── domain-exception.filter.ts
+│   │       ├── tenant-resolver.ts
+│   │       ├── role-resolver.ts
+│   │       └── scope-resolver.ts
+│   ├── Repositories/
+│   │   ├── tenant-scoped.repository.ts
+│   │   ├── tenant.repository.ts
+│   │   ├── customer.repository.ts
+│   │   ├── employee.repository.ts
+│   │   ├── team.repository.ts
+│   │   ├── ContractRepository
+│   │   ├── ContractSiteRepository
+│   │   ├── ContractItemRepository
+│   │   ├── ShiftRepository
+│   │   ├── ShiftPhotoRepository
+│   │   ├── StatementRepository
+│   │   └── ContractCostRepository
+│   ├── Models/
+│   │   ├── domain-errors.ts
+│   │   ├── tenant.entity.ts
+│   │   ├── employee.entity.ts
+│   │   ├── customer.entity.ts
+│   │   ├── team.entity.ts
+│   │   ├── PlatformAdmin
+│   │   ├── Contract
+│   │   ├── ContractSite
+│   │   ├── ContractItem
+│   │   ├── Shift
+│   │   ├── ShiftPhoto
+│   │   ├── Statement
+│   │   └── ContractCost
+│   ├── Data/
+│   │   ├── DbContext/data-source.ts
+│   │   ├── Migrations/
+│   │   ├── ObjectStorageClient/
+│   │   ├── ChannelClient/
+│   │   └── PdfRenderer/
+│   └── tests/
+│       ├── unit/
+│       └── support/
+└── frontend/
+    ├── src/
+    │   ├── assets/
+    │   │   ├── images
+    │   │   ├── icons
+    │   │   └── fonts
+    │   ├── components/
+    │   │   ├── EvidenceViewer
+    │   │   ├── ScheduleTable
+    │   │   ├── AlertList
+    │   │   ├── Form
+    │   │   ├── Table
+    │   │   └── Button
+    │   ├── layouts/
+    │   │   ├── AuthenticatedLayout
+    │   │   ├── FieldLayout
+    │   │   └── AuthLayout
+    │   ├── pages/
+    │   │   ├── Login
+    │   │   ├── Contracts
+    │   │   ├── ContractCreate
+    │   │   ├── ContractDetail
+    │   │   ├── Dispatch
+    │   │   ├── ShiftDetail
+    │   │   ├── DisputeCreate
+    │   │   ├── Alerts
+    │   │   ├── Statements
+    │   │   ├── StatementPreview
+    │   │   ├── Reconciliation
+    │   │   ├── ContractCosts
+    │   │   ├── Dashboard
+    │   │   ├── Employees
+    │   │   ├── Teams
+    │   │   ├── Customers
+    │   │   ├── Field
+    │   │   ├── PlatformDashboard
+    │   │   └── Tenants
+    │   ├── hooks/
+    │   │   ├── useAuth
+    │   │   ├── useRole
+    │   │   ├── useContracts
+    │   │   ├── useShifts
+    │   │   ├── useStatements
+    │   │   └── useAlerts
+    │   ├── services/
+    │   │   ├── authService
+    │   │   ├── contractService
+    │   │   ├── shiftService
+    │   │   ├── fieldService
+    │   │   ├── statementService
+    │   │   ├── reconciliationService
+    │   │   ├── contractCostService
+    │   │   ├── alertService
+    │   │   ├── dashboardService
+    │   │   ├── customerService
+    │   │   ├── employeeService
+    │   │   ├── teamService
+    │   │   └── platformService
+    │   ├── types/
+    │   │   ├── Customer
+    │   │   ├── Contract
+    │   │   ├── Shift
+    │   │   ├── Statement
+    │   │   ├── ContractCost
+    │   │   ├── Employee
+    │   │   ├── Team
+    │   │   ├── Tenant
+    │   │   └── Common
+    │   ├── routes/
+    │   │   └── AppRoutes
+    │   ├── context/
+    │   │   └── AuthContext
+    │   └── utils/
+    └── public/
 ```
 
 ## Documentation
 
 | # | Document | Contents |
 |---|---|---|
-| 1 | [Requirements Analysis](docs/01-requirements-analysis.md) | Project overview, user stories (INVEST), FR1–FR28, NFR1–NFR7, use-case diagram |
-| 2 | [UI/UX Design](docs/02-ui-ux-design.md) | Information architecture → screens hierarchy → UI/UX, per role |
+| 1 | [Requirements Analysis](docs/01-requirements-analysis.md) | Project overview, User stories (INVEST), Functional requirements, Non-fucntional requirements Use-case diagram |
+| 2 | [Screens Hierarchy](docs/02-screens-heriarchy.md) | Screens hierarchy, per role |
 | 3 | [Architecture](docs/03-architecture.md) | arc42 + c4 |
 | 4 | [ERD](docs/04-erd.md) | Entity-relationship diagram |
 | 5 | [API Specification (OpenAPI)](docs/05-api.yaml) | OpenAPI 3.0 — paths, schemas, error examples |
-| 6 | [Class Diagram](docs/06-class-diagram.md) | Design-level class diagram, incl. Tenant |
-| 7 | [Sequence Diagram](docs/07-sequence-diagram.md) | The 5 core-flow sequence diagrams, each with its failure branch |
-| 8 | [Repo Layout](docs/08-repo-layout.md) | Planned source tree by architecture style — stack not yet decided |
-| 9 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
+| 6 | [Repo Layout](docs/06-repo-layout.md) | Planned source tree for NestJS backend, ReactJS frontend |
+| 7 | [Class Diagram](docs/07-class-diagram.md) | Class diagram |
+| 8 | [Sequence Diagram](docs/08-sequence-diagram.md) | 10 sequence diagrams |
+| 9 | [Prototype](docs/ui/prototype.html) | UI Prototpye |
 | 10 | [SQL Schema](docs/04-schema.sql) | ANSI SQL |
-
-Dropped: the PRD as a standalone doc (its overview now opens Requirements Analysis;
-the rest lives in `temp/draft/01-prd.md`) and the prose endpoint-contract doc — the
-OpenAPI YAML is the only API contract now.
-
 ---

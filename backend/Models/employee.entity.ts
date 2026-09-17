@@ -96,10 +96,16 @@ export class Employee {
     this.passwordHash = passwordHash;
   }
 
-  assertDeletable(futureShiftIds: readonly number[]): void {
+  setStatus(status: EmployeeStatus): void {
+    this.status = status;
+  }
+
+  deactivate(futureShiftIds: readonly number[]): void {
     if (futureShiftIds.length > 0) {
       throw new EmployeeHasAssignedShiftsException(futureShiftIds);
     }
+
+    this.status = EmployeeStatus.Terminated;
   }
 
   private cyclePathThrough(managerChainIds: readonly number[]): number[] | null {

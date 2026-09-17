@@ -16,11 +16,12 @@ erDiagram
     employees ||--o{ employees : "manages"
     teams ||--o{ employees : "members"
     employee_statuses ||--o{ employees : "status of"
-    customer_segments ||--o{ customers : "status of"
+    customer_segments ||--o{ customers : "segment of"
     customers ||--o{ contracts : "signs"
     contract_statuses ||--o{ contracts : "status of"
     contracts ||--o{ contract_sites : "has"
     contract_sites ||--o{ contract_items : "has"
+    frequency_units ||--o{ contract_items : "unit of"
     contract_items ||--o{ shifts : "generates"
     employees ||--o{ shifts : "assigned"
     shift_statuses ||--o{ shifts : "status of"
@@ -69,6 +70,11 @@ erDiagram
     }
 
     contract_statuses {
+        int id PK
+        varchar code
+    }
+
+    frequency_units {
         int id PK
         varchar code
     }
@@ -146,7 +152,9 @@ erDiagram
         int tenant_id FK
         int site_id FK
         varchar name
-        varchar frequency
+        int frequency_count
+        int frequency_unit_id FK
+        varchar frequency_rule
         numeric unit_price
         timestamp created_at
     }

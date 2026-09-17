@@ -23,8 +23,9 @@ tags:
   - name: Teams
   - name: Platform
     description: >
-      /platform/* only. Authenticated against `platform_admins`, disjoint from every
-      other tag — carries no `tenant_id` and cannot reach any resource above.
+      /platform/* only. Authenticated against `platform_admins`, resolved by the same
+      Access Control component as every other tag (see `03-architecture.md` §8.1) —
+      but carries no `tenant_id` and cannot reach any resource above.
 
 security:
   - bearerAuth: []
@@ -1165,7 +1166,7 @@ paths:
       tags: [Customers]
       operationId: updateCustomer
       summary: Update a customer
-      x-roles: [director]
+      x-roles: [director, manager]
       x-scope: all
       requestBody:
         content:
@@ -1185,7 +1186,7 @@ paths:
       responses:
         '204': { description: Deleted }
         '409':
-          description: Still holds a non-terminated contract
+          description: Still holds an active contract
           content:
             application/json:
               examples:
@@ -1278,12 +1279,17 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
     delete:
       tags: [Employees]
-      operationId: deleteEmployee
-      summary: Delete an employee account
+      operationId: deactivateEmployee
+      summary: >-
+        Deactivate an employee account — soft delete, sets status = terminated;
+        the row and its shift/cost history are never removed
       x-roles: [director]
       x-scope: all
       responses:
-        '204': { description: Deleted }
+        '200':
+          description: Deactivated
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Employee' } }
         '409':
           description: Still assigned to future shifts
           content:
@@ -1312,7 +1318,7 @@ paths:
     post:
       tags: [Teams]
       operationId: createTeam
-      summary: Create a team
+      summary: Create a team — FR29
       x-roles: [director]
       x-scope: all
       requestBody:
@@ -1356,7 +1362,7 @@ paths:
     patch:
       tags: [Teams]
       operationId: updateTeam
-      summary: Update a team's name or code
+      summary: Update a team's name or code — FR29
       x-roles: [director]
       x-scope: all
       responses:
@@ -1367,7 +1373,7 @@ paths:
     delete:
       tags: [Teams]
       operationId: deleteTeam
-      summary: Delete a team
+      summary: Delete a team — FR29
       x-roles: [director]
       x-scope: all
       responses:
@@ -1389,14 +1395,16 @@ components:
         Session or bearer token issued by POST /auth/login, carrying tenant_id and
         role, carried on every desk request. Field endpoints (/field/*) carry no
         session — the per-shift signed token in the path is their sole credential;
-        see `05-architecture.md` §8.1.
+        see `03-architecture.md` §8.1.
     platformBearerAuth:
       type: http
       scheme: bearer
       description: >
-        Token issued by POST /platform/auth/login against platform_admins. Carries
-        no tenant_id and is rejected by every bearerAuth-secured operation above —
-        the two credential spaces are disjoint; see `05-architecture.md` §8.1.
+        Token issued by POST /platform/auth/login against platform_admins, resolved
+        by the same Access Control component as bearerAuth. Carries no tenant_id and
+        is rejected by every bearerAuth-secured operation above — the two credential
+        spaces stay separate even though one component resolves both; see
+        `03-architecture.md` §8.1.
 
   parameters:
     Limit:
@@ -1509,7 +1517,11 @@ components:
 
     ContractStatus:
       type: string
-      enum: [active, expiring_soon, expired, cancelled, renewed]
+      enum: [active, expired, cancelled, renewed]
+      description: >
+        Stored status. "Expiring soon" is not a stored value — it's computed at
+        read time as active AND expires_at within 30 days (FR25), so the dashboard's
+        expiring_soon count never drifts from the same 30-day window the alert uses.
     ShiftStatus:
       type: string
       enum: [scheduled, late, completed, disputed]
@@ -1887,13 +1899,19 @@ components:
         role: { $ref: '#/components/schemas/Role' }
         manager_id: { type: integer, nullable: true }
         team_id: { type: integer, nullable: true, description: "NULL for desk staff — not every employee belongs to a team" }
+        status:
+          type: string
+          enum: [active, terminated]
+          description: >-
+            Optional on PATCH — reactivates a terminated account, or terminates one
+            without the DELETE endpoint's future-shift guard. Ignored on POST; a
+            created account is always active.
     Employee:
       allOf:
         - $ref: '#/components/schemas/EmployeeCreate'
         - type: object
           properties:
             id: { type: integer }
-            status: { type: string, enum: [active, terminated] }
     EmployeeList:
       allOf:
         - type: object

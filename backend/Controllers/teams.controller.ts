@@ -3,7 +3,7 @@ import { AccessContext } from '../Services/AccessControl/access-context';
 import { Access, CurrentAccess } from '../Services/AccessControl/access.decorator';
 import { Operation, Resource } from '../Services/AccessControl/role-resolver';
 import { TeamPage, TeamService, TeamView } from '../Services/team.service';
-import { TeamCreateDto, TeamUpdateDto } from './teams.dto';
+import { TeamCreateDto, TeamUpdateDto } from '../DTOs/teams.dto';
 
 @Controller('teams')
 export class TeamsController {

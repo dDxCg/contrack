@@ -1,18 +1,14 @@
 # Contrack — Repository Layout
 
 ## Backend
-
-NestJS + TypeORM. Names without a file extension are **planned** (M2–M6 of
-`temp/draft/plan-tenant-api-nestjs.md`); every lowercase `*.ts` name below is implemented.
-
 ```
 backend/
-├── main.ts                       # bootstrap: Fastify, global prefix /api/v1, filter + pipe
-├── app.module.ts                 # composition root wiring every folder below
-├── package.json                  # build · start · dev · test · lint · format scripts
-├── tsconfig.json                 # tsconfig.build.json · eslint.config.mjs · .prettierrc
-├── Controllers/                  # NestJS @Controller; *.dto.ts sits beside its controller
-│   ├── auth.controller.ts + auth.dto.ts
+├── main.ts
+├── app.module.ts
+├── package.json
+├── tsconfig.json
+├── Controllers/
+│   ├── auth.controller.ts
 │   ├── PlatformAuthController
 │   ├── TenantsController
 │   ├── PlatformDashboardController
@@ -24,9 +20,15 @@ backend/
 │   ├── ContractCostsController
 │   ├── AlertsController
 │   ├── DashboardController
-│   ├── customers.controller.ts + customers.dto.ts
-│   ├── employees.controller.ts + employees.dto.ts
-│   └── teams.controller.ts + teams.dto.ts
+│   ├── customers.controller.ts
+│   ├── employees.controller.ts
+│   └── teams.controller.ts
+├── DTOs/
+│   ├── auth.dto.ts
+│   ├── customers.dto.ts
+│   ├── employees.dto.ts
+│   ├── teams.dto.ts
+│   └── page-query.dto.ts
 ├── Services/
 │   ├── TenantService
 │   ├── PlatformDashboardService
@@ -41,25 +43,25 @@ backend/
 │   ├── ContractProfitabilityService
 │   ├── CostEstimationService
 │   ├── DashboardService
-│   ├── auth.service.ts             # login · refresh · logout · me — FR1
-│   ├── token.service.ts            # desk credential issue/verify/revoke (D3 covers field tokens)
-│   ├── password-hasher.service.ts  # PASSWORD_HASHER token + bcryptjs implementation
+│   ├── auth.service.ts
+│   ├── token.service.ts
+│   ├── password-hasher.service.ts
 │   ├── customer.service.ts
 │   ├── employee.service.ts
 │   ├── team.service.ts
 │   └── AccessControl/
-│       ├── access-context.ts       # { tenantId, employee, scope } — the first argument of every service call
-│       ├── auth.config.ts          # AUTH_CONFIG token; env-driven secret and lifetimes
-│       ├── clock.ts                # CLOCK token + IClock — server time is authoritative (D7)
-│       ├── access.decorator.ts     # @Access(resource, operation) · @Public()
-│       ├── access-control.guard.ts # resolves caller + role + scope before any service runs
-│       ├── domain-exception.filter.ts # the single error-envelope mapper (05-api.yaml §9)
-│       ├── tenant-resolver.ts      # caller's tenant_id — never read from a request body
-│       ├── role-resolver.ts        # 05-api.yaml §8 matrix: role × resource × operation
-│       └── scope-resolver.ts       # own · team · unit · all
-├── Repositories/                 # TypeORM custom repositories — every query tenant-filtered (R7)
-│   ├── tenant-scoped.repository.ts # abstract base: scopedTo() · scopedQuery() · lookupId()
-│   ├── tenant.repository.ts        # the one exception: `tenants` has no tenant_id column
+│       ├── access-context.ts
+│       ├── auth.config.ts
+│       ├── clock.ts
+│       ├── access.decorator.ts
+│       ├── access-control.guard.ts
+│       ├── domain-exception.filter.ts
+│       ├── tenant-resolver.ts
+│       ├── role-resolver.ts
+│       └── scope-resolver.ts
+├── Repositories/
+│   ├── tenant-scoped.repository.ts
+│   ├── tenant.repository.ts
 │   ├── customer.repository.ts
 │   ├── employee.repository.ts
 │   ├── team.repository.ts
@@ -70,11 +72,11 @@ backend/
 │   ├── ShiftPhotoRepository
 │   ├── StatementRepository
 │   └── ContractCostRepository
-├── Models/                       # TypeORM entity classes carrying their own invariants (§9)
-│   ├── domain-errors.ts          # DomainException base + the 05-api.yaml §9 catalogue
+├── Models/
+│   ├── domain-errors.ts
 │   ├── tenant.entity.ts
-│   ├── employee.entity.ts        # + Role · EmployeeStatus
-│   ├── customer.entity.ts        # + CustomerSegment
+│   ├── employee.entity.ts
+│   ├── customer.entity.ts
 │   ├── team.entity.ts
 │   ├── PlatformAdmin
 │   ├── Contract
@@ -85,19 +87,15 @@ backend/
 │   ├── Statement
 │   └── ContractCost
 ├── Data/
-│   ├── DbContext/data-source.ts  # TypeORM DataSource — synchronize: false (C3)
-│   ├── Migrations/               # points at docs/04-schema.sql — never TypeORM migrations
+│   ├── DbContext/data-source.ts
+│   ├── Migrations/
 │   ├── ObjectStorageClient/
 │   ├── ChannelClient/
 │   └── PdfRenderer/
-└── test/                         # cross-cutting end-to-end harness only
-    ├── qr6-sweep.e2e-spec.ts     # QR6 — two seeded tenants, every directory endpoint
-    └── support/                  # test app builder + in-memory repositories
+└── tests/
+    ├── unit/
+    └── support/
 ```
-
-Unit specs sit beside the class they cover (`*.spec.ts`); `test/` holds only tests that span the
-whole HTTP surface. `main.ts` and `app.module.ts` are at the backend root because NestJS requires a
-bootstrap entry point and a composition root there — everything else follows the tree above.
 
 ## Frontend
 

@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
-import { Role } from '../Models/employee.entity';
+import { EmployeeStatus, Role } from '../Models/employee.entity';
 
 export class EmployeeBodyDto {
   @IsString()
@@ -38,4 +38,8 @@ export class EmployeeBodyDto {
   @IsInt()
   @Min(1)
   team_id?: number | null;
+
+  @IsOptional()
+  @IsEnum(EmployeeStatus)
+  status?: EmployeeStatus;
 }

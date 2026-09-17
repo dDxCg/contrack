@@ -141,13 +141,6 @@ export class InMemoryEmployeeRepository extends EmployeeRepository {
     return employee;
   }
 
-  override async delete(tenantId: number, id: number): Promise<void> {
-    const index = this.db.employees.findIndex((row) => row.tenantId === tenantId && row.id === id);
-    if (index >= 0) {
-      this.db.employees.splice(index, 1);
-    }
-  }
-
   override async findByTeamIds(tenantId: number, teamIds: readonly number[]): Promise<Employee[]> {
     return this.db.employees
       .filter(

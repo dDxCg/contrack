@@ -1,5 +1,4 @@
 # Contrack — Sequence Diagrams
-
 ### 1. Create contract with sites and service items
 
 ```mermaid
@@ -125,4 +124,108 @@ sequenceDiagram
     else a shift is missing evidence or still disputed
         System-->>Accountant: Cannot close period, list incomplete shifts
     end
+```
+
+### 6. Platform Admin onboards a new tenant
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor PlatformAdmin as Platform Admin
+    participant System
+    participant DB as Database
+
+    PlatformAdmin->>System: Create tenant (company name, first Director email)
+    System->>System: Validate — FR19
+    alt tenant name and Director email are valid
+        System->>DB: INSERT tenants (status = active)
+        System->>DB: INSERT employees (role = Director, tenant_id, temp password)
+        System-->>PlatformAdmin: Tenant created, one active Director login scoped to it
+    else Director email already in use
+        System-->>PlatformAdmin: Reject — employees.email is globally unique
+    end
+```
+
+### 7. Platform Admin suspends or reactivates a tenant
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor PlatformAdmin as Platform Admin
+    participant System
+    participant DB as Database
+    actor Employee as Any tenant employee
+
+    PlatformAdmin->>System: Suspend tenant — FR20
+    System->>DB: UPDATE tenants SET status = suspended
+    System-->>PlatformAdmin: Tenant suspended
+    Employee->>System: Sign in (desk credential)
+    System->>DB: Resolve tenant from matched employee
+    alt tenant is suspended
+        System-->>Employee: Rejected before password check
+    else tenant reactivated
+        PlatformAdmin->>System: Reactivate tenant
+        System->>DB: UPDATE tenants SET status = active
+        Employee->>System: Sign in again
+        System-->>Employee: Session issued as normal
+    end
+```
+
+### 8. Team lead reassigns or reschedules a shift
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor TeamLead as Team Lead
+    participant System
+    participant DB as Database
+
+    TeamLead->>System: Reassign shift to a different team member, or move its date
+    System->>DB: SELECT shift status
+    alt shift not yet completed
+        System->>DB: UPDATE shifts SET assignee / scheduled_date
+        System-->>TeamLead: Shift updated
+    else shift already completed
+        System-->>TeamLead: Reject — evidence is write-once (D7)
+    end
+```
+
+### 9. Accountant records a cost, profitability updates
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Accountant
+    participant System
+    participant DB as Database
+    actor Director
+
+    Accountant->>System: Save cost entry (contract, category, month, amount) — FR14
+    System->>DB: UPSERT contract_costs for (category, period)
+    System-->>Accountant: Cost saved
+    Director->>System: Open profitability view for the contract
+    System->>DB: Query contract_items revenue and that month's recorded cost
+    alt month has recorded cost
+        DB-->>System: Actual profit/loss = revenue − recorded cost
+    else month has no recorded cost yet
+        DB-->>System: Estimated profit/loss — trailing 3-month average or tenant cost ratio
+    end
+    System-->>Director: Profit/loss, flagged actual or estimated
+```
+
+### 10. Reconciliation: shifts due vs. shifts with evidence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Accountant
+    participant System
+    participant DB as Database
+
+    Accountant->>System: Open reconciliation for a contract and period
+    System->>DB: Query shifts due by each item's frequency
+    System->>DB: Query shifts with complete evidence in the period
+    DB-->>System: Due list, evidenced list
+    System->>System: Compute variance — due but not evidenced
+    System-->>Accountant: Side-by-side due vs. evidenced, variance called out
 ```

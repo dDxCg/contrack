@@ -3,8 +3,8 @@ import { AccessContext } from '../Services/AccessControl/access-context';
 import { Access, CurrentAccess } from '../Services/AccessControl/access.decorator';
 import { Operation, Resource } from '../Services/AccessControl/role-resolver';
 import { EmployeeCommand, EmployeePage, EmployeeService, EmployeeView } from '../Services/employee.service';
-import { EmployeeBodyDto } from './employees.dto';
-import { PageQueryDto } from './page-query.dto';
+import { EmployeeBodyDto } from '../DTOs/employees.dto';
+import { PageQueryDto } from '../DTOs/page-query.dto';
 
 @Controller('employees')
 export class EmployeesController {
@@ -40,10 +40,9 @@ export class EmployeesController {
   }
 
   @Delete(':id')
-  @HttpCode(204)
   @Access(Resource.Employees, Operation.Delete)
-  delete(@CurrentAccess() access: AccessContext, @Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.employeeService.delete(access, id);
+  deactivate(@CurrentAccess() access: AccessContext, @Param('id', ParseIntPipe) id: number): Promise<EmployeeView> {
+    return this.employeeService.deactivate(access, id);
   }
 }
 
@@ -56,5 +55,6 @@ function toCommand(body: EmployeeBodyDto): EmployeeCommand {
     role: body.role,
     managerId: body.manager_id ?? null,
     teamId: body.team_id ?? null,
+    status: body.status,
   };
 }

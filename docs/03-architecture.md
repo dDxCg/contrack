@@ -45,57 +45,47 @@ needs a decision recorded in §9, not a silent shortcut.
 | C3 | Must run [`04-schema.sql`](04-schema.sql) unmodified | Technical | Rules out an engine without ANSI SQL, identity columns and `NUMERIC` |
 | C4 | Many 10–80 staff operator companies share one Contrack deployment | Business | Multi-tenant from day one; drives D1 |
 | C5 | No native app install (NFR7) | Technical | Browser-only client; field access cannot depend on app-store distribution |
-| C6 | Technology stack not yet selected | Organisational | §5 states criteria instead of naming a language, framework or database |
-| C7 | Design phase only — no implementation phase follows this plan | Organisational | §7's deployment view and §5's technology criteria describe an intended shape, not a provisioned environment |
+| C6 | Stack is fixed: NestJS (API), ReactJS (client), PostgreSQL (database), S3 (object storage) | Organisational | §5.1 states the chosen stack; C3's ANSI SQL / `NUMERIC` requirement, resolved as PostgreSQL |
+| C7 | Design phase only — no implementation phase follows this plan | Organisational | §7's deployment view describes an intended shape, not a provisioned environment; the backend skeleton under `backend/` (NestJS + TypeORM, [`06-repo-layout.md`](06-repo-layout.md)) is the one exception already underway |
 
 ---
 
 ## 3. Context and Scope
 
 ### 3.1 Business context (C4 - level 1)
-
-Five roles use the system inside one tenant — director, manager, accountant, team
-lead, employee. A sixth role, **Platform Admin**, sits outside every tenant and
-exists only to create and suspend them (FR19, FR20) and view an aggregate platform
-dashboard over the `tenants` table (FR21) — it never reads a contract, shift or
-statement. The **customer is outside the system boundary**: they sign the
-contract and the paper receipt in person and raise complaints by phone, all of
-which tenant staff record on their behalf. Two external services are integrated:
-Zalo ZNS and/or SMS for reminders (FR27), and VietQR for payment (Could-have, not
-in MVP).
-
 ```mermaid
 flowchart TB
     customer["Customer<br/><i>outside the system</i>"]
-    employee["Field employee / team lead<br/><i>person, in one tenant</i>"]
-    accountant["Accountant / manager<br/><i>person, in one tenant</i>"]
-    director["Director<br/><i>person, in one tenant</i>"]
-    platformadmin["Platform Admin<br/><i>person, outside every tenant</i>"]
+    employee["Field employee / team lead"]
+    accountant["Accountant / manager"]
+    director["Director"]
+    platformadmin["Platform Admin"]
 
-    contrack["<b>Contrack</b><br/><i>the system, multi-tenant</i><br/>contracts, schedule,<br/>field proof, statements"]
+    contrack["<b>Contrack</b><br/><i>the system</i>"]:::system
 
-    zalo["Zalo ZNS / SMS<br/><i>external</i><br/>reminders"]
-    vietqr["VietQR<br/><i>external, planned</i><br/>payment"]
+    zalo["Zalo ZNS / SMS"]
+    vietqr["VietQR"]
 
     customer -.->|"signs contract in person"| director
     customer -.->|"signs paper receipt in person"| employee
     employee -->|"opens shift link,<br/>submits photos"| contrack
-    accountant -->|"creates contracts,<br/>exports statements"| contrack
-    director -->|"views dashboard"| contrack
+    accountant -->|"exports statements"| contrack
+    director -->|"views dashboard,<br/>manage contracts, employees"| contrack
     platformadmin -->|"creates / suspends tenants,<br/>views platform dashboard"| contrack
 
     contrack -->|"sends reminder"| zalo
     contrack -->|"requests payment"| vietqr
+
+    classDef system fill:#bfdbfe,color:#1e3a8a,stroke:#60a5fa,stroke-width:2px
 ```
 
 ### 3.2 External interfaces
 
 | Interface | Direction | Protocol | Contract owner | Failure mode |
 |---|---|---|---|---|
-| Field link | in | HTTPS, signed token, no login | API server | expired or invalid token refused, `401` |
 | Zalo ZNS / SMS | out | provider HTTP API | Alert job | delivery failure falls back to in-app (§8.3) |
 | VietQR | out | provider HTTP API | Billing (Could-have) | not built in MVP |
-| Object storage | both | S3-compatible API | API server | upload retried; an unresolvable upload blocks shift completion |
+| Object storage | both | S3 API | API server | upload retried; an unresolvable upload blocks shift completion |
 
 ---
 
@@ -122,13 +112,13 @@ system.*
 
 ```mermaid
 flowchart LR
-    subgraph client["Client — browser only, no native app"]
-        desk_ui["Desk UI<br/><i>authenticated</i>"]
-        field_ui["Field UI<br/><i>token, mobile-first</i>"]
+    subgraph client["Client"]
+        tanent_ui["Tanent UI"]
+        platform_ui["Platform admin UI"]
     end
 
     subgraph server["Server"]
-        api["API<br/>contracts · shifts · statements"]
+        api["API"]
         gen["Schedule generator"]
         alerts["Alert job"]
         pdf["PDF renderer"]
@@ -138,8 +128,8 @@ flowchart LR
     store[("Object storage<br/>photos · receipts · PDFs")]
     channel["Zalo ZNS / SMS"]
 
-    desk_ui --> api
-    field_ui --> api
+    tanent_ui --> api
+    platform_ui --> api
     api --> db
     api --> store
     gen --> db
@@ -148,16 +138,12 @@ flowchart LR
     pdf --> store
 ```
 
-**The stack is not selected yet** (C6, §11 R1). Any candidate must meet:
-
-| Criterion | Source |
-|---|---|
-| Responsive web, no native app install | NFR7, FR16 |
-| Runs [`04-schema.sql`](04-schema.sql) unmodified — ANSI SQL, identity columns, `NUMERIC` | C3 |
-| Server-side PDF rendering with embedded images | FR11 |
-| S3-compatible object storage client | §9 D2 |
-| Scheduled job execution | FR22, FR25, FR26 |
-| Multi-tenant: one shared deployment, `tenant_id` filtering in every query, no per-tenant host | C4, D1 |
+| Layer | Choice | Meets |
+|---|---|---|
+| API | NestJS (Node.js) | Server-side PDF rendering with embedded images (FR11); scheduled job execution (FR22, FR25, FR26) via Nest's scheduler |
+| Client | ReactJS | Responsive web, no native app install (NFR7, FR16); desk and field UI as one SPA (§5.1 client subgraph) |
+| Database | PostgreSQL | Runs [`04-schema.sql`](04-schema.sql) unmodified — ANSI SQL, identity columns, `NUMERIC` (C3) |
+| Object storage | S3 | S3 object storage client (§9 D2) |
 
 ### 5.2 Components (C4 - level 3)
 
@@ -170,17 +156,21 @@ reverse.
 ```mermaid
 flowchart TB
     subgraph clients["Clients"]
-        desk_ui2["Desk UI"]
-        field_ui2["Field UI<br/><i>token, no login</i>"]
+        subgraph tenant_ui2["Tenant UI"]
+            desk_ui2["Desk UI"]
+            field_ui2["Field UI<br/><i>token, no login</i>"]
+        end
+        platformadmin_ui2["Platform Admin UI"]
     end
 
     subgraph apic["API container"]
-        auth["Access Control<br/><i>[Component]</i><br/>Resolves tenant + role + row scope<br/>own / team / unit / all — §8.1"]
-        contracts["Contracts & Schedule<br/><i>[Component]</i><br/>CRUD contracts, sites, items<br/>05-api.yaml §3"]
-        shifts["Shifts & Dispatch<br/><i>[Component]</i><br/>List, reassign, dispute<br/>05-api.yaml §4"]
-        field["Field Submission<br/><i>[Component]</i><br/>Token redemption, upload, submit<br/>05-api.yaml §5"]
-        statements["Statements & Reconciliation<br/><i>[Component]</i><br/>Compute, export, reconcile<br/>05-api.yaml §6"]
-        directory["Directory & Alerts<br/><i>[Component]</i><br/>Customers, employees, teams,<br/>dashboard, alerts — 05-api.yaml §7"]
+        auth["Access Control<br/><i>[Component]</i>"]
+        contracts["Contracts & Schedule<br/><i>[Component]</i>"]
+        shifts["Shifts & Dispatch<br/><i>[Component]</i>"]
+        field["Field Submission<br/><i>[Component]</i>"]
+        statements["Statements & Reconciliation<br/><i>[Component]</i>"]
+        directory["Directory & Alerts<br/><i>[Component]</i>"]
+        platform["Platform Admin<br/><i>[Component]</i>"]
     end
 
     gen["Schedule Generator"]
@@ -192,10 +182,12 @@ flowchart TB
 
     desk_ui2 --> auth
     field_ui2 --> field
+    platformadmin_ui2 --> auth
     auth -.->|"scope check"| contracts
     auth -.->|"scope check"| shifts
     auth -.->|"scope check"| statements
     auth -.->|"scope check"| directory
+    auth -.->|"platform credential (§8.1)"| platform
 
     contracts --> db
     contracts --> gen
@@ -208,6 +200,7 @@ flowchart TB
     pdf --> store
     directory --> db
     directory --> alertjob
+    platform --> db
     alertjob --> channel
 ```
 
@@ -220,20 +213,20 @@ than by the shared scope check.
 ## 6. Runtime View
 
 The five scenarios, each with its failure branch, are diagrammed in
-[sequence-diagram.md](07-sequence-diagram.md): [create
-contract](07-sequence-diagram.md#1-create-contract-with-sites-and-service-items),
-[field submission](07-sequence-diagram.md#2-weekly-dispatch-and-field-shift-execution),
-[dispute](07-sequence-diagram.md#3-dispute-a-shift),
-[alerts](07-sequence-diagram.md#4-alerts-expiring-contract-and-missed-shift),
-[month-end close](07-sequence-diagram.md#5-month-end-statement-export).
+[sequence-diagram.md](08-sequence-diagram.md): [create
+contract](08-sequence-diagram.md#1-create-contract-with-sites-and-service-items),
+[field submission](08-sequence-diagram.md#2-weekly-dispatch-and-field-shift-execution),
+[dispute](08-sequence-diagram.md#3-dispute-a-shift),
+[alerts](08-sequence-diagram.md#4-alerts-expiring-contract-and-missed-shift),
+[month-end close](08-sequence-diagram.md#5-month-end-statement-export).
 
 ---
 
 ## 7. Deployment View
 
 A target shape stated for estimating cost and operational surface, not a
-provisioned environment — C6 and C7 keep §5.1's technology criteria unnamed, so
-this names roles rather than products, beyond D2's choice of MinIO.
+provisioned environment — C7 keeps this a shape rather than a provisioned
+environment, but C6 now fixes the products named below.
 
 ```mermaid
 flowchart LR
@@ -241,9 +234,9 @@ flowchart LR
     platformclient["Platform Admin browser"] -->|HTTPS| app
 
     subgraph host["Shared host, all tenants (C4, D1)"]
-        app["App process<br/>API + schedule generator + alert job<br/>every query tenant_id-filtered"]
-        db[("Database<br/>one schema, tenant_id on every core table")]
-        store[("Object storage<br/>keyed per tenant")]
+        app["NestJS app process<br/>API + schedule generator + alert job<br/>every query tenant_id-filtered"]
+        db[("PostgreSQL<br/>one schema, tenant_id on every core table")]
+        store[("S3<br/>keyed per tenant")]
     end
 
     app --> db
@@ -253,9 +246,9 @@ flowchart LR
 
 | Environment | Node | Runs | Note |
 |---|---|---|---|
-| Production, shared | App host | API, schedule generator, alert job | One shared host serves every tenant (C4, D1); scales by adding hosts behind a load balancer, not one host per tenant |
-| Production, shared | Database | The 19-table relational model, one schema | Every core table's `tenant_id` is the isolation boundary — no per-tenant schema or database |
-| Production, shared | Object storage | MinIO or a managed S3-compatible bucket | Object keys are prefixed by `tenant_id`; a bucket policy denies cross-prefix reads |
+| Production, shared | App host | NestJS API, schedule generator, alert job | One shared host serves every tenant (C4, D1); scales by adding hosts behind a load balancer, not one host per tenant |
+| Production, shared | Database | PostgreSQL, the relational model in [`04-schema.sql`](04-schema.sql), one schema | Every core table's `tenant_id` is the isolation boundary — no per-tenant schema or database |
+| Production, shared | Object storage | S3 bucket | Object keys are prefixed by `tenant_id`; a bucket policy denies cross-prefix reads |
 
 ---
 
@@ -277,11 +270,13 @@ Three distinct mechanisms, checked in order:
 - **Field access** carries a per-shift token (D3) and can reach exactly one shift; the token's
   `shift_id` already pins a `tenant_id` transitively, so no separate tenant check is needed there.
 
-**Platform Admin** is a fourth, disjoint mechanism: `platform_admins` is not `employees`, carries no
-`tenant_id`, and its credential can only reach `05-api.yaml` §10 and §11 — it cannot present a token
-that resolves to any tenant's contracts, shifts or statements. Its dashboard (FR21) is bound by the
-same rule: the aggregate it reads is computed from the `tenants` table alone and never joins into any
-tenant-scoped table. There is no role that spans both worlds.
+**Platform Admin** is a fourth credential, resolved by the same Access Control component (§5.2) on the
+same shared server as every desk and field request: `platform_admins` is not `employees`, carries no
+`tenant_id`, and its credential can only reach `05-api.yaml`'s Platform tag (login, dashboard, create
+tenant, suspend/reactivate tenant) — it cannot present a token that resolves to any tenant's contracts,
+shifts or statements. Its dashboard (FR21) is bound by the same rule: the aggregate it reads is computed
+from the `tenants` table alone and never joins into any tenant-scoped table. There is no role that spans
+both worlds — one component resolves both credential spaces, but the spaces themselves stay separate.
 
 The two desk scopes rest on different columns: `team` resolves through `employees.team_id`, so a team
 lead sees the shifts of the team they belong to; `unit` resolves through `employees.manager_id`, so a
@@ -315,7 +310,7 @@ before upload. The remaining mechanics — resumable upload, offline queue — a
 | # | Decision | Context and options | Consequence | Revisit when |
 |---|---|---|---|---|
 | D1 | **Multi-tenant, shared schema, `tenant_id` row-level isolation** | Contrack is sold to many operating companies. Alternatives: a database per tenant, or a schema per tenant. Both isolate more strongly but multiply migration and backup work per tenant at a scale where that cost dominates; shared-schema with a mandatory `tenant_id` filter is the standard SaaS default at this profile. | Every core table carries `tenant_id` (`04-schema.sql`); every repository method requires it, not accepts it optionally. `employees.email` is unique globally (login resolves the tenant from the matched employee), while `teams.code` stays unique per tenant. A leak is a code-review-catchable bug (missing filter), not a schema question. (NFR6, G4) | Tenant count or per-tenant data volume grows enough that noisy-neighbor query load, not isolation, becomes the bottleneck — revisit toward schema-per-tenant or per-tenant read replicas then. |
-| D2 | **Evidence in S3-compatible object storage (MinIO)** | Alternatives: blobs in the database, or a directory on the app server. Photos are the bulk of the data and are retained ≥ 12 months. | DB stays small and easy to back up; retention (NFR4) becomes a bucket lifecycle rule; a storage service must be operated alongside the database. | A managed object-storage tier becomes available at a cost point the operating budget cannot ignore, or self-hosting MinIO turns out to need more operational effort than the team has. |
+| D2 | **Evidence in S3 object storage** | Alternatives: blobs in the database, or a directory on the app server. Photos are the bulk of the data and are retained ≥ 12 months. | DB stays small and easy to back up; retention (NFR4) becomes a bucket lifecycle rule; the app talks to S3 through an `ObjectStorageClient` abstraction ([`06-repo-layout.md`](06-repo-layout.md)) rather than the filesystem. | Cost at scale, or a requirement to self-host, makes a self-managed S3-compatible service (e.g. MinIO) worth revisiting. |
 | D3 | **Per-shift signed token for field access** | FR16 and NFR7 require a link that opens and works on a phone with no install. Alternatives: employee login, or a magic link per employee. | No password at a job site. The token names one shift, expires, and authorises only that shift's submission. Whoever holds the link can submit — acceptable because the evidence itself carries GPS and time. | A forwarded link is found to have been used by someone other than the assignee, or the business needs to know *who* submitted rather than only *that* the assigned shift was submitted. |
 | D4 | **Photographed paper receipt, not on-screen signature** | The customer already signs paper today and the original is filed. | No signature-capture component; the evidence is an image like any other. The paper original remains the legal artifact. | A customer disputes a photographed receipt as illegible or fraudulent often enough that an on-screen signature becomes worth building. |
 | D5 | **Customer is not a system actor** | The customer signs in person and complains by phone. | No customer login, no portal, no notification to customers in MVP. A manager records disputes manually (FR8). | Customers ask for self-service visibility into schedule or statements — a Should/Could-have already named in the PRD roadmap. |
@@ -340,9 +335,9 @@ this table states how each is tested.
 | QR6 | NFR6 | An authenticated account of tenant A requests, by id, a resource belonging to tenant B (contract, shift, employee, statement, customer) | Request is refused exactly like an out-of-scope row | `404` for every core resource type, zero exceptions — automated per-endpoint sweep with two seeded tenants |
 | QR7 | NFR7 | A newly hired field employee receives a shift link on a personal phone, no prior app install | Employee completes the shift | Zero installs, zero passwords entered, shift reaches `completed` |
 
-QR1 and QR4 cannot be measured until R1 (stack) and R4 (weak-network mechanics) in
-§11 are resolved — they are stated now so the target is fixed before the mechanism
-is chosen.
+QR4 is measurable now that the stack (R1) is fixed — an S3 bucket lifecycle rule. QR1
+still cannot be measured until R4 (weak-network mechanics) in §11 is resolved — it is
+stated now so the target is fixed before the mechanism is chosen.
 
 ---
 
@@ -350,7 +345,7 @@ is chosen.
 
 | # | Risk | Impact | Likelihood | Mitigation |
 |---|---|---|---|---|
-| R1 | **Stack not yet selected.** Everything in §5.1 is stated as criteria rather than a name. | Blocks estimation, hiring, and turns §7's deployment view from concrete to hypothetical | High — certain until decided | Decide before sprint planning or committing a delivery date |
+| R1 | **Resolved.** Stack fixed: NestJS, ReactJS, PostgreSQL, S3 (C6, §5.1). | — | — | Backend skeleton already scaffolded under `backend/` ([`06-repo-layout.md`](06-repo-layout.md)) |
 | R2 | **Resolved.** `contract_items.frequency` (`VARCHAR(100)` free text) is split into `frequency_count` (integer) and `frequency_unit_id` (FK to a `frequency_units` lookup) — both structured, so FR22's generator schedules off them directly with no parsing. A separate `frequency_rule` stays free text for the exact agreed placement when one exists (e.g. "thứ 7 hàng tuần"); real contracts negotiate placements too varied to fix into a grammar, so it is kept as a staff-facing note only and is never parsed — a director moves individual shifts by hand to match it. | — | — | Implemented in [`04-schema.sql`](04-schema.sql) |
 | R3 | **Schedule generation timing undecided** — eager on contract creation, or a rolling job that keeps a horizon filled | Medium — affects term-change cost and initial contract-creation latency | Medium | Default to eager, as seq. 1 implies; revisit if term changes prove frequent |
 | R4 | **Weak-network mechanics undecided** — resumable upload, offline queue, retry policy | High — QR1 cannot be verified without this | Medium | Design before the field page is built; §8.4 states the goal only |

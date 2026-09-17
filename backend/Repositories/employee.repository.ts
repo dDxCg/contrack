@@ -85,10 +85,6 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
     return this.saveAndReload(employee);
   }
 
-  async delete(tenantId: number, id: number): Promise<void> {
-    await this.dataSource.getRepository(Employee).delete({ id, tenantId });
-  }
-
   async futureShiftIdsFor(tenantId: number, employeeId: number): Promise<number[]> {
     const rows = await this.scopedIds('shifts', tenantId, 's')
       .andWhere('s.assignee_id = :employeeId', { employeeId })

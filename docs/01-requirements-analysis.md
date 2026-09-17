@@ -27,7 +27,7 @@ Contrack replaces that with one system: a contract's schedules are generated, fi
 | US-11 | Manager, Director | flag a shift as disputed the moment a customer complains | the complaint is tied to the actual evidence instead of living in someone's memory | Given a completed shift, when I mark it disputed with a reason, then it keeps its photos/receipt/GPS and shows the reason, separate from a normal completed shift |
 | US-12 | Manager | know a contract is about to expire before it does | I can start the renewal conversation in time | Given a contract 30 days from `expires_at`, when that threshold is crossed, then one alert fires for that contract via Zalo (ZNS) with SMS fallback, and never fires twice |
 | US-13 | Manager | know a visit was missed before the customer tells me | I can fix it before it becomes a complaint | Given a shift past its due date per the contract's frequency, when it's still not completed, then an alert fires the moment it passes due, via Zalo (ZNS) with SMS fallback |
-| US-14 | Manager, Director | create or update a customer record, and delete it if I'm Director | the customer directory matches who we actually work with | Given a customer with a non-terminated contract, when a Director tries to delete it, then it's rejected; given no such contract, when a Director deletes it, then it succeeds |
+| US-14 | Manager, Director | create or update a customer record, and delete it if I'm Director | the customer directory matches who we actually work with | Given a customer with an active contract, when a Director tries to delete it, then it's rejected; given no such contract, when a Director deletes it, then it succeeds |
 | US-15 | Accountant | close a contract's month without reassembling evidence by hand | I can send the customer a statement in minutes, not days | Given a period where every due shift has complete evidence, when I export, then one action produces the full PDF with photos and signature; given any shift in the period is missing evidence, when I try to export, then it's blocked and the missing shifts are listed |
 | US-16 | Accountant | send an exported statement to the customer and mark it sent | I have one record of what was billed and when, without a side spreadsheet | Given a statement already exported as PDF, when I send it, then it's marked sent with a timestamp, and can't be sent twice by accident |
 | US-17 | Accountant | record labor and materials costs against a contract each month | the Director's profit/loss numbers are accurate, not guessed | Given I save a cost entry (category, month, amount), when it's saved, then that contract's profit/loss for that month updates immediately |
@@ -37,6 +37,7 @@ Contrack replaces that with one system: a contract's schedules are generated, fi
 | US-21 | Platform Admin | onboard a new operating company with its first Director account | a new customer of Contrack itself can start working without me touching the database | Given I create a tenant, when it's saved, then one active Director login exists, scoped to that tenant only |
 | US-22 | Platform Admin | suspend or reactivate a tenant | I can cut off a non-paying or offboarded company without deleting their data | Given a suspended tenant, when any of its accounts try to sign in, then they're rejected before password check; given reactivation, when the same account signs in, then it succeeds |
 | US-23 | Platform Admin | see tenant counts by status, recent onboarding activity and tenant growth trend | I track platform health without querying the database myself | Given I open the platform dashboard, when it loads, then all three views reflect current tenant data |
+| US-24 | Director | create, rename or delete a team | field staff are organized into the group a team lead actually dispatches, not left as one undifferentiated pool | Given a name and a code unique within my tenant, when I save a team, then it's created; given a team that still has members, when I try to delete it, then it's rejected |
 
 ### Functional Requirements
 
@@ -44,13 +45,13 @@ Contrack replaces that with one system: a contract's schedules are generated, fi
 |---|---|---|
 | FR1 | Director, Accountant, Manager, Team Lead, Employee | Sign in with an email and password; the session carries the account's tenant, role and row scope for every later request |
 | FR2 | Director | View dashboard: active/expiring/disputed contract counts, projected revenue, late/missed shifts by month, on-time renewal rate, cancellation rate, new contracts signed by month, profit/loss trend — filterable by month |
-| FR3 | Director | Read, create, update or delete employee accounts, including role and manager assignment |
+| FR3 | Director | Read, create, update or deactivate employee accounts, including role and manager assignment; deactivation is a soft delete — the account and its shift/cost history are retained |
 | FR4 | Director, Accountant | View profit/loss per contract per month: revenue from `contract_items` minus that month's recorded or estimated cost |
 | FR5 | Manager, Director | Create a contract for a customer with a signed date and expiry date. Update/delete: Director only |
 | FR6 | Manager, Director | Add one or more sites to a contract. Update/delete: Director only |
 | FR7 | Manager, Director | Add service items to a site (name, frequency, unit price). Update/delete: Director only |
 | FR8 | Manager, Director | Mark a shift as disputed and record the reason |
-| FR9 | Manager, Director | Create or update a customer record (name, contact, address, segment). Delete: Director only, blocked while the customer holds a non-terminated contract |
+| FR9 | Manager, Director | Create or update a customer record (name, contact, address, segment). Delete: Director only, blocked while the customer holds an active contract |
 | FR10 | Accountant | Generate a monthly statement per contract from its completed shifts |
 | FR11 | Accountant | Export a statement as PDF with photos and receipts attached |
 | FR12 | Accountant | Send an exported statement to the customer, marking it sent |
@@ -70,6 +71,7 @@ Contrack replaces that with one system: a contract's schedules are generated, fi
 | FR26 | System | Alert when a shift has not been completed at the contract's required frequency |
 | FR27 | System | Send alerts via Zalo (ZNS) and/or SMS |
 | FR28 | System | Estimate a contract's month cost when the Accountant hasn't recorded it yet — trailing 3-month average of that contract's own recorded costs, or the tenant's average cost-to-revenue ratio if the contract has no recorded cost history — so FR2/FR4 never show a gap for an unclosed month |
+| FR29 | Director | Create, rename or delete a team (name, code unique per tenant); delete blocked while the team still has members |
 
 ### Non-Functional Requirements
 
