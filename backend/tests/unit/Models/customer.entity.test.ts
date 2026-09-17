@@ -25,11 +25,11 @@ describe('Customer', () => {
     it('changes name, company, contact, address and segment', () => {
       const customer = aCustomer();
 
-      customer.rename('Chung cư Golden Park');
-      customer.changeCompanyName('Golden Park JSC');
-      customer.changeContact('Anh Hùng · 0988 000 111');
-      customer.changeAddress('Hà Đông, Hà Nội');
-      customer.changeSegment(CustomerSegment.Vip);
+      customer.setName('Chung cư Golden Park');
+      customer.setCompanyName('Golden Park JSC');
+      customer.setContact('Anh Hùng · 0988 000 111');
+      customer.setAddress('Hà Đông, Hà Nội');
+      customer.setSegment(CustomerSegment.Vip);
 
       expect(customer).toMatchObject({
         name: 'Chung cư Golden Park',

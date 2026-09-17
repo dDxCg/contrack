@@ -59,8 +59,8 @@ export class TeamService {
 
     const team = new Team();
     team.tenantId = access.tenantId;
-    team.rename(command.name);
-    team.changeCode(command.code);
+    team.setName(command.name);
+    team.setCode(command.code);
 
     return this.toView(await this.teamRepository.create(team), []);
   }
@@ -72,10 +72,10 @@ export class TeamService {
       if (await this.teamRepository.existsCode(access.tenantId, command.code)) {
         throw new TeamCodeTakenException(command.code);
       }
-      team.changeCode(command.code);
+      team.setCode(command.code);
     }
     if (command.name !== undefined) {
-      team.rename(command.name);
+      team.setName(command.name);
     }
 
     const [view] = await this.toViews(access, [await this.teamRepository.update(team)]);
@@ -85,7 +85,7 @@ export class TeamService {
 
   async delete(access: AccessContext, id: number): Promise<void> {
     const team = await this.requireTeam(access, id);
-    team.withMembers(await this.employeeRepository.findByTeamIds(access.tenantId, [id])).assertDeletable();
+    team.setMembers(await this.employeeRepository.findByTeamIds(access.tenantId, [id])).assertDeletable();
 
     await this.teamRepository.delete(access.tenantId, id);
   }
@@ -113,8 +113,8 @@ export class TeamService {
     );
   }
 
-  private toView(team: Team, members: Parameters<Team['withMembers']>[0]): TeamView {
-    const hydrated = team.withMembers(members);
+  private toView(team: Team, members: Parameters<Team['setMembers']>[0]): TeamView {
+    const hydrated = team.setMembers(members);
 
     return {
       id: hydrated.id,

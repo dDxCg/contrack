@@ -47,23 +47,23 @@ export class CustomerService {
   async create(access: AccessContext, command: CustomerCommand): Promise<CustomerView> {
     const customer = new Customer();
     customer.tenantId = access.tenantId;
-    customer.rename(command.name);
-    customer.changeCompanyName(command.companyName ?? null);
-    customer.changeContact(command.contact ?? null);
-    customer.changeAddress(command.address ?? null);
-    customer.changeSegment(command.segment ?? CustomerSegment.Regular);
+    customer.setName(command.name);
+    customer.setCompanyName(command.companyName ?? null);
+    customer.setContact(command.contact ?? null);
+    customer.setAddress(command.address ?? null);
+    customer.setSegment(command.segment ?? CustomerSegment.Regular);
 
     return toCustomerView(await this.customerRepository.create(customer));
   }
 
   async update(access: AccessContext, id: number, command: CustomerCommand): Promise<CustomerView> {
     const customer = await this.requireCustomer(access, id);
-    customer.rename(command.name);
-    customer.changeCompanyName(command.companyName ?? null);
-    customer.changeContact(command.contact ?? null);
-    customer.changeAddress(command.address ?? null);
+    customer.setName(command.name);
+    customer.setCompanyName(command.companyName ?? null);
+    customer.setContact(command.contact ?? null);
+    customer.setAddress(command.address ?? null);
     if (command.segment !== undefined) {
-      customer.changeSegment(command.segment);
+      customer.setSegment(command.segment);
     }
 
     return toCustomerView(await this.customerRepository.update(customer));

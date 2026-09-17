@@ -1,16 +1,11 @@
 openapi: 3.0.3
 info:
-  title: LichHD API
-  version: 0.1.0-draft
+  title: Contrack API
+  version: 0.1.0-staging
   description: >
-    Recurring service contract management. Every operation traces to a requirement
-    in `02-design-analysis.md`; field names match the columns in `db/schema.sql`.
-    Status: draft — endpoint shapes settled, transport details follow the stack
-    decision (`04-architecture.md` §11 R1). See `05-api.md` for the prose version
-    of this spec, including the full access-control matrix and error-code catalogue
-    this file's `x-roles` / `x-scope` extensions and `components.examples` summarize.
+    Recurring service contract management.
   contact:
-    name: LichHD documentation
+    name: Contrack documentation
     url: https://github.com/
 servers:
   - url: /api/v1
@@ -195,7 +190,7 @@ paths:
     post:
       tags: [Platform]
       operationId: createTenant
-      summary: Create a tenant and its first Director account — FR23
+      summary: Create a tenant and its first Director account — FR19
       security: [{ platformBearerAuth: [] }]
       requestBody:
         required: true
@@ -218,7 +213,7 @@ paths:
     patch:
       tags: [Platform]
       operationId: updateTenantStatus
-      summary: Suspend or reactivate a tenant — FR24
+      summary: Suspend or reactivate a tenant — FR20
       security: [{ platformBearerAuth: [] }]
       parameters:
         - name: id
@@ -253,7 +248,7 @@ paths:
     get:
       tags: [Platform]
       operationId: getPlatformDashboard
-      summary: Platform Admin's landing dashboard — tenant counts, growth trend, recent tenants — FR25
+      summary: Platform Admin's landing dashboard — tenant counts, growth trend, recent tenants — FR21
       security: [{ platformBearerAuth: [] }]
       responses:
         '200':
@@ -500,7 +495,7 @@ paths:
       summary: Regenerate future shifts after an item or term change
       description: >
         Never touches a completed or disputed shift. Frequency currently has no
-        grammar (`04-architecture.md` §11 R2) — blocked until that is resolved.
+        grammar (`05-architecture.md` §11 R2) — blocked until that is resolved.
       x-roles: [director, manager]
       x-scope: all
       responses:
@@ -674,7 +669,7 @@ paths:
                 type: object
                 properties:
                   token: { type: string }
-                  url: { type: string, format: uri, example: "https://app.lichhd.vn/field/eyJhbGciOi..." }
+                  url: { type: string, format: uri, example: "https://app.contrack.vn/field/eyJhbGciOi..." }
                   expires_at: { type: string, format: date-time }
 
   # -------------------------------------------------------------- Field
@@ -759,7 +754,7 @@ paths:
       summary: >
         Complete the shift. The server stamps captured_at from its own clock,
         inserts shift_photos and writes receipt_photo_url — evidence is
-        write-once (`04-architecture.md` §9 D7). latitude/longitude may be
+        write-once (`05-architecture.md` §9 D7). latitude/longitude may be
         null; the shift still completes, flagged for missing location.
       security: []
       requestBody:
@@ -949,7 +944,7 @@ paths:
     get:
       tags: [Statements]
       operationId: listContractCosts
-      summary: List recorded costs for a contract, optionally filtered to one month — FR26
+      summary: List recorded costs for a contract, optionally filtered to one month — FR14
       x-roles: [director, accountant]
       x-scope: all
       parameters:
@@ -970,7 +965,7 @@ paths:
     put:
       tags: [Statements]
       operationId: upsertContractCost
-      summary: Set one month's cost for a category — replaces any existing entry for (category, period) — FR26
+      summary: Set one month's cost for a category — replaces any existing entry for (category, period) — FR14
       x-roles: [accountant]
       x-scope: all
       parameters:
@@ -1002,7 +997,7 @@ paths:
     get:
       tags: [Statements]
       operationId: getContractProfitability
-      summary: Revenue vs. recorded cost per month, trailing N months — FR27
+      summary: Revenue vs. recorded cost per month, trailing N months — FR4
       x-roles: [director, accountant]
       x-scope: all
       parameters:
@@ -1070,7 +1065,7 @@ paths:
     get:
       tags: [Alerts and dashboard]
       operationId: getDashboard
-      summary: Active, expiring and disputed contract counts; projected revenue; trends — FR17
+      summary: Active, expiring and disputed contract counts; projected revenue; trends — FR2
       x-roles: [director]
       x-scope: all
       parameters:
@@ -1394,14 +1389,14 @@ components:
         Session or bearer token issued by POST /auth/login, carrying tenant_id and
         role, carried on every desk request. Field endpoints (/field/*) carry no
         session — the per-shift signed token in the path is their sole credential;
-        see `04-architecture.md` §8.1.
+        see `05-architecture.md` §8.1.
     platformBearerAuth:
       type: http
       scheme: bearer
       description: >
         Token issued by POST /platform/auth/login against platform_admins. Carries
         no tenant_id and is rejected by every bearerAuth-secured operation above —
-        the two credential spaces are disjoint; see `04-architecture.md` §8.1.
+        the two credential spaces are disjoint; see `05-architecture.md` §8.1.
 
   parameters:
     Limit:
@@ -1550,7 +1545,7 @@ components:
             Free text, optional. The exact agreement when one exists (e.g. "thứ 7 hàng tuần",
             "ngày 15 hàng tháng") — kept as a note for staff, deliberately not parsed by the
             generator, since real contracts negotiate placements too varied to force into a
-            fixed grammar (`04-architecture.md` §11 R2). The generator schedules purely off
+            fixed grammar (`05-architecture.md` §11 R2). The generator schedules purely off
             `frequency_count`/`frequency_unit`; a director can move individual shifts afterward
             to match the rule.
           example: "thứ 7 hàng tuần"
@@ -1795,9 +1790,9 @@ components:
         not_due: { type: integer, description: Scheduled inside the period but the date has not arrived yet. }
         completed: { type: integer, description: Finished on schedule with no dispute. Shown as "Hoàn thành". }
         completed_pct: { type: number, nullable: true, description: completed / due * 100. Null when due is 0. }
-        overdue: { type: integer, description: Its scheduled date has passed and it is still not finished — FR13. Shown as "Trễ hẹn". }
+        overdue: { type: integer, description: Its scheduled date has passed and it is still not finished — FR26. Shown as "Trễ hẹn". }
         overdue_pct: { type: number, nullable: true, description: overdue / due * 100. Null when due is 0. }
-        disputed: { type: integer, description: Finished but carrying an FR11 dispute. Counted here rather than under completed, so the two never double-count. }
+        disputed: { type: integer, description: Finished but carrying an FR8 dispute. Counted here rather than under completed, so the two never double-count. }
         disputed_pct: { type: number, nullable: true, description: disputed / due * 100. Null when due is 0. }
         missing_evidence: { type: integer, description: Of `completed` — finished and undisputed but short of the required evidence. Reported for follow-up; it does not form a fourth slice. }
 
@@ -1831,7 +1826,7 @@ components:
 
     ContractCost:
       type: object
-      description: One recorded cost line for a contract in one month — FR26. Unique on (contract, category, period).
+      description: One recorded cost line for a contract in one month — FR14. Unique on (contract, category, period).
       properties:
         id: { type: integer }
         contract_id: { type: integer }
@@ -1844,7 +1839,7 @@ components:
 
     ContractProfitMonth:
       type: object
-      description: One month of a contract's profit and loss — FR27. Never blank; FR28 fills an unrecorded month with an estimate and flags it.
+      description: One month of a contract's profit and loss — FR4. Never blank; FR28 fills an unrecorded month with an estimate and flags it.
       properties:
         period: { type: string, format: date, example: "2024-10-01" }
         revenue: { type: number, description: Derived from contract_items, not stored. }

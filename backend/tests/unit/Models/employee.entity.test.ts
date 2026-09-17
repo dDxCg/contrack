@@ -19,7 +19,7 @@ describe('Employee', () => {
     it('accepts a manager who is not downstream of this employee', () => {
       const employee = anEmployee({ id: 12, managerId: null });
 
-      employee.assignManager(31, [31, 40, 5]);
+      employee.setManager(31, [31, 40, 5]);
 
       expect(employee.managerId).toBe(31);
     });
@@ -27,7 +27,7 @@ describe('Employee', () => {
     it('reports the whole cycle path when the manager reports to this employee', () => {
       const employee = anEmployee({ id: 12, managerId: null });
 
-      const error = captureDomainError(() => employee.assignManager(31, [31, 12, 5]));
+      const error = captureDomainError(() => employee.setManager(31, [31, 12, 5]));
 
       expect(error.code).toBe('employee.manager_cycle');
       expect(error.getStatus()).toBe(400);
@@ -37,7 +37,7 @@ describe('Employee', () => {
     it('reports a self-assignment as a cycle of one', () => {
       const employee = anEmployee({ id: 12 });
 
-      const error = captureDomainError(() => employee.assignManager(12, [12]));
+      const error = captureDomainError(() => employee.setManager(12, [12]));
 
       expect(error.code).toBe('employee.manager_cycle');
       expect(error.details).toEqual({ path: [12, 12] });
@@ -46,7 +46,7 @@ describe('Employee', () => {
     it('leaves the assignment untouched when the cycle is refused', () => {
       const employee = anEmployee({ id: 12, managerId: 40 });
 
-      captureDomainError(() => employee.assignManager(31, [31, 12]));
+      captureDomainError(() => employee.setManager(31, [31, 12]));
 
       expect(employee.managerId).toBe(40);
     });
@@ -54,7 +54,7 @@ describe('Employee', () => {
     it('clears the manager when assigned null', () => {
       const employee = anEmployee({ id: 12, managerId: 31 });
 
-      employee.assignManager(null, []);
+      employee.setManager(null, []);
 
       expect(employee.managerId).toBeNull();
     });
@@ -64,9 +64,9 @@ describe('Employee', () => {
     it('changes role, team, name and contact', () => {
       const employee = anEmployee({ id: 12 });
 
-      employee.changeRole(Role.Employee);
-      employee.assignTeam(7);
-      employee.rename('Nguyễn Văn Toàn');
+      employee.setRole(Role.Employee);
+      employee.setTeam(7);
+      employee.setName('Nguyễn Văn Toàn');
       employee.setContact('0909 111 222');
       employee.setPasswordHash('$2b$04$hash');
 

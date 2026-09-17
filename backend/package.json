@@ -1,8 +1,8 @@
 {
-  "name": "lich-hd-backend",
+  "name": "contrack-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "LichHD API — NestJS + TypeORM. The contract lives in docs/05-api.yaml.",
+  "description": "Contrack API — NestJS + TypeORM. The contract lives in docs/05-api.yaml.",
   "license": "UNLICENSED",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

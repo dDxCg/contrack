@@ -61,12 +61,12 @@ export class EmployeeService {
 
     const employee = new Employee();
     employee.tenantId = access.tenantId;
-    employee.rename(command.name);
+    employee.setName(command.name);
     employee.setContact(command.contact ?? null);
     employee.email = command.email;
-    employee.changeRole(command.role);
-    employee.assignTeam(command.teamId ?? null);
-    employee.assignManager(command.managerId ?? null);
+    employee.setRole(command.role);
+    employee.setTeam(command.teamId ?? null);
+    employee.setManager(command.managerId ?? null);
     employee.status = EmployeeStatus.Active;
 
     await this.assertTeamLeadAllowed(access, employee);
@@ -83,13 +83,13 @@ export class EmployeeService {
     }
 
     employee.email = command.email;
-    employee.rename(command.name);
+    employee.setName(command.name);
     employee.setContact(command.contact ?? null);
-    employee.changeRole(command.role);
-    employee.assignTeam(command.teamId ?? null);
+    employee.setRole(command.role);
+    employee.setTeam(command.teamId ?? null);
 
     const managerId = command.managerId ?? null;
-    employee.assignManager(
+    employee.setManager(
       managerId,
       managerId === null ? [] : await this.employeeRepository.managerChainOf(access.tenantId, managerId),
     );
@@ -122,7 +122,7 @@ export class EmployeeService {
 
     const members = await this.employeeRepository.findByTeamIds(access.tenantId, [candidate.teamId]);
     team
-      .withMembers(members.filter((member) => member.id !== candidate.id))
+      .setMembers(members.filter((member) => member.id !== candidate.id))
       .addMember(candidate);
   }
 

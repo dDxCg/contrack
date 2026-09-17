@@ -64,8 +64,8 @@ describe('Team', () => {
     it('changes name and code', () => {
       const team = aTeam();
 
-      team.rename('Tổ 3 — PCCC');
-      team.changeCode('T3');
+      team.setName('Tổ 3 — PCCC');
+      team.setCode('T3');
 
       expect(team).toMatchObject({ name: 'Tổ 3 — PCCC', code: 'T3' });
     });

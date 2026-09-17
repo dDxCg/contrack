@@ -21,7 +21,7 @@ export class Team {
 
   members: Employee[] = [];
 
-  withMembers(members: readonly Employee[]): this {
+  setMembers(members: readonly Employee[]): this {
     this.members = [...members];
 
     return this;
@@ -50,11 +50,11 @@ export class Team {
     }
   }
 
-  rename(name: string): void {
+  setName(name: string): void {
     this.name = name;
   }
 
-  changeCode(code: string): void {
+  setCode(code: string): void {
     this.code = code;
   }
 }

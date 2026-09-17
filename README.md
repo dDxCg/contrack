@@ -1,6 +1,6 @@
 <div align="center">
 
-# LichHD
+# Contrack
 
 **Recurring Service Contract Management**
 
@@ -8,21 +8,7 @@
 
 </div>
 
----
-
-## Table of contents
-
-- [What LichHD is](#what-lichhd-is)
-- [User stories](#user-stories)
-- [The screens](#the-screens)
-- [Architecture](#architecture)
-- [Success metrics](#success-metrics)
-- [Repository layout](#repository-layout)
-- [Documentation](#documentation)
-
----
-
-## What LichHD is
+## What Contrack is
 
 Contract management and scheduling for companies delivering **periodic services** — industrial cleaning, HVAC/elevator maintenance, pest control,
 landscaping, fire-safety maintenance, etc. 
@@ -41,22 +27,41 @@ flowchart LR
     class C yours
     class S,P,T ours
 ```
-Specification: [docs/01-prd.md](docs/01-prd.md).
+Specification: [docs/01-requirements-analysis.md](docs/01-requirements-analysis.md).
 
 ---
 
 ## User stories
 
-| As a... | I want to... | So that... | Acceptance criteria |
-|---|---|---|---|
-| Team lead | know which shifts my team owes this week without chasing anyone for it | I can assign work the moment the week starts | The week's shift list reaches the team lead by Monday morning, scoped to their own team |
-| Employee | leave proof that I actually did the visit | I'm protected if a customer disputes it later | A shift only reaches `completed` once before/after photos and the signed receipt are submitted, with location and time recorded |
-| Manager | know a contract is about to expire before it does | I can start the renewal conversation in time | Alert fires once per contract, 30 days before expiry |
-| Manager | know a visit was missed before the customer tells me | I can fix it before it becomes a complaint | Alert fires the moment a shift passes its due date uncompleted |
-| Accountant | close a contract's month without reassembling evidence by hand | I can send the customer a statement in minutes, not days | One action produces the full PDF; a period with incomplete evidence is blocked and lists exactly which shifts are missing it |
-| Director | see the state of every contract without asking staff for a status update | I catch a revenue or delivery problem myself, before it reaches me as a complaint | One view shows active, expiring and disputed contract counts plus projected revenue, current as of the underlying data |
+INVEST-checked and ID'd, all 23 — sorted by role: cross-cutting sign-in first, then
+Director, Manager, Accountant, Team Lead, Employee, Platform Admin. A multi-role row
+sorts under the first-listed role. FR trace: [Functional Requirements](docs/01-requirements-analysis.md#functional-requirements) table in the same doc.
 
-Full user stories: [design-analysis.md §I](docs/02-design-analysis.md#user-stories).
+| ID | As a... | I want to... | So that... | Acceptance criteria |
+|---|---|---|---|---|
+| US-01 | employee (any role) | sign in with my email and password | I get a session scoped to my tenant, role and row-scope | Given a valid email/password, when I sign in, then I receive a token carrying tenant + role; given the email doesn't exist or the tenant is suspended, when I sign in, then I'm rejected before any password check |
+| US-02 | Director | see contract status, projected revenue/profit and this period's shift-completion status in one place | I catch a delivery or revenue problem before it reaches me as a complaint | Given I open the dashboard, when it loads, then active/expiring/disputed contract counts, projected revenue and period profit reflect the current data, filterable by month; given the same load, then the period's scheduled shifts show as completed/overdue/disputed/not-yet-due, with the three completion rates computed only against shifts actually due |
+| US-03 | Director | see late/missed shifts by month on the dashboard | I spot a slipping team before it costs a contract | Given I filter the dashboard by month, when it renders, then late/missed shift counts for that month are shown |
+| US-04 | Director | see on-time renewal rate and cancellation rate on the dashboard | I know whether retention is improving or slipping | Given I open the dashboard, when it loads, then both rates are computed against the selected month's baseline |
+| US-05 | Director | see new contracts signed by month and the profit/loss trend on the dashboard | I see growth and margin together, not in two places | Given I open the dashboard, when it loads, then both trends render for the selected date range, using the same profit/loss numbers as US-08 |
+| US-06 | Director | manage employee accounts, roles and manager assignment myself | access always matches who's actually on staff, without waiting on IT | Given I create, edit or deactivate an employee, when they next call the API, then the change already applies — no redeploy, no re-login required |
+| US-07 | Director, Accountant | see what's billed against what actually got done, per contract and period | I catch billing drift before it reaches the customer as a dispute | Given a contract and a period, when I open reconciliation, then shifts due by frequency sit next to shifts with complete evidence, for that contract and period only |
+| US-08 | Director, Accountant | see profit/loss per contract per month | I catch a bad contract before renewing it | Given a month with recorded costs, when I open the view, then profit/loss = revenue from `contract_items` minus that month's recorded labor/materials/other cost |
+| US-09 | Director | still see a profit/loss number for a month the Accountant hasn't closed yet | the dashboard never shows a gap for an unclosed month | Given a contract with no cost recorded for the month, when I open the view, then it shows a clearly marked estimate — trailing 3-month average for that contract, or the tenant's average cost-to-revenue ratio if it has no cost history |
+| US-10 | Manager, Director | set up a new contract with its sites and service items in one pass | the shift schedule generates itself instead of me building a calendar by hand | Given a contract with a term, ≥1 site and ≥1 service item, when I save it, then the full set of scheduled shifts is generated immediately; given a site or item is missing frequency or unit price, when I save, then the contract is rejected with the specific field named |
+| US-11 | Manager, Director | flag a shift as disputed the moment a customer complains | the complaint is tied to the actual evidence instead of living in someone's memory | Given a completed shift, when I mark it disputed with a reason, then it keeps its photos/receipt/GPS and shows the reason, separate from a normal completed shift |
+| US-12 | Manager | know a contract is about to expire before it does | I can start the renewal conversation in time | Given a contract 30 days from `expires_at`, when that threshold is crossed, then one alert fires for that contract via Zalo (ZNS) with SMS fallback, and never fires twice |
+| US-13 | Manager | know a visit was missed before the customer tells me | I can fix it before it becomes a complaint | Given a shift past its due date per the contract's frequency, when it's still not completed, then an alert fires the moment it passes due, via Zalo (ZNS) with SMS fallback |
+| US-14 | Manager, Director | create or update a customer record, and delete it if I'm Director | the customer directory matches who we actually work with | Given a customer with a non-terminated contract, when a Director tries to delete it, then it's rejected; given no such contract, when a Director deletes it, then it succeeds |
+| US-15 | Accountant | close a contract's month without reassembling evidence by hand | I can send the customer a statement in minutes, not days | Given a period where every due shift has complete evidence, when I export, then one action produces the full PDF with photos and signature; given any shift in the period is missing evidence, when I try to export, then it's blocked and the missing shifts are listed |
+| US-16 | Accountant | send an exported statement to the customer and mark it sent | I have one record of what was billed and when, without a side spreadsheet | Given a statement already exported as PDF, when I send it, then it's marked sent with a timestamp, and can't be sent twice by accident |
+| US-17 | Accountant | record labor and materials costs against a contract each month | the Director's profit/loss numbers are accurate, not guessed | Given I save a cost entry (category, month, amount), when it's saved, then that contract's profit/loss for that month updates immediately |
+| US-18 | Team lead | know which shifts my team owes this week without chasing anyone for it | I can assign work the moment the week starts | Given it's Monday, when the week starts, then my team's shift list has already arrived, scoped to my own team only |
+| US-19 | Team lead | swap the assignee or date on a shift when someone's out or a site asks to move | the week still gets covered without waiting on a manager | Given a shift not yet completed, when I reassign or reschedule it, then it succeeds; given a shift already completed, when I try the same, then it's rejected |
+| US-20 | Employee | leave proof that I actually did the visit | I'm protected if a customer disputes it later | Given I open the shift link on my phone, when I submit before/after photos and the signed-receipt photo, then GPS and timestamp are captured automatically and the shift only reaches `completed` once all three are present |
+| US-21 | Platform Admin | onboard a new operating company with its first Director account | a new customer of Contrack itself can start working without me touching the database | Given I create a tenant, when it's saved, then one active Director login exists, scoped to that tenant only |
+| US-22 | Platform Admin | suspend or reactivate a tenant | I can cut off a non-paying or offboarded company without deleting their data | Given a suspended tenant, when any of its accounts try to sign in, then they're rejected before password check; given reactivation, when the same account signs in, then it succeeds |
+| US-23 | Platform Admin | see tenant counts by status, recent onboarding activity and tenant growth trend | I track platform health without querying the database myself | Given I open the platform dashboard, when it loads, then all three views reflect current tenant data |
 
 ---
 
@@ -64,7 +69,7 @@ Full user stories: [design-analysis.md §I](docs/02-design-analysis.md#user-stor
 
 **1. Director dashboard.**
 
-![The LichHD director dashboard for October 2024. Four figures read 48 hợp đồng đang chạy, 5 sắp hết hạn, 3 ca bị khiếu nại, and 245tr doanh thu dự kiến. A "Cần chú ý" list flags Keangnam Landmark 72 (còn 18 ngày) and Chung cư Golden Park (khiếu nại). Two more tiles read 94% ca có đủ bằng chứng and 41/48 bảng kê đã chốt.](docs/screenshots/prototype/director/dashboard.png)
+![The Contrack director dashboard for October 2024. Four figures read 48 hợp đồng đang chạy, 5 sắp hết hạn, 3 ca bị khiếu nại, and 245tr doanh thu dự kiến. A "Cần chú ý" list flags Keangnam Landmark 72 (còn 18 ngày) and Chung cư Golden Park (khiếu nại). Two more tiles read 94% ca có đủ bằng chứng and 41/48 bảng kê đã chốt.](docs/screenshots/prototype/director/dashboard.png)
 
 **2. Create contract with sites and service items.** 
 
@@ -105,20 +110,20 @@ flowchart TB
     director["Director<br/><i>person, in one tenant</i>"]
     platformadmin["Platform Admin<br/><i>person, outside every tenant</i>"]
 
-    lichhd["<b>LichHD</b><br/><i>the system, multi-tenant</i><br/>contracts, schedule,<br/>field proof, statements"]
+    contrack["<b>Contrack</b><br/><i>the system, multi-tenant</i><br/>contracts, schedule,<br/>field proof, statements"]
 
     zalo["Zalo ZNS / SMS<br/><i>external</i><br/>reminders"]
     vietqr["VietQR<br/><i>external, planned</i><br/>payment"]
 
     customer -.->|"signs contract in person"| director
     customer -.->|"signs paper receipt in person"| employee
-    employee -->|"opens shift link,<br/>submits photos"| lichhd
-    accountant -->|"creates contracts,<br/>exports statements"| lichhd
-    director -->|"views dashboard"| lichhd
-    platformadmin -->|"creates / suspends tenants"| lichhd
+    employee -->|"opens shift link,<br/>submits photos"| contrack
+    accountant -->|"creates contracts,<br/>exports statements"| contrack
+    director -->|"views dashboard"| contrack
+    platformadmin -->|"creates / suspends tenants"| contrack
 
-    lichhd -->|"sends reminder"| zalo
-    lichhd -->|"requests payment"| vietqr
+    contrack -->|"sends reminder"| zalo
+    contrack -->|"requests payment"| vietqr
 ```
 
 Customer sits outside the system boundary: signatures and complaints are recorded
@@ -128,7 +133,7 @@ never their contracts or shifts.
 ### View 2 — class diagram
 
 Same domain classes as
-[design-analysis.md §III](docs/02-design-analysis.md#iii-class-diagram), design-level
+[class-diagram.md](docs/06-class-diagram.md), design-level
 (typed attributes, typed methods).
 
 ```mermaid
@@ -232,7 +237,7 @@ classDiagram
 ### View 3 — the core flows
 
 The same five sequence diagrams as
-[design-analysis.md §V](docs/02-design-analysis.md#v-sequence-diagrams), each with
+[sequence-diagram.md](docs/07-sequence-diagram.md), each with
 its failure branch.
 
 **1. Create contract with sites and service items**
@@ -362,7 +367,7 @@ sequenceDiagram
     end
 ```
 
-Full architecture: [docs/04-architecture.md](docs/04-architecture.md).
+Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 
 ---
 
@@ -372,8 +377,6 @@ Full architecture: [docs/04-architecture.md](docs/04-architecture.md).
 |---|---|---|
 | Month-end statement closing time | 1.5–3 days | Under 30 minutes |
 | Visits with complete photo and signature evidence | Not measurable | ≥ 90% |
-
-Full release criteria: [PRD §8](docs/01-prd.md#8-success-metrics--release-criteria).
 
 ---
 
@@ -411,15 +414,19 @@ frontend/
 
 | # | Document | Contents |
 |---|---|---|
-| 1 | [PRD](docs/01-prd.md) | Problem statement, personas, MVP scope, roadmap, release criteria |
-| 2 | [Design Analysis](docs/02-design-analysis.md) | FR/NFR, use cases, class diagram, sequence diagrams |
-| 3 | [Functional Spec](docs/03-functional-spec.md) | Function → screens needed → API needed, per FR |
-| 4 | [Architecture](docs/04-architecture.md) | arc42 + c4 |
-| 5 | [API Specification](docs/05-api.md) | Endpoint contract, field-token submission path, access-control matrix |
-| 6 | [API Specification (OpenAPI)](docs/05-api.yaml) | Same contract as OpenAPI 3.0 — paths, schemas, error examples |
-| 7 | [Repo Layout](docs/06-repo-layout.md) | Planned source tree by architecture style — stack not yet decided |
-| 8 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
-| 9 | [ERD](docs/db/erd.md) | Entity-relationship diagram |
-| 10 | [SQL Schema](docs/db/schema.sql) | ANSI SQL |
+| 1 | [Requirements Analysis](docs/01-requirements-analysis.md) | Project overview, user stories (INVEST), FR1–FR28, NFR1–NFR7, use-case diagram |
+| 2 | [UI/UX Design](docs/02-ui-ux-design.md) | Information architecture → screens hierarchy → UI/UX, per role |
+| 3 | [Architecture](docs/03-architecture.md) | arc42 + c4 |
+| 4 | [ERD](docs/04-erd.md) | Entity-relationship diagram |
+| 5 | [API Specification (OpenAPI)](docs/05-api.yaml) | OpenAPI 3.0 — paths, schemas, error examples |
+| 6 | [Class Diagram](docs/06-class-diagram.md) | Design-level class diagram, incl. Tenant |
+| 7 | [Sequence Diagram](docs/07-sequence-diagram.md) | The 5 core-flow sequence diagrams, each with its failure branch |
+| 8 | [Repo Layout](docs/08-repo-layout.md) | Planned source tree by architecture style — stack not yet decided |
+| 9 | [Prototype](docs/ui/prototype.html) | Clickable build: login, role-scoped navigation, 22 screens |
+| 10 | [SQL Schema](docs/04-schema.sql) | ANSI SQL |
+
+Dropped: the PRD as a standalone doc (its overview now opens Requirements Analysis;
+the rest lives in `temp/draft/01-prd.md`) and the prose endpoint-contract doc — the
+OpenAPI YAML is the only API contract now.
 
 ---

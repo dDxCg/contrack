@@ -61,7 +61,7 @@ export class Employee {
     return this.status === EmployeeStatus.Active;
   }
 
-  assignManager(managerId: number | null, managerChainIds: readonly number[] = []): void {
+  setManager(managerId: number | null, managerChainIds: readonly number[] = []): void {
     if (managerId === null) {
       this.managerId = null;
       return;
@@ -76,15 +76,15 @@ export class Employee {
     this.managerId = managerId;
   }
 
-  assignTeam(teamId: number | null): void {
+  setTeam(teamId: number | null): void {
     this.teamId = teamId;
   }
 
-  changeRole(role: Role): void {
+  setRole(role: Role): void {
     this.role = role;
   }
 
-  rename(name: string): void {
+  setName(name: string): void {
     this.name = name;
   }
 

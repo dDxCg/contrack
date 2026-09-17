@@ -50,7 +50,7 @@ export abstract class TenantScopedRepository<T extends ObjectLiteral> {
       .getRawOne<{ id: number }>();
 
     if (row === undefined || row === null) {
-      throw new Error(`Lookup ${table}.code='${code}' does not exist — has db/schema.sql been loaded?`);
+      throw new Error(`Lookup ${table}.code='${code}' does not exist`);
     }
 
     return row.id;

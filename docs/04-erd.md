@@ -202,7 +202,3 @@ erDiagram
         timestamp created_at
     }
 ```
-
-`platform_admins` carries no `tenant_id` and no relationship line to the tenant-owned
-tables above — it sits outside every tenant, the one identity allowed to create or
-suspend a `tenants` row in the first place.

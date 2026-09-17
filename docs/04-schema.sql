@@ -1,6 +1,3 @@
--- LichHD — ANSI SQL
-
--- Trạng thái tenant (công ty vận hành thuê LichHD)
 CREATE TABLE tenant_statuses (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -9,8 +6,6 @@ CREATE TABLE tenant_statuses (
 INSERT INTO tenant_statuses (code) VALUES ('active');
 INSERT INTO tenant_statuses (code) VALUES ('suspended');
 
--- Tenant — 1 công ty dịch vụ định kỳ thuê LichHD; mọi bảng nghiệp vụ bên dưới
--- thuộc về đúng 1 tenant, cách ly hoàn toàn với các tenant khác
 CREATE TABLE tenants (
     id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name        VARCHAR(255) NOT NULL,
@@ -21,7 +16,6 @@ CREATE TABLE tenants (
 
 CREATE INDEX idx_tenants_status ON tenants(status_id);
 
--- Platform admin — vận hành LichHD, đứng ngoài mọi tenant; tạo/khóa/mở tenant
 CREATE TABLE platform_admins (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name            VARCHAR(255) NOT NULL,
@@ -30,7 +24,6 @@ CREATE TABLE platform_admins (
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Roles
 CREATE TABLE roles (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name    VARCHAR(50) NOT NULL UNIQUE
@@ -42,7 +35,6 @@ INSERT INTO roles (name) VALUES ('manager');
 INSERT INTO roles (name) VALUES ('team_lead');
 INSERT INTO roles (name) VALUES ('employee');
 
--- Phân khúc khách
 CREATE TABLE customer_segments (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -51,7 +43,6 @@ CREATE TABLE customer_segments (
 INSERT INTO customer_segments (code) VALUES ('regular');
 INSERT INTO customer_segments (code) VALUES ('vip');
 
--- Trạng thái nhân viên
 CREATE TABLE employee_statuses (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -60,7 +51,6 @@ CREATE TABLE employee_statuses (
 INSERT INTO employee_statuses (code) VALUES ('active');
 INSERT INTO employee_statuses (code) VALUES ('terminated');
 
--- Trạng thái hợp đồng
 CREATE TABLE contract_statuses (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -72,7 +62,6 @@ INSERT INTO contract_statuses (code) VALUES ('expired');
 INSERT INTO contract_statuses (code) VALUES ('cancelled');
 INSERT INTO contract_statuses (code) VALUES ('renewed');
 
--- Trạng thái ca làm
 CREATE TABLE shift_statuses (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -83,7 +72,6 @@ INSERT INTO shift_statuses (code) VALUES ('late');
 INSERT INTO shift_statuses (code) VALUES ('completed');
 INSERT INTO shift_statuses (code) VALUES ('disputed');
 
--- Đơn vị tần suất hạng mục hợp đồng
 CREATE TABLE frequency_units (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -95,7 +83,6 @@ INSERT INTO frequency_units (code) VALUES ('month');
 INSERT INTO frequency_units (code) VALUES ('quarter');
 INSERT INTO frequency_units (code) VALUES ('year');
 
--- Loại chi phí hợp đồng
 CREATE TABLE cost_categories (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -105,7 +92,6 @@ INSERT INTO cost_categories (code) VALUES ('labor');
 INSERT INTO cost_categories (code) VALUES ('materials');
 INSERT INTO cost_categories (code) VALUES ('other');
 
--- Loại ảnh ca làm
 CREATE TABLE photo_types (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -114,7 +100,6 @@ CREATE TABLE photo_types (
 INSERT INTO photo_types (code) VALUES ('before');
 INSERT INTO photo_types (code) VALUES ('after');
 
--- Trạng thái bảng kê
 CREATE TABLE statement_statuses (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -124,7 +109,6 @@ INSERT INTO statement_statuses (code) VALUES ('draft');
 INSERT INTO statement_statuses (code) VALUES ('issued');
 INSERT INTO statement_statuses (code) VALUES ('sent');
 
--- Khách — khách hàng của 1 tenant
 CREATE TABLE customers (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id       INTEGER NOT NULL,
@@ -153,7 +137,6 @@ CREATE TABLE teams (
 
 CREATE INDEX idx_teams_tenant ON teams(tenant_id);
 
--- Nhân viên
 CREATE TABLE employees (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id       INTEGER NOT NULL,
@@ -163,7 +146,7 @@ CREATE TABLE employees (
     password_hash   VARCHAR(255) NOT NULL,
     role_id         INTEGER NOT NULL,
     manager_id      INTEGER,
-    team_id         INTEGER,  -- NULL với khối văn phòng: không thuộc tổ nào
+    team_id         INTEGER,
     status_id       INTEGER NOT NULL DEFAULT 1,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_employees_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
@@ -179,7 +162,6 @@ CREATE INDEX idx_employees_team ON employees(team_id);
 CREATE INDEX idx_employees_manager ON employees(manager_id);
 CREATE INDEX idx_employees_status ON employees(status_id);
 
--- Hợp đồng
 CREATE TABLE contracts (
     id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id   INTEGER NOT NULL,
@@ -198,7 +180,6 @@ CREATE INDEX idx_contracts_customer ON contracts(customer_id);
 CREATE INDEX idx_contracts_status ON contracts(status_id);
 CREATE INDEX idx_contracts_expires_at ON contracts(expires_at);
 
--- Địa điểm hợp đồng — 1 hợp đồng chuỗi lớn có nhiều site, mỗi site 1 chi nhánh/địa chỉ
 CREATE TABLE contract_sites (
     id                  INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id           INTEGER NOT NULL,
@@ -214,9 +195,6 @@ CREATE TABLE contract_sites (
 CREATE INDEX idx_contract_sites_tenant ON contract_sites(tenant_id);
 CREATE INDEX idx_contract_sites_contract ON contract_sites(contract_id);
 
--- Hạng mục hợp đồng — tần suất tách 3 phần: số lần (frequency_count), đơn vị
--- (frequency_unit_id, lookup) và quy tắc chính xác nếu có (frequency_rule, ví
--- dụ "thứ 7 hàng tuần", "ngày 15 hàng tháng") — NULL khi không cần chốt ngày cụ thể
 CREATE TABLE contract_items (
     id                  INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id           INTEGER NOT NULL,
@@ -235,7 +213,6 @@ CREATE TABLE contract_items (
 CREATE INDEX idx_contract_items_tenant ON contract_items(tenant_id);
 CREATE INDEX idx_contract_items_site ON contract_items(site_id);
 
--- Ca làm
 CREATE TABLE shifts (
     id                      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id               INTEGER NOT NULL,
@@ -261,7 +238,6 @@ CREATE INDEX idx_shifts_assignee ON shifts(assignee_id);
 CREATE INDEX idx_shifts_status ON shifts(status_id);
 CREATE INDEX idx_shifts_scheduled_date ON shifts(scheduled_date);
 
--- Ảnh ca làm
 CREATE TABLE shift_photos (
     id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id   INTEGER NOT NULL,
@@ -278,7 +254,6 @@ CREATE INDEX idx_shift_photos_tenant ON shift_photos(tenant_id);
 CREATE INDEX idx_shift_photos_shift ON shift_photos(shift_id);
 CREATE INDEX idx_shift_photos_type ON shift_photos(type_id);
 
--- Bảng kê
 CREATE TABLE statements (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id       INTEGER NOT NULL,
@@ -298,8 +273,6 @@ CREATE INDEX idx_statements_tenant ON statements(tenant_id);
 CREATE INDEX idx_statements_contract ON statements(contract_id);
 CREATE INDEX idx_statements_status ON statements(status_id);
 
--- Chi phí hợp đồng theo tháng — Accountant nhập tay (nhân công/vật tư/khác);
--- đối chiếu với doanh thu contract_items để tính lãi/lỗ theo hợp đồng — FR26
 CREATE TABLE contract_costs (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tenant_id       INTEGER NOT NULL,

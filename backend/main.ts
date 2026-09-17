@@ -14,7 +14,7 @@ async function bootstrap(): Promise<void> {
 
   const port = Number(process.env.PORT ?? 3000);
   await app.listen(port, '0.0.0.0');
-  new Logger('bootstrap').log(`LichHD tenant API listening on http://localhost:${port}/api/v1`);
+  new Logger('bootstrap').log(`Contrack tenant API listening on http://localhost:${port}/api/v1`);
 }
 
 void bootstrap();

@@ -40,23 +40,23 @@ export class Customer {
     }
   }
 
-  rename(name: string): void {
+  setName(name: string): void {
     this.name = name;
   }
 
-  changeCompanyName(companyName: string | null): void {
+  setCompanyName(companyName: string | null): void {
     this.companyName = companyName;
   }
 
-  changeContact(contact: string | null): void {
+  setContact(contact: string | null): void {
     this.contact = contact;
   }
 
-  changeAddress(address: string | null): void {
+  setAddress(address: string | null): void {
     this.address = address;
   }
 
-  changeSegment(segment: CustomerSegment): void {
+  setSegment(segment: CustomerSegment): void {
     this.segment = segment;
   }
 }

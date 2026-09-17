@@ -1,4 +1,4 @@
-# LichHD — Repository Layout
+# Contrack — Repository Layout
 
 ## Backend
 
@@ -41,7 +41,7 @@ backend/
 │   ├── ContractProfitabilityService
 │   ├── CostEstimationService
 │   ├── DashboardService
-│   ├── auth.service.ts             # login · refresh · logout · me — FR22
+│   ├── auth.service.ts             # login · refresh · logout · me — FR1
 │   ├── token.service.ts            # desk credential issue/verify/revoke (D3 covers field tokens)
 │   ├── password-hasher.service.ts  # PASSWORD_HASHER token + bcryptjs implementation
 │   ├── customer.service.ts
@@ -53,9 +53,9 @@ backend/
 │       ├── clock.ts                # CLOCK token + IClock — server time is authoritative (D7)
 │       ├── access.decorator.ts     # @Access(resource, operation) · @Public()
 │       ├── access-control.guard.ts # resolves caller + role + scope before any service runs
-│       ├── domain-exception.filter.ts # the single error-envelope mapper (05-api.md §9)
+│       ├── domain-exception.filter.ts # the single error-envelope mapper (05-api.yaml §9)
 │       ├── tenant-resolver.ts      # caller's tenant_id — never read from a request body
-│       ├── role-resolver.ts        # 05-api.md §8 matrix: role × resource × operation
+│       ├── role-resolver.ts        # 05-api.yaml §8 matrix: role × resource × operation
 │       └── scope-resolver.ts       # own · team · unit · all
 ├── Repositories/                 # TypeORM custom repositories — every query tenant-filtered (R7)
 │   ├── tenant-scoped.repository.ts # abstract base: scopedTo() · scopedQuery() · lookupId()
@@ -71,7 +71,7 @@ backend/
 │   ├── StatementRepository
 │   └── ContractCostRepository
 ├── Models/                       # TypeORM entity classes carrying their own invariants (§9)
-│   ├── domain-errors.ts          # DomainException base + the 05-api.md §9 catalogue
+│   ├── domain-errors.ts          # DomainException base + the 05-api.yaml §9 catalogue
 │   ├── tenant.entity.ts
 │   ├── employee.entity.ts        # + Role · EmployeeStatus
 │   ├── customer.entity.ts        # + CustomerSegment
@@ -86,7 +86,7 @@ backend/
 │   └── ContractCost
 ├── Data/
 │   ├── DbContext/data-source.ts  # TypeORM DataSource — synchronize: false (C3)
-│   ├── Migrations/               # points at docs/db/schema.sql — never TypeORM migrations
+│   ├── Migrations/               # points at docs/04-schema.sql — never TypeORM migrations
 │   ├── ObjectStorageClient/
 │   ├── ChannelClient/
 │   └── PdfRenderer/
