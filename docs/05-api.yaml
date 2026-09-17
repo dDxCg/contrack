@@ -48,10 +48,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [tenant_id, username, password]
+              required: [email, password]
               properties:
-                tenant_id: { type: integer, example: 4 }
-                username: { type: string, example: mai.lt }
+                email: { type: string, format: email, example: mai.lt@example.com }
                 password: { type: string, format: password, example: "•••••••" }
       responses:
         '200':
@@ -62,22 +61,14 @@ paths:
                 manager:
                   value:
                     token: eyJhbGciOiJIUzI1NiJ9.example
+                    refresh_token: eyJhbGciOiJIUzI1NiJ9.refresh-example
+                    expires_in: 1800
                     employee: { id: 12, tenant_id: 4, name: "Lê Thị Mai", role: manager }
-              schema:
-                type: object
-                properties:
-                  token: { type: string }
-                  employee:
-                    type: object
-                    properties:
-                      id: { type: integer }
-                      tenant_id: { type: integer }
-                      name: { type: string }
-                      role: { $ref: '#/components/schemas/Role' }
+              schema: { $ref: '#/components/schemas/Session' }
         '401':
           description: >
-            Unknown (tenant_id, username) or wrong password — the two are not
-            distinguished — or the tenant is suspended
+            Unknown email or wrong password — the two are not distinguished —
+            or the tenant is suspended
           content:
             application/json:
               examples:
@@ -85,11 +76,48 @@ paths:
                 tenant_suspended: { $ref: '#/components/examples/TenantSuspended' }
               schema: { $ref: '#/components/schemas/Error' }
 
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: refreshSession
+      summary: Exchange a single-use refresh token for a new credential pair
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: >-
+            New credential pair. The presented refresh token is single-use: it is invalid
+            from here on, together with any credential already issued from it.
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Session' } }
+        '401':
+          description: Refresh token expired, already used, or its employee is no longer active
+          content:
+            application/json:
+              examples:
+                credential_expired: { $ref: '#/components/examples/CredentialExpired' }
+              schema: { $ref: '#/components/schemas/Error' }
+
   /auth/logout:
     post:
       tags: [Auth]
       operationId: logout
-      summary: Invalidate the current credential
+      summary: Invalidate the current credential, and its refresh token when supplied
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token: { type: string }
       responses:
         '204': { description: Logged out }
 
@@ -1202,11 +1230,11 @@ paths:
           content:
             application/json: { schema: { $ref: '#/components/schemas/Employee' } }
         '409':
-          description: Username already in use
+          description: Email already in use
           content:
             application/json:
               examples:
-                username_taken: { $ref: '#/components/examples/EmployeeUsernameTaken' }
+                email_taken: { $ref: '#/components/examples/EmployeeEmailTaken' }
               schema: { $ref: '#/components/schemas/Error' }
         '400':
           description: manager_id would create a cycle in the reporting chain
@@ -1434,6 +1462,24 @@ components:
             message: { type: string, example: "Ca đã hoàn thành" }
             details: { type: object }
 
+    Session:
+      type: object
+      description: >-
+        Credential pair issued by POST /auth/login and POST /auth/refresh. `expires_in` is the
+        access token's remaining lifetime in seconds. Role and scope are re-read from
+        `employees` per request, never trusted from the token.
+      properties:
+        token: { type: string }
+        refresh_token: { type: string, description: Single-use; invalidated by rotation and by POST /auth/logout }
+        expires_in: { type: integer, example: 1800 }
+        employee:
+          type: object
+          properties:
+            id: { type: integer }
+            tenant_id: { type: integer }
+            name: { type: string }
+            role: { $ref: '#/components/schemas/Role' }
+
     Role:
       type: string
       enum: [director, accountant, manager, team_lead, employee]
@@ -1444,10 +1490,10 @@ components:
 
     TenantCreate:
       type: object
-      required: [name, director_username, director_password]
+      required: [name, director_email, director_password]
       properties:
         name: { type: string, example: "Vệ sinh công nghiệp Thành Đạt" }
-        director_username: { type: string, example: director }
+        director_email: { type: string, format: email, example: director@example.com }
         director_password: { type: string, format: password, example: "•••••••" }
     Tenant:
       type: object
@@ -1832,11 +1878,17 @@ components:
 
     EmployeeCreate:
       type: object
-      required: [name, username, role]
+      required: [name, email, role]
       properties:
         name: { type: string, example: "Nguyễn Văn Toàn" }
         contact: { type: string }
-        username: { type: string, example: toan.nv }
+        email: { type: string, format: email, example: toan.nv@example.com }
+        password:
+          type: string
+          format: password
+          description: >-
+            Optional. When omitted the account's initial password is its own `email`;
+            send it on PATCH to reset the password. No invite-email flow in the MVP.
         role: { $ref: '#/components/schemas/Role' }
         manager_id: { type: integer, nullable: true }
         team_id: { type: integer, nullable: true, description: "NULL for desk staff — not every employee belongs to a team" }
@@ -1868,6 +1920,8 @@ components:
       value: { error: { code: auth.invalid_credentials, message: "Sai tên đăng nhập hoặc mật khẩu", details: {} } }
     TenantSuspended:
       value: { error: { code: tenant.suspended, message: "Tài khoản công ty đã bị tạm khóa", details: {} } }
+    CredentialExpired:
+      value: { error: { code: auth.credential_expired, message: "Phiên đăng nhập đã hết hạn", details: {} } }
     TenantNotFound:
       value: { error: { code: tenant.not_found, message: "Không tìm thấy công ty", details: { tenant_id: 999 } } }
     TokenExpired:
@@ -1918,8 +1972,8 @@ components:
       value: { error: { code: customer.has_active_contracts, message: "Khách hàng còn hợp đồng đang chạy", details: { contract_ids: [89] } } }
     EmployeeHasAssignedShifts:
       value: { error: { code: employee.has_assigned_shifts, message: "Nhân viên còn ca sắp tới", details: { shift_ids: [40, 41] } } }
-    EmployeeUsernameTaken:
-      value: { error: { code: employee.username_taken, message: "Tên đăng nhập đã tồn tại", details: { username: toan.nv } } }
+    EmployeeEmailTaken:
+      value: { error: { code: employee.email_taken, message: "Email đã tồn tại", details: { email: toan.nv@example.com } } }
     EmployeeManagerCycle:
       value: { error: { code: employee.manager_cycle, message: "Sẽ tạo vòng lặp quản lý", details: { path: [12, 31, 12] } } }
     TeamCodeTaken:
@@ -1928,3 +1982,9 @@ components:
       value: { error: { code: team.has_members, message: "Tổ còn thành viên", details: { employee_ids: [31, 40] } } }
     TeamLeadConflict:
       value: { error: { code: team.lead_conflict, message: "Tổ đã có tổ trưởng", details: { employee_id: 31 } } }
+    ForbiddenRole:
+      value: { error: { code: auth.forbidden_role, message: "Vai trò của bạn không có quyền thao tác này", details: { required_role: director } } }
+    OutOfScope:
+      value: { error: { code: auth.out_of_scope, message: "Không tìm thấy dữ liệu", details: {} } }
+    ValidationFailed:
+      value: { error: { code: validation.failed, message: "Dữ liệu không hợp lệ", details: { fields: [{ field: name, message: "name must be a string" }] } } }

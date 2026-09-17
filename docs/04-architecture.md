@@ -276,10 +276,10 @@ Three distinct mechanisms, checked in order:
   mandatory filter — there is no code path that queries `contracts`, `shifts`, `employees` or any
   other core table without one. A row belonging to a different tenant is not a `403`, it does not
   exist — same non-disclosure rule as §8's `404` for out-of-scope rows, one level up.
-- **Desk roles**, inside that tenant, authenticate with `employees.username` / `password_hash`
-  (unique per tenant, not globally — `db/schema.sql`'s `uq_employees_tenant_username`) and are
-  authorised by role plus a row scope — own, team, managed unit, or all. The full matrix is in
-  `05-api.md` §8.
+- **Desk roles**, inside that tenant, authenticate with `employees.email` / `password_hash`
+  (unique globally, not per tenant — `db/schema.sql`'s `uq_employees_email`; login resolves the
+  tenant from the matched employee, so the client never sends a `tenant_id`) and are authorised
+  by role plus a row scope — own, team, managed unit, or all. The full matrix is in `05-api.md` §8.
 - **Field access** carries a per-shift token (D3) and can reach exactly one shift; the token's
   `shift_id` already pins a `tenant_id` transitively, so no separate tenant check is needed there.
 
@@ -320,7 +320,7 @@ before upload. The remaining mechanics — resumable upload, offline queue — a
 
 | # | Decision | Context and options | Consequence | Revisit when |
 |---|---|---|---|---|
-| D1 | **Multi-tenant, shared schema, `tenant_id` row-level isolation** | LichHD is sold to many operating companies. Alternatives: a database per tenant, or a schema per tenant. Both isolate more strongly but multiply migration and backup work per tenant at a scale where that cost dominates; shared-schema with a mandatory `tenant_id` filter is the standard SaaS default at this profile. | Every core table carries `tenant_id` (`db/schema.sql`); every repository method requires it, not accepts it optionally. `employees.username` and `teams.code` are unique per tenant, not globally. A leak is a code-review-catchable bug (missing filter), not a schema question. (NFR6, G4) | Tenant count or per-tenant data volume grows enough that noisy-neighbor query load, not isolation, becomes the bottleneck — revisit toward schema-per-tenant or per-tenant read replicas then. |
+| D1 | **Multi-tenant, shared schema, `tenant_id` row-level isolation** | LichHD is sold to many operating companies. Alternatives: a database per tenant, or a schema per tenant. Both isolate more strongly but multiply migration and backup work per tenant at a scale where that cost dominates; shared-schema with a mandatory `tenant_id` filter is the standard SaaS default at this profile. | Every core table carries `tenant_id` (`db/schema.sql`); every repository method requires it, not accepts it optionally. `employees.email` is unique globally (login resolves the tenant from the matched employee), while `teams.code` stays unique per tenant. A leak is a code-review-catchable bug (missing filter), not a schema question. (NFR6, G4) | Tenant count or per-tenant data volume grows enough that noisy-neighbor query load, not isolation, becomes the bottleneck — revisit toward schema-per-tenant or per-tenant read replicas then. |
 | D2 | **Evidence in S3-compatible object storage (MinIO)** | Alternatives: blobs in the database, or a directory on the app server. Photos are the bulk of the data and are retained ≥ 12 months. | DB stays small and easy to back up; retention (NFR4) becomes a bucket lifecycle rule; a storage service must be operated alongside the database. | A managed object-storage tier becomes available at a cost point the operating budget cannot ignore, or self-hosting MinIO turns out to need more operational effort than the team has. |
 | D3 | **Per-shift signed token for field access** | FR7 and NFR7 require a link that opens and works on a phone with no install. Alternatives: employee login, or a magic link per employee. | No password at a job site. The token names one shift, expires, and authorises only that shift's submission. Whoever holds the link can submit — acceptable because the evidence itself carries GPS and time. | A forwarded link is found to have been used by someone other than the assignee, or the business needs to know *who* submitted rather than only *that* the assigned shift was submitted. |
 | D4 | **Photographed paper receipt, not on-screen signature** | The customer already signs paper today and the original is filed. | No signature-capture component; the evidence is an image like any other. The paper original remains the legal artifact. | A customer disputes a photographed receipt as illegible or fraudulent often enough that an on-screen signature becomes worth building. |

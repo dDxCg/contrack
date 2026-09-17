@@ -41,8 +41,9 @@ The lead is the member holding the team-lead role — `teams` carries no `lead_i
 - `tenant_id` on every core table is NOT NULL, indexed, and every repository query
   filters on it — see [NFR6](../02-design-analysis.md#non-functional-requirements)
   and [D1](../04-architecture.md#9-architecture-decisions).
-- `employees.username` and `teams.code` are unique **per tenant**
-  (`uq_employees_tenant_username`, `uq_teams_tenant_code`), not globally — two
-  tenants may each have a `director` login.
+- `employees.email` is now unique **globally** (`uq_employees_email`), not per
+  tenant — login resolves the tenant from the matched employee, so the client
+  never sends a `tenant_id`. `teams.code` stays unique **per tenant**
+  (`uq_teams_tenant_code`).
 
 Requirements this model implements: [`02-design-analysis.md`](../02-design-analysis.md).

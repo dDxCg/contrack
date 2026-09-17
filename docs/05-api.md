@@ -79,9 +79,20 @@ evidence ([`04-architecture.md`](04-architecture.md#82-evidence-integrity-and-re
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/auth/login` | Exchange `tenant_id` (or a tenant-unique slug) + `username` + `password` for a credential. Returns the employee's `tenant_id`, `role` and `id`. `401 tenant.suspended` if the tenant is not active. |
-| POST | `/auth/logout` | Invalidate the current credential. |
-| GET | `/auth/me` | Current employee, tenant, role, and manager chain — drives client-side navigation scoping. |
+| POST | `/auth/login` | Exchange `email` + `password` for a credential — `email` is globally unique, so the tenant is resolved from the matched employee, not sent by the client. Returns the employee's `tenant_id`, `role` and `id`, plus a single-use `refresh_token`. `401 tenant.suspended` if the tenant is not active. |
+| POST | `/auth/refresh` | Exchange a `refresh_token` for a new credential pair. Single-use — the presented token is invalid from here on, and so is any credential already issued from it. |
+| POST | `/auth/logout` | Invalidate the current credential, and the `refresh_token` when the body carries it. `204`, no body. |
+| GET | `/auth/me` | Current employee, tenant, role, manager and team assignment — drives client-side navigation scoping. |
+
+Credential lifetimes are configuration, not contract: the access token lasts `JWT_ACCESS_TTL_SECONDS`
+(default 30 minutes) and the refresh token `JWT_REFRESH_TTL_SECONDS` (default 12 hours) — long enough that a
+phone losing signal mid-shift is not sent back to a login screen at the job site
+([`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R6's conservative default).
+
+Role, team and status are re-read from `employees` on **every** desk request rather than trusted from the
+token, so a role change, a team move or a deactivation takes effect on the caller's next request — no
+redeploy, no re-login (FR18's acceptance criterion). A credential naming an employee who is no longer
+`active` is refused exactly like an expired one: `401 auth.credential_expired`.
 
 ---
 
@@ -182,6 +193,17 @@ when any shift in the period lacks evidence or is disputed
 | GET POST PATCH DELETE | `/employees` , `/employees/{id}` | Accounts with `role_id`, `manager_id` and `team_id`. **Director only.** | FR18 |
 | GET POST PATCH DELETE | `/teams` , `/teams/{id}` | Teams with `name` and `code`; the response derives `lead` and `member_count` from `employees`. Create, update and delete are **Director only**. | FR18 |
 
+**Directory notes.** `POST /employees` takes an optional `password`; when it is omitted, the account's
+initial password is its own `email`. There is no invite-email or self-service change-password flow in the
+MVP — a `PATCH` carrying `password` resets it, Director only. Both `POST /employees` and
+`PATCH /employees/{id}` refuse a `manager_id` that would close a cycle in the reporting chain
+(`400 employee.manager_cycle`) and a `team_lead` joining a team that already has one
+(`409 team.lead_conflict`). A deleted employee still assigned to a future shift is refused with
+`409 employee.has_assigned_shifts`, and a deleted customer still holding a non-terminated contract with
+`409 customer.has_active_contracts`. `GET /teams` answers `{ "items": [...] }` — teams are not paginated;
+`lead` and `member_count` are derived per row, a team lead sees only their own team, and another team's id
+comes back `404` exactly like any other out-of-scope row.
+
 ---
 
 ## 8. Access control
@@ -230,8 +252,8 @@ there is nothing to add.
 
 | Code | Status | Returned when | `details` |
 |---|---|---|---|
-| `auth.invalid_credentials` | 401 | `POST /auth/login` or `POST /platform/auth/login` with an unknown `(tenant_id, username)` / `username`, or wrong password. The two are not distinguished. | — |
-| `auth.credential_expired` | 401 | Session or bearer token past its lifetime. | — |
+| `auth.invalid_credentials` | 401 | `POST /auth/login` with an unknown `email` or wrong password, or `POST /platform/auth/login` with an unknown `username` or wrong password. The two are not distinguished. | — |
+| `auth.credential_expired` | 401 | Session or bearer token past its lifetime, revoked by `POST /auth/logout`, or naming an employee who is no longer `active`. | — |
 | `auth.forbidden_role` | 403 | The role does not hold the operation in [§8](#8-access-control). | `required_role` |
 | `auth.out_of_scope` | 404 | The row exists but falls outside the caller's row scope, or belongs to a different tenant. Deliberately indistinguishable from a missing row. | — |
 | `tenant.suspended` | 401 | `POST /auth/login` for a tenant whose `tenants.status` is `suspended`. Checked before password verification. | — |
@@ -285,11 +307,21 @@ there is nothing to add.
 | `alert.channel_unavailable` | 502 | Zalo ZNS and SMS both rejected the send; the alert falls back in-app ([`04-architecture.md`](04-architecture.md#8-crosscutting-concepts) §8.3). | `channel`, `provider_code` |
 | `customer.has_active_contracts` | 409 | Deleting a customer that still holds a non-terminated contract. | `contract_ids[]` |
 | `employee.has_assigned_shifts` | 409 | Deleting an employee still assigned to future shifts. | `shift_ids[]` |
-| `employee.username_taken` | 409 | `username` is already in use. | `username` |
+| `employee.email_taken` | 409 | `email` is already in use. | `email` |
 | `employee.manager_cycle` | 400 | `manager_id` would create a cycle in the reporting chain. | `path[]` |
 | `team.code_taken` | 409 | `code` is already in use by another team. | `code` |
 | `team.has_members` | 409 | Deleting a team that still has members. | `employee_ids[]` |
 | `team.lead_conflict` | 409 | The team already has a member with the team-lead role. | `employee_id` |
+
+### Request-level failures
+
+| Code | Status | Returned when | `details` |
+|---|---|---|---|
+| `validation.failed` | 400 | The body, query or path fails validation — a malformed request is refused, never coerced. | `fields[]`, each with the offending field and message |
+| `http.<status>` | 4xx | Any other transport-level refusal (an unknown path, an unsupported method). The code is derived from the status, so a client may branch on `status` alone. | — |
+
+An unexpected server-side failure returns `500 internal.error` with empty `details`; the cause is logged and
+never returned. All three carry the same envelope as every catalogue code above.
 
 An unrecognised code is handled as its HTTP status. Clients must not parse `message`.
 
@@ -306,7 +338,7 @@ writes a `contract`, `shift`, `statement`, `customer`, `employee` or `team` row;
 |---|---|---|
 | POST | `/platform/auth/login` | Exchange `username` + `password` (against `platform_admins`) for a platform credential. |
 | GET | `/platform/tenants` | List tenants. Filters: `status`. |
-| POST | `/platform/tenants` | Create a tenant (`name`) and its first employee in one call (`director_username`, `director_password`) — FR23. Returns the new `tenant_id` and `employee_id`. |
+| POST | `/platform/tenants` | Create a tenant (`name`) and its first employee in one call (`director_email`, `director_password`) — FR23. Returns the new `tenant_id` and `employee_id`. |
 | PATCH | `/platform/tenants/{id}` | Set `status` to `suspended` or `active` — FR24. A suspended tenant's `POST /auth/login` starts failing with `tenant.suspended` immediately; a session already issued before suspension is not retroactively revoked — an open risk tracked alongside [`04-architecture.md`](04-architecture.md#11-risks-and-technical-debt) R6's token-lifetime work. |
 
 ---

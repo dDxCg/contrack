@@ -159,7 +159,7 @@ CREATE TABLE employees (
     tenant_id       INTEGER NOT NULL,
     name            VARCHAR(255) NOT NULL,
     contact         VARCHAR(255),
-    username        VARCHAR(100) NOT NULL,
+    email           VARCHAR(255) NOT NULL,
     password_hash   VARCHAR(255) NOT NULL,
     role_id         INTEGER NOT NULL,
     manager_id      INTEGER,
@@ -171,7 +171,7 @@ CREATE TABLE employees (
     CONSTRAINT fk_employees_manager FOREIGN KEY (manager_id) REFERENCES employees(id),
     CONSTRAINT fk_employees_team FOREIGN KEY (team_id) REFERENCES teams(id),
     CONSTRAINT fk_employees_status FOREIGN KEY (status_id) REFERENCES employee_statuses(id),
-    CONSTRAINT uq_employees_tenant_username UNIQUE (tenant_id, username)
+    CONSTRAINT uq_employees_email UNIQUE (email)
 );
 
 CREATE INDEX idx_employees_tenant ON employees(tenant_id);

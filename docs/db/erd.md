@@ -112,7 +112,7 @@ erDiagram
         int tenant_id FK
         varchar name
         varchar contact
-        varchar username
+        varchar email
         varchar password_hash
         int role_id FK
         int manager_id FK

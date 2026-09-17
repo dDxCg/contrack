@@ -7,11 +7,12 @@ inside one tenant (NFR3, NFR6, NFR7).*
 
 | Screens needed | API needed |
 |---|---|
-| Login (username/password) | `POST` session (authenticate, issue token carrying tenant + role) |
+| Login (email/password) | `POST` session (authenticate, issue token carrying tenant + role) |
 | — | `POST` session refresh/logout |
 
-Login resolves `(tenant_id, username)`, not `username` alone — two tenants may each
-run a `director` account. A suspended tenant's login is rejected before password
+Login resolves by `email` alone — `email` is globally unique across every tenant, so
+the client never sends a `tenant_id`; the tenant is derived from whichever employee
+the email matches (FR22). A suspended tenant's login is rejected before password
 check (FR24).
 
 ---
@@ -163,7 +164,7 @@ LichHD — outside any tenant, not reachable by Director or any tenant-scoped ro
 | Screens needed | API needed |
 |---|---|
 | Tenant list (Platform Admin only) | `GET` tenants (list, filter by status) |
-| Tenant create — name + first Director's username/password | `POST` tenant (creates the tenant row and its first employee, role = director) |
+| Tenant create — name + first Director's email/password | `POST` tenant (creates the tenant row and its first employee, role = director) |
 | Tenant suspend / reactivate | `PATCH` tenant status |
 
 A new tenant starts with exactly one account: the Director created alongside it.

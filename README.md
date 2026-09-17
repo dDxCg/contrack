@@ -407,10 +407,6 @@ frontend/
 └── public/
 ```
 
-Full layout: [docs/06-repo-layout.md](docs/06-repo-layout.md).
-
----
-
 ## Documentation
 
 | # | Document | Contents |

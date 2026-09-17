@@ -45,7 +45,7 @@
 | FR19 | Accountant | Send an exported statement to the customer, marking it sent |
 | FR20 | Accountant, Director | View reconciliation: shifts due by frequency vs. shifts with complete evidence, per contract per period |
 | FR21 | Manager, Director | Create or update a customer record (name, contact, address, segment). Delete: Director only, blocked while the customer holds a non-terminated contract |
-| FR22 | Director, Accountant, Manager, Team Lead, Employee | Sign in with a username and password; the session carries the account's tenant, role and row scope for every later request |
+| FR22 | Director, Accountant, Manager, Team Lead, Employee | Sign in with an email and password; the session carries the account's tenant, role and row scope for every later request |
 | FR23 | Platform Admin | Create a new tenant (operating company) with its first Director account | 
 | FR24 | Platform Admin | Suspend or reactivate a tenant; a suspended tenant's accounts can't sign in |
 | FR25 | Platform Admin | View platform dashboard: tenant counts by status, recent onboarding activity, tenant growth trend |
@@ -239,7 +239,7 @@ classDiagram
     class Employee {
         -id: int
         -name: string
-        -username: string
+        -email: string
         -role: Role
         -status: EmployeeStatus
     }
