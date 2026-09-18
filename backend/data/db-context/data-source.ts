@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import { ENTITIES } from '../../models/entities';
 export const DATA_SOURCE = Symbol('DATA_SOURCE');
@@ -10,12 +11,15 @@ export function createDataSource(env: NodeJS.ProcessEnv = process.env): DataSour
     password: env.DB_PASSWORD ?? 'contrack',
     database: env.DB_NAME ?? 'contrack',
     entities: [...ENTITIES],
+    migrations: [join(__dirname, '../../migrations/*.{ts,js}')],
+    migrationsTableName: 'schema_migrations',
     synchronize: false,
     logging: false,
     ssl: env.DB_SSL === 'true' ? { rejectUnauthorized: true } : false,
     extra: { max: readPositiveInt(env, 'DB_POOL_MAX', 10) },
   });
 }
+export default createDataSource(process.env);
 function readPositiveInt(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
   const raw = env[name];
   if (raw === undefined || raw === '') {

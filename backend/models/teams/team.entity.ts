@@ -1,12 +1,18 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { TeamHasMembersException, TeamLeadConflictException } from '../domain-errors';
 import { Employee } from '../employees/employee.entity';
+import { Tenant } from '../tenants/tenant.entity';
 @Entity('teams')
+@Unique('uq_teams_tenant_code', ['tenantId', 'code'])
 export class Team {
   @PrimaryGeneratedColumn('identity')
   id!: number;
+  @Index('idx_teams_tenant')
   @Column({ name: 'tenant_id', type: 'integer' })
   tenantId!: number;
+  @ManyToOne(() => Tenant)
+  @JoinColumn({ name: 'tenant_id', foreignKeyConstraintName: 'fk_teams_tenant' })
+  tenant?: Tenant;
   @Column({ type: 'varchar', length: 100 })
   name!: string;
   @Column({ type: 'varchar', length: 20 })

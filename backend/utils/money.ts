@@ -64,7 +64,7 @@ export class Money {
   }
 }
 export const moneyTransformer: ValueTransformer = {
-  to: (value?: Money | null): string | null | undefined =>
-    value == null ? value : value.toFixed(),
-  from: (value?: string | null): Money | null | undefined => (value == null ? value : Money.fromString(value)),
+  to: (value?: Money | null): string | null | undefined => (value == null ? value : value.toFixed()),
+  from: (value?: string | null): Money | null | undefined =>
+    value == null ? value : Money.fromString(value),
 };

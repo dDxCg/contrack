@@ -1,5 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { EmployeeHasAssignedShiftsException, EmployeeManagerCycleException } from '../domain-errors';
+import { EmployeeStatusLookup } from '../lookups/employee-status.entity';
+import { RoleLookup } from '../lookups/role.entity';
+import { Team } from '../teams/team.entity';
+import { Tenant } from '../tenants/tenant.entity';
 export enum Role {
   Director = 'director',
   Accountant = 'accountant',
@@ -12,27 +16,47 @@ export enum EmployeeStatus {
   Terminated = 'terminated',
 }
 @Entity('employees')
+@Unique('uq_employees_email', ['email'])
 export class Employee {
   @PrimaryGeneratedColumn('identity')
   id!: number;
+  @Index('idx_employees_tenant')
   @Column({ name: 'tenant_id', type: 'integer' })
   tenantId!: number;
+  @ManyToOne(() => Tenant)
+  @JoinColumn({ name: 'tenant_id', foreignKeyConstraintName: 'fk_employees_tenant' })
+  tenant?: Tenant;
   @Column({ type: 'varchar', length: 255 })
   name!: string;
   @Column({ type: 'varchar', length: 255, nullable: true })
   contact!: string | null;
   @Column({ type: 'varchar', length: 255 })
   email!: string;
-  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'password_hash', type: 'varchar', length: 255 })
   passwordHash!: string | null;
+  @Index('idx_employees_manager')
   @Column({ name: 'manager_id', type: 'integer', nullable: true })
   managerId!: number | null;
+  @ManyToOne(() => Employee)
+  @JoinColumn({ name: 'manager_id', foreignKeyConstraintName: 'fk_employees_manager' })
+  manager?: Employee;
+  @Index('idx_employees_team')
   @Column({ name: 'team_id', type: 'integer', nullable: true })
   teamId!: number | null;
+  @ManyToOne(() => Team)
+  @JoinColumn({ name: 'team_id', foreignKeyConstraintName: 'fk_employees_team' })
+  team?: Team;
   @Column({ name: 'role_id', type: 'integer' })
   roleId!: number;
+  @ManyToOne(() => RoleLookup)
+  @JoinColumn({ name: 'role_id', foreignKeyConstraintName: 'fk_employees_role' })
+  roleLookup?: RoleLookup;
+  @Index('idx_employees_status')
   @Column({ name: 'status_id', type: 'integer', default: 1 })
   statusId!: number;
+  @ManyToOne(() => EmployeeStatusLookup)
+  @JoinColumn({ name: 'status_id', foreignKeyConstraintName: 'fk_employees_status' })
+  statusLookup?: EmployeeStatusLookup;
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
   role!: Role;

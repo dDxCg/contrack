@@ -1,5 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 @Entity('platform_admins')
+@Unique('platform_admins_username_key', ['username'])
 export class PlatformAdmin {
   @PrimaryGeneratedColumn('identity')
   id!: number;

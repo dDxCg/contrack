@@ -1,6 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { FieldViolation } from '../domain-errors';
 import { Money, moneyTransformer } from '../../utils/money';
+import { FrequencyUnitLookup } from '../lookups/frequency-unit.entity';
+import { Tenant } from '../tenants/tenant.entity';
+import { ContractSite } from './contract-site.entity';
 export enum FrequencyUnit {
   Day = 'day',
   Week = 'week',
@@ -12,16 +15,27 @@ export enum FrequencyUnit {
 export class ContractItem {
   @PrimaryGeneratedColumn('identity')
   id!: number;
+  @Index('idx_contract_items_tenant')
   @Column({ name: 'tenant_id', type: 'integer' })
   tenantId!: number;
+  @ManyToOne(() => Tenant)
+  @JoinColumn({ name: 'tenant_id', foreignKeyConstraintName: 'fk_contract_items_tenant' })
+  tenant?: Tenant;
+  @Index('idx_contract_items_site')
   @Column({ name: 'site_id', type: 'integer' })
   siteId!: number;
+  @ManyToOne(() => ContractSite, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'site_id', foreignKeyConstraintName: 'fk_contract_items_site' })
+  site?: ContractSite;
   @Column({ type: 'varchar', length: 255 })
   name!: string;
   @Column({ name: 'frequency_count', type: 'integer' })
   frequencyCount!: number;
   @Column({ name: 'frequency_unit_id', type: 'integer' })
   frequencyUnitId!: number;
+  @ManyToOne(() => FrequencyUnitLookup)
+  @JoinColumn({ name: 'frequency_unit_id', foreignKeyConstraintName: 'fk_contract_items_frequency_unit' })
+  frequencyUnitLookup?: FrequencyUnitLookup;
   @Column({ name: 'frequency_rule', type: 'varchar', length: 255, nullable: true })
   frequencyRule!: string | null;
   @Column({ name: 'unit_price', type: 'numeric', precision: 14, scale: 2, transformer: moneyTransformer })

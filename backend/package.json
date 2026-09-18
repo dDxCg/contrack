@@ -14,7 +14,10 @@
     "test:cov": "jest --coverage",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d data/db-context/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d data/db-context/data-source.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d data/db-context/data-source.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.5",
@@ -46,6 +49,7 @@
     "pg-mem": "^3.0.14",
     "prettier": "^3.9.7",
     "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.70.0"
   },

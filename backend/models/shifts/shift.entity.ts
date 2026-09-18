@@ -1,9 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import {
   ShiftAlreadyCompletedException,
   ShiftAlreadyDisputedException,
   ShiftNotDisputedException,
 } from '../domain-errors';
+import { ContractItem } from '../contracts/contract-item.entity';
+import { Employee } from '../employees/employee.entity';
+import { ShiftStatusLookup } from '../lookups/shift-status.entity';
+import { Tenant } from '../tenants/tenant.entity';
 export interface ShiftEvidence {
   receiptPhotoUrl: string;
   latitude: number | null;
@@ -19,18 +23,35 @@ export enum ShiftStatus {
 export class Shift {
   @PrimaryGeneratedColumn('identity')
   id!: number;
+  @Index('idx_shifts_tenant')
   @Column({ name: 'tenant_id', type: 'integer' })
   tenantId!: number;
+  @ManyToOne(() => Tenant)
+  @JoinColumn({ name: 'tenant_id', foreignKeyConstraintName: 'fk_shifts_tenant' })
+  tenant?: Tenant;
+  @Index('idx_shifts_contract_item')
   @Column({ name: 'contract_item_id', type: 'integer' })
   contractItemId!: number;
+  @ManyToOne(() => ContractItem, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'contract_item_id', foreignKeyConstraintName: 'fk_shifts_contract_item' })
+  contractItem?: ContractItem;
+  @Index('idx_shifts_assignee')
   @Column({ name: 'assignee_id', type: 'integer', nullable: true })
   assigneeId!: number | null;
+  @ManyToOne(() => Employee)
+  @JoinColumn({ name: 'assignee_id', foreignKeyConstraintName: 'fk_shifts_assignee' })
+  assignee?: Employee;
+  @Index('idx_shifts_scheduled_date')
   @Column({ name: 'scheduled_date', type: 'date' })
   scheduledDate!: Date;
   @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
   completedAt!: Date | null;
+  @Index('idx_shifts_status')
   @Column({ name: 'status_id', type: 'integer', default: 1 })
   statusId!: number;
+  @ManyToOne(() => ShiftStatusLookup)
+  @JoinColumn({ name: 'status_id', foreignKeyConstraintName: 'fk_shifts_status' })
+  statusLookup?: ShiftStatusLookup;
   @Column({ type: 'numeric', precision: 9, scale: 6, nullable: true })
   latitude!: number | null;
   @Column({ type: 'numeric', precision: 9, scale: 6, nullable: true })
