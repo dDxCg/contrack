@@ -6,6 +6,7 @@ import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
 import { Role } from '../../../models/employees/employee.entity';
 import { AuthConfig } from '../../../services/access-control/auth.config';
+import { InMemoryRevocationStore } from '../../../services/auth/revocation-store';
 import { FieldLinkService } from '../../../services/field/field-link.service';
 import { FieldTokenService } from '../../../services/field/field-token.service';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
@@ -19,7 +20,11 @@ const config: AuthConfig = {
 async function world() {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
-  const fieldTokenService = new FieldTokenService(new JwtService({ secret: config.jwtSecret }), config);
+  const fieldTokenService = new FieldTokenService(
+    new JwtService({ secret: config.jwtSecret }),
+    config,
+    new InMemoryRevocationStore(new FakeClock()),
+  );
   const clock = new FakeClock(new Date('2024-10-21T08:30:00.000Z'));
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id);
@@ -43,8 +48,9 @@ describe('FieldLinkService.issue — D3', () => {
   it('issues a field token naming this shift, expiring after the configured lifetime', async () => {
     const { service, access, shiftId, clock, fieldTokenService } = await world();
     const link = await service.issue(access, shiftId);
-    expect(fieldTokenService.verify(link.token)).toMatchObject({ shift_id: shiftId });
+    await expect(fieldTokenService.verify(link.token)).resolves.toMatchObject({ shift_id: shiftId });
     expect(link.url).toContain(link.token);
+    expect(link.url).toContain('/field#');
     expect(link.expires_at).toBe(new Date(clock.now().getTime() + 86400 * 1000).toISOString());
   });
   it('answers 404 auth.out_of_scope for a shift outside the tenant', async () => {

@@ -1,8 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
-import { FieldTokenExpiredException, FieldTokenInvalidException } from '../../models/domain-errors';
+import {
+  FieldTokenAlreadyUsedException,
+  FieldTokenExpiredException,
+  FieldTokenInvalidException,
+} from '../../models/domain-errors';
 import { AUTH_CONFIG, AuthConfig } from '../access-control/auth.config';
+import { REVOCATION_STORE, RevocationStore } from '../auth/revocation-store';
 export interface FieldTokenClaims {
   readonly typ: 'field';
   readonly shift_id: number;
@@ -16,6 +21,8 @@ export class FieldTokenService {
     private readonly jwt: JwtService,
     @Inject(AUTH_CONFIG)
     private readonly config: AuthConfig,
+    @Inject(REVOCATION_STORE)
+    private readonly revocations: RevocationStore,
   ) {}
   get ttlSeconds(): number {
     return this.config.fieldTtlSeconds;
@@ -26,7 +33,7 @@ export class FieldTokenService {
       { expiresIn: this.config.fieldTtlSeconds },
     );
   }
-  verify(raw: string): FieldTokenClaims {
+  async verify(raw: string): Promise<FieldTokenClaims> {
     let payload: Record<string, unknown>;
     try {
       payload = this.jwt.verify<Record<string, unknown>>(raw);
@@ -45,6 +52,12 @@ export class FieldTokenService {
     if (!usable) {
       throw new FieldTokenInvalidException();
     }
+    if (await this.revocations.isRevoked(payload.jti as string)) {
+      throw new FieldTokenAlreadyUsedException();
+    }
     return payload as unknown as FieldTokenClaims;
+  }
+  async markUsed(claims: FieldTokenClaims): Promise<void> {
+    await this.revocations.revoke(claims.jti, claims.exp);
   }
 }

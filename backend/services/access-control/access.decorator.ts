@@ -5,6 +5,7 @@ import { PlatformAccessContext } from './platform-access-context';
 import { Operation, Resource } from './role-resolver';
 export const ACCESS_METADATA = 'access';
 export const PUBLIC_METADATA = 'public';
+export const SELF_SCOPED_METADATA = 'self_scoped';
 export interface AccessRequirement {
   readonly resource: Resource;
   readonly operation: Operation;
@@ -12,6 +13,7 @@ export interface AccessRequirement {
 export const Access = (resource: Resource, operation: Operation): MethodDecorator =>
   SetMetadata(ACCESS_METADATA, { resource, operation } satisfies AccessRequirement);
 export const Public = (): MethodDecorator => SetMetadata(PUBLIC_METADATA, true);
+export const SelfScoped = (): MethodDecorator => SetMetadata(SELF_SCOPED_METADATA, true);
 interface RequestWithAccess {
   access?: AccessContext | PlatformAccessContext;
 }

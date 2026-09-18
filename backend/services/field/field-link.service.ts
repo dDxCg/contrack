@@ -22,7 +22,7 @@ export class FieldLinkService {
     const expiresAt = new Date(this.clock.now().getTime() + this.fieldTokenService.ttlSeconds * 1000);
     return {
       token,
-      url: `${process.env.APP_BASE_URL ?? ''}/field/${token}`,
+      url: `${process.env.APP_BASE_URL ?? ''}/field#${token}`,
       expires_at: expiresAt.toISOString(),
     };
   }

@@ -1,9 +1,14 @@
 import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AuthCredentialExpiredException } from '../../models/domain-errors';
+import { AuthCredentialExpiredException, AuthForbiddenRoleException } from '../../models/domain-errors';
 import { TokenService } from '../auth/token.service';
 import { AccessContext } from './access-context';
-import { ACCESS_METADATA, AccessRequirement, PUBLIC_METADATA } from './access.decorator';
+import {
+  ACCESS_METADATA,
+  AccessRequirement,
+  PUBLIC_METADATA,
+  SELF_SCOPED_METADATA,
+} from './access.decorator';
 import { CREDENTIAL_RESOLVERS, CredentialResolver } from './credential-resolver';
 import { PlatformAccessContext } from './platform-access-context';
 interface DeskRequest {
@@ -32,12 +37,23 @@ export class AccessControlGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
+    if (requirement === undefined && !this.isSelfScoped(context)) {
+      throw new AuthForbiddenRoleException([]);
+    }
     request.access = await resolver.resolve(claims, requirement);
     return true;
   }
   private isPublic(context: ExecutionContext): boolean {
     return (
       this.reflector.getAllAndOverride<boolean>(PUBLIC_METADATA, [
+        context.getHandler(),
+        context.getClass(),
+      ]) === true
+    );
+  }
+  private isSelfScoped(context: ExecutionContext): boolean {
+    return (
+      this.reflector.getAllAndOverride<boolean>(SELF_SCOPED_METADATA, [
         context.getHandler(),
         context.getClass(),
       ]) === true

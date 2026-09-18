@@ -1,11 +1,29 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+const OBJECT_KEY_PATTERN = /^$|^(?!.*\.\.)(?!\/)[A-Za-z0-9!_.*'()/-]+$/;
 export class FieldPhotoKeysBodyDto {
   @IsArray()
+  @ArrayMaxSize(20)
   @IsString({ each: true })
+  @MaxLength(500, { each: true })
+  @Matches(OBJECT_KEY_PATTERN, { each: true })
   before!: string[];
   @IsArray()
+  @ArrayMaxSize(20)
   @IsString({ each: true })
+  @MaxLength(500, { each: true })
+  @Matches(OBJECT_KEY_PATTERN, { each: true })
   after!: string[];
 }
 export class FieldSubmissionBodyDto {
@@ -13,11 +31,17 @@ export class FieldSubmissionBodyDto {
   @Type(() => FieldPhotoKeysBodyDto)
   photo_keys!: FieldPhotoKeysBodyDto;
   @IsString()
+  @MaxLength(500)
+  @Matches(OBJECT_KEY_PATTERN)
   receipt_photo_key!: string;
   @IsOptional()
   @IsNumber()
+  @Min(-90)
+  @Max(90)
   latitude?: number | null;
   @IsOptional()
   @IsNumber()
+  @Min(-180)
+  @Max(180)
   longitude?: number | null;
 }

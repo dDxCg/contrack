@@ -4,6 +4,7 @@ import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
 import { AuthConfig } from '../../../services/access-control/auth.config';
+import { InMemoryRevocationStore } from '../../../services/auth/revocation-store';
 import { FieldTokenService } from '../../../services/field/field-token.service';
 import {
   FieldSubmissionCommand,
@@ -31,7 +32,11 @@ async function world() {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
   const shiftPhotos = new ShiftPhotoRepository(dataSource);
-  const tokens = new FieldTokenService(new JwtService({ secret: config.jwtSecret }), config);
+  const tokens = new FieldTokenService(
+    new JwtService({ secret: config.jwtSecret }),
+    config,
+    new InMemoryRevocationStore(new FakeClock()),
+  );
   const clock = new FakeClock(new Date('2024-10-21T08:30:00.000Z'));
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id);
@@ -103,6 +108,13 @@ describe('FieldSubmissionService.submit — FR16, FR17, FR24', () => {
     const error = await captureDomainErrorAsync(() => service.submit(tokens.sign(shiftId), validCommand()));
     expect(error.code).toBe('shift.already_completed');
   });
+  it('rejects reusing the exact same token for a second submission', async () => {
+    const { service, tokens, shiftId } = await world();
+    const raw = tokens.sign(shiftId);
+    await service.submit(raw, validCommand());
+    const error = await captureDomainErrorAsync(() => service.submit(raw, validCommand()));
+    expect(error.code).toBe('token.already_used');
+  });
   it('rejects an unknown shift id even with a well-formed token', async () => {
     const { service, tokens } = await world();
     const error = await captureDomainErrorAsync(() => service.submit(tokens.sign(999999), validCommand()));
@@ -110,10 +122,11 @@ describe('FieldSubmissionService.submit — FR16, FR17, FR24', () => {
   });
   it('rejects an expired token', async () => {
     const { service, shiftId } = await world();
-    const expiredTokens = new FieldTokenService(new JwtService({ secret: config.jwtSecret }), {
-      ...config,
-      fieldTtlSeconds: -1,
-    });
+    const expiredTokens = new FieldTokenService(
+      new JwtService({ secret: config.jwtSecret }),
+      { ...config, fieldTtlSeconds: -1 },
+      new InMemoryRevocationStore(new FakeClock()),
+    );
     const error = await captureDomainErrorAsync(() =>
       service.submit(expiredTokens.sign(shiftId), validCommand()),
     );

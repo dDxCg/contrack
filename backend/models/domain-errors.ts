@@ -142,6 +142,12 @@ export class FieldTokenInvalidException extends DomainException {
     super(HttpStatus.UNAUTHORIZED, 'Liên kết không hợp lệ');
   }
 }
+export class FieldTokenAlreadyUsedException extends DomainException {
+  readonly code = 'token.already_used';
+  constructor() {
+    super(HttpStatus.UNAUTHORIZED, 'Liên kết này đã được sử dụng');
+  }
+}
 export class StatementPeriodIncompleteException extends DomainException {
   readonly code = 'statement.period_incomplete';
   constructor(shiftIds: readonly number[]) {

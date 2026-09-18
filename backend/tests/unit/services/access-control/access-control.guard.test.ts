@@ -13,6 +13,7 @@ function contextFor(
   metadata: {
     public?: boolean;
     access?: AccessRequirement;
+    selfScoped?: boolean;
   } = {},
 ): {
   context: ExecutionContext;
@@ -35,6 +36,7 @@ function contextFor(
   jest.spyOn(Reflector.prototype, 'getAllAndOverride').mockImplementation((key: unknown) => {
     if (key === 'public') return metadata.public === true;
     if (key === 'access') return metadata.access;
+    if (key === 'self_scoped') return metadata.selfScoped === true;
     return undefined;
   });
   return { context, request };
@@ -76,5 +78,24 @@ describe('AccessControlGuard', () => {
     expect(desk.resolve).toHaveBeenCalledWith(claims, requirement);
     expect(platform.resolve).not.toHaveBeenCalled();
     expect(request.access).toEqual({ resolved: 'desk' });
+  });
+  it('fails closed when a handler carries neither @Access nor @SelfScoped — a forgotten decorator, not an open route', async () => {
+    const claims: TokenClaims = { typ: 'access', jti: 't', iat: 0, exp: 1 };
+    const tokenService = verifyAnyReturning(claims);
+    const desk = fakeResolver('access');
+    const guard = new AccessControlGuard(new Reflector(), tokenService as never, [desk]);
+    const { context } = contextFor({ authorization: 'Bearer token' });
+    const error = await captureDomainErrorAsync(() => guard.canActivate(context));
+    expect(error.code).toBe('auth.forbidden_role');
+    expect(desk.resolve).not.toHaveBeenCalled();
+  });
+  it('lets a @SelfScoped handler through with no @Access metadata', async () => {
+    const claims: TokenClaims = { typ: 'access', jti: 't', iat: 0, exp: 1 };
+    const tokenService = verifyAnyReturning(claims);
+    const desk = fakeResolver('access', { resolved: 'desk' });
+    const guard = new AccessControlGuard(new Reflector(), tokenService as never, [desk]);
+    const { context } = contextFor({ authorization: 'Bearer token' }, { selfScoped: true });
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(desk.resolve).toHaveBeenCalledWith(claims, undefined);
   });
 });

@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from '../../services/auth/auth.service';
 import { AccessContext } from '../../services/access-control/access-context';
-import { CurrentAccess, Public } from '../../services/access-control/access.decorator';
+import { CurrentAccess, Public, SelfScoped } from '../../services/access-control/access.decorator';
 import { LoginDto, LogoutDto, RefreshDto } from '../../dtos/auth/auth.dto';
 import { SessionView } from '../../dtos/auth/auth.response.dto';
 import { EmployeeView } from '../../dtos/employees/employees.response.dto';
@@ -29,6 +29,7 @@ export class AuthController {
   ): Promise<SessionView> {
     return this.authService.refresh(body.refresh_token);
   }
+  @SelfScoped()
   @Post('logout')
   @HttpCode(204)
   logout(
@@ -39,6 +40,7 @@ export class AuthController {
   ): Promise<void> {
     return this.authService.logout(access, body.refresh_token);
   }
+  @SelfScoped()
   @Get('me')
   me(
     @CurrentAccess()

@@ -30,7 +30,7 @@ export class FieldSubmissionService {
     private readonly dataSource: DataSource,
   ) {}
   async submit(token: string, command: FieldSubmissionCommand): Promise<ShiftView> {
-    const claims = this.fieldTokenService.verify(token);
+    const claims = await this.fieldTokenService.verify(token);
     const missing = missingEvidence(command);
     if (missing.length > 0) {
       throw new ShiftEvidenceIncompleteException(missing);
@@ -54,6 +54,7 @@ export class FieldSubmissionService {
       );
       return updated;
     });
+    await this.fieldTokenService.markUsed(claims);
     return toShiftView(saved);
   }
 }
