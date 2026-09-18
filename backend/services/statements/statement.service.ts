@@ -14,8 +14,9 @@ import { ContractRepository } from '../../repositories/contracts/contract.reposi
 import { RevenueRow, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
 import { StatementListFilter, StatementRepository } from '../../repositories/statements/statement.repository';
+import { withUniqueViolation } from '../../repositories/unique-violation';
 import { AccessContext } from '../access-control/access-context';
-import { addMonthsUTC, round2, toDateString } from '../../utils/period';
+import { addMonthsUTC, round2, startOfMonthUTC, toDateString } from '../../utils/period';
 export interface ComputeStatementCommand {
   contractId: number;
   period: Date;
@@ -46,7 +47,8 @@ export class StatementService {
     if (contract === null) {
       throw new AuthOutOfScopeException();
     }
-    const periodStart = toDateString(command.period);
+    const period = startOfMonthUTC(command.period);
+    const periodStart = toDateString(period);
     const existing = await this.statementRepository.findByContractPeriod(
       access.tenantId,
       command.contractId,
@@ -55,16 +57,19 @@ export class StatementService {
     if (existing !== null) {
       throw new StatementAlreadyExistsException(existing.id);
     }
-    const rows = await this.revenueRowsFor(access.tenantId, command.contractId, command.period);
+    const rows = await this.revenueRowsFor(access.tenantId, command.contractId, period);
     assertPeriodComplete(rows);
     const statement = new Statement();
     statement.tenantId = access.tenantId;
     statement.contractId = command.contractId;
-    statement.period = command.period;
+    statement.period = period;
     statement.totalAmount = round2(rows.reduce((sum, row) => sum + row.unitPrice, 0));
     statement.pdfUrl = null;
     statement.status = StatementStatus.Draft;
-    const saved = await this.statementRepository.create(statement);
+    const saved = await withUniqueViolation(
+      () => this.statementRepository.create(statement),
+      () => new StatementAlreadyExistsException(-1),
+    );
     return toStatementView(saved, rows.map(toLine));
   }
   async export(

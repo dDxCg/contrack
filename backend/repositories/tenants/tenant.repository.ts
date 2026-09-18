@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { Tenant, TenantStatus } from '../../models/tenants/tenant.entity';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { PageOf } from '../tenant-scoped.repository';
@@ -14,16 +14,16 @@ export class TenantRepository {
     @Inject(DATA_SOURCE)
     private readonly dataSource: DataSource,
   ) {}
-  async findById(id: number): Promise<Tenant | null> {
-    const row = await this.selected().andWhere('t.id = :id', { id }).getRawOne<TenantRow>();
+  async findById(id: number, tx?: EntityManager): Promise<Tenant | null> {
+    const row = await this.selected(tx).andWhere('t.id = :id', { id }).getRawOne<TenantRow>();
     return row === undefined || row === null ? null : hydrateTenant(row);
   }
-  async create(name: string): Promise<Tenant> {
-    const statusId = await this.lookupStatusId(TenantStatus.Active);
-    const saved = await this.dataSource
+  async create(name: string, tx?: EntityManager): Promise<Tenant> {
+    const statusId = await this.lookupStatusId(TenantStatus.Active, tx);
+    const saved = await (tx ?? this.dataSource.manager)
       .getRepository(Tenant)
       .save(Object.assign(new Tenant(), { name, statusId }));
-    return this.requireById(saved.id);
+    return this.requireById(saved.id, tx);
   }
   async updateStatus(id: number, status: TenantStatus): Promise<Tenant> {
     const statusId = await this.lookupStatusId(status);
@@ -75,20 +75,29 @@ export class TenantRepository {
       .getRawMany<{ id: number }>();
     return rows.map((row) => row.id);
   }
-  private selected() {
-    return this.dataSource
+  async timezoneOf(id: number): Promise<string> {
+    const row = await this.dataSource
+      .createQueryBuilder(Tenant, 't')
+      .andWhere('t.id = :id', { id })
+      .select('t.timezone', 'timezone')
+      .getRawOne<{ timezone: string }>();
+    return row?.timezone ?? 'Asia/Ho_Chi_Minh';
+  }
+  private selected(tx?: EntityManager) {
+    return (tx ?? this.dataSource.manager)
       .createQueryBuilder(Tenant, 't')
       .innerJoin('tenant_statuses', 's', 's.id = t.status_id')
       .select([
         't.id AS id',
         't.name AS name',
         't.status_id AS status_id',
+        't.timezone AS timezone',
         't.created_at AS created_at',
         's.code AS status',
       ]);
   }
-  private async lookupStatusId(status: TenantStatus): Promise<number> {
-    const row = await this.dataSource
+  private async lookupStatusId(status: TenantStatus, tx?: EntityManager): Promise<number> {
+    const row = await (tx ?? this.dataSource.manager)
       .createQueryBuilder()
       .select('t.id', 'id')
       .from('tenant_statuses', 't')
@@ -101,8 +110,8 @@ export class TenantRepository {
     }
     return row.id;
   }
-  private async requireById(id: number): Promise<Tenant> {
-    const tenant = await this.findById(id);
+  private async requireById(id: number, tx?: EntityManager): Promise<Tenant> {
+    const tenant = await this.findById(id, tx);
     if (tenant === null) {
       throw new Error(`tenants row ${id} disappeared right after it was written`);
     }
@@ -113,6 +122,7 @@ interface TenantRow {
   id: number;
   name: string;
   status_id: number;
+  timezone: string;
   created_at: Date;
   status: Tenant['status'];
 }
@@ -121,6 +131,7 @@ function hydrateTenant(row: TenantRow): Tenant {
   tenant.id = row.id;
   tenant.name = row.name;
   tenant.statusId = row.status_id;
+  tenant.timezone = row.timezone;
   tenant.createdAt = row.created_at;
   tenant.status = row.status;
   return tenant;

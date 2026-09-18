@@ -10,8 +10,8 @@ async function world() {
   const dataSource = await createTestDataSource();
   const tenants = new TenantRepository(dataSource);
   const employees = new EmployeeRepository(dataSource);
-  const service = new TenantService(tenants, employees, new BcryptPasswordHasher(4));
-  return { service, tenants, employees };
+  const service = new TenantService(tenants, employees, new BcryptPasswordHasher(4), dataSource);
+  return { service, tenants, employees, dataSource };
 }
 describe('TenantService', () => {
   describe('create — FR19', () => {
@@ -35,6 +35,18 @@ describe('TenantService', () => {
       const error = await captureDomainErrorAsync(() =>
         service.create({ name: 'New Co', directorEmail: 'taken@example.com', directorPassword: 'x' }),
       );
+      expect(error.code).toBe('employee.email_taken');
+    });
+    it('still answers 409 employee.email_taken when a race slips past the pre-check', async () => {
+      const { service, tenants, employees } = await world();
+      const otherTenant = await tenants.create('Existing Co');
+      await seedDirector(employees, otherTenant.id, 'taken@example.com');
+      jest.spyOn(employees, 'existsEmail').mockResolvedValue(false);
+
+      const error = await captureDomainErrorAsync(() =>
+        service.create({ name: 'New Co', directorEmail: 'taken@example.com', directorPassword: 'x' }),
+      );
+
       expect(error.code).toBe('employee.email_taken');
     });
   });

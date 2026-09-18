@@ -52,6 +52,23 @@ describe('StatementService.compute — FR10, D6', () => {
     expect(view.lines).toHaveLength(2);
     expect(view.lines.every((line) => line.has_evidence)).toBe(true);
   });
+  it('normalizes a mid-month period to the start of the month (D11) — still covers the whole month', async () => {
+    const { service, access, chain, tenant, dataSource, statements } = await world();
+    await seedShift(dataSource, {
+      tenantId: tenant.id,
+      contractItemId: chain.itemId,
+      assigneeId: null,
+      scheduledDate: '2024-10-03',
+      status: 'completed',
+    });
+    const view = await service.compute(access, {
+      contractId: chain.contractId,
+      period: new Date('2024-10-15'),
+    });
+    expect(view.total_amount).toBe(500000);
+    const stored = await statements.findByContractPeriod(tenant.id, chain.contractId, '2024-10-01');
+    expect(stored?.id).toBe(view.id);
+  });
   it('blocks on a shift missing evidence, naming it', async () => {
     const { service, access, chain, tenant, dataSource } = await world();
     await seedShift(dataSource, {
@@ -99,6 +116,17 @@ describe('StatementService.compute — FR10, D6', () => {
     );
     expect(error.code).toBe('statement.already_exists');
     expect(error.details).toEqual({ statement_id: first.id });
+  });
+  it('still answers 409 statement.already_exists when a race slips past the pre-check', async () => {
+    const { service, access, chain, statements } = await world();
+    await service.compute(access, { contractId: chain.contractId, period: new Date('2024-10-01') });
+    jest.spyOn(statements, 'findByContractPeriod').mockResolvedValue(null);
+
+    const error = await captureDomainErrorAsync(() =>
+      service.compute(access, { contractId: chain.contractId, period: new Date('2024-10-01') }),
+    );
+
+    expect(error.code).toBe('statement.already_exists');
   });
 });
 describe('StatementService.get', () => {

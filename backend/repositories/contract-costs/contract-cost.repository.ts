@@ -54,40 +54,36 @@ export class ContractCostRepository extends TenantScopedRepository<ContractCost>
     beforePeriod: string,
     limit: number,
   ): Promise<number[]> {
-    const rows = (await this.dataSource.query(
-      `SELECT period, SUM(amount) AS total
-       FROM contract_costs
-       WHERE tenant_id = $1 AND contract_id = $2 AND period < $3
-       GROUP BY period
-       ORDER BY period DESC
-       LIMIT $4`,
-      [tenantId, contractId, beforePeriod, limit],
-    )) as {
-      period: Date;
-      total: string;
-    }[];
+    const rows = await this.scopedTo(tenantId, 'cc')
+      .andWhere('cc.contract_id = :contractId', { contractId })
+      .andWhere('cc.period < :beforePeriod', { beforePeriod })
+      .groupBy('cc.period')
+      .orderBy('cc.period', 'DESC')
+      .limit(limit)
+      .select('SUM(cc.amount)', 'total')
+      .getRawMany<{
+        total: string;
+      }>();
     return rows.map((row) => Number(row.total));
   }
   async totalForMonth(tenantId: number, contractId: number, period: string): Promise<number | null> {
-    const rows = (await this.dataSource.query(
-      `SELECT amount FROM contract_costs WHERE tenant_id = $1 AND contract_id = $2 AND period = $3`,
-      [tenantId, contractId, period],
-    )) as {
-      amount: string;
-    }[];
+    const rows = await this.scopedTo(tenantId, 'cc')
+      .andWhere('cc.contract_id = :contractId', { contractId })
+      .andWhere('cc.period = :period', { period })
+      .select('cc.amount', 'amount')
+      .getRawMany<{
+        amount: string;
+      }>();
     if (rows.length === 0) {
       return null;
     }
     return rows.reduce((sum, row) => sum + Number(row.amount), 0);
   }
   async tenantTotalCost(tenantId: number): Promise<number> {
-    const [row] = (await this.dataSource.query(
-      `SELECT COALESCE(SUM(amount), 0) AS total FROM contract_costs WHERE tenant_id = $1`,
-      [tenantId],
-    )) as {
+    const row = await this.scopedTo(tenantId, 'cc').select('COALESCE(SUM(cc.amount), 0)', 'total').getRawOne<{
       total: string;
-    }[];
-    return Number(row.total);
+    }>();
+    return Number(row?.total ?? 0);
   }
   private selected(query: SelectQueryBuilder<ContractCost>): SelectQueryBuilder<ContractCost> {
     return query

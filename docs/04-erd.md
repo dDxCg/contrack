@@ -46,6 +46,7 @@ erDiagram
         int id PK
         varchar name
         int status_id FK
+        varchar timezone
         timestamp created_at
     }
 

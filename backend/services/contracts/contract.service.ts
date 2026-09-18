@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { DATA_SOURCE } from '../../data/db-context/data-source';
 import {
   ContractItemView,
   ContractSiteView,
@@ -48,6 +50,8 @@ export class ContractService {
     private readonly contractItemRepository: ContractItemRepository,
     private readonly shiftRepository: ShiftRepository,
     private readonly scheduleGenerator: ScheduleGeneratorService,
+    @Inject(DATA_SOURCE)
+    private readonly dataSource: DataSource,
   ) {}
   async list(access: AccessContext, page: Page): Promise<ContractPage> {
     const { items, total } = await this.contractRepository.list(access.tenantId, page);
@@ -66,60 +70,62 @@ export class ContractService {
     if (violations.length > 0) {
       throw new ValidationFailedException(violations);
     }
-    const contract = new Contract();
-    contract.tenantId = access.tenantId;
-    contract.customerId = command.customerId;
-    contract.setTerm(command.signedAt, command.expiresAt);
-    contract.setStatus(ContractStatus.Active);
-    const savedContract = await this.contractRepository.create(contract);
-    const siteViews: ContractSiteView[] = [];
-    const generatedShifts: Shift[] = [];
-    for (const siteCommand of command.sites) {
-      const site = new ContractSite();
-      site.tenantId = access.tenantId;
-      site.contractId = savedContract.id;
-      site.setName(siteCommand.name);
-      site.setWorkRequirements(siteCommand.workRequirements);
-      site.setNotes(siteCommand.notes);
-      const savedSite = await this.contractSiteRepository.create(site);
-      const itemViews: ContractItemView[] = [];
-      for (const itemCommand of siteCommand.items) {
-        const item = new ContractItem();
-        item.tenantId = access.tenantId;
-        item.siteId = savedSite.id;
-        item.setName(itemCommand.name);
-        item.setFrequency(itemCommand.frequencyCount, itemCommand.frequencyUnit, itemCommand.frequencyRule);
-        item.setUnitPrice(itemCommand.unitPrice);
-        const savedItem = await this.contractItemRepository.create(item);
-        itemViews.push(toContractItemView(savedItem));
-        for (const scheduledDate of this.scheduleGenerator.generate(
-          { from: savedContract.signedAt, to: savedContract.expiresAt },
-          { frequencyCount: savedItem.frequencyCount, frequencyUnit: savedItem.frequencyUnit },
-        )) {
-          const shift = new Shift();
-          shift.tenantId = access.tenantId;
-          shift.contractItemId = savedItem.id;
-          shift.assigneeId = null;
-          shift.scheduledDate = scheduledDate;
-          shift.completedAt = null;
-          shift.latitude = null;
-          shift.longitude = null;
-          shift.capturedAt = null;
-          shift.receiptPhotoUrl = null;
-          shift.status = ShiftStatus.Scheduled;
-          generatedShifts.push(shift);
+    return this.dataSource.transaction(async (tx) => {
+      const contract = new Contract();
+      contract.tenantId = access.tenantId;
+      contract.customerId = command.customerId;
+      contract.setTerm(command.signedAt, command.expiresAt);
+      contract.setStatus(ContractStatus.Active);
+      const savedContract = await this.contractRepository.create(contract, tx);
+      const siteViews: ContractSiteView[] = [];
+      const generatedShifts: Shift[] = [];
+      for (const siteCommand of command.sites) {
+        const site = new ContractSite();
+        site.tenantId = access.tenantId;
+        site.contractId = savedContract.id;
+        site.setName(siteCommand.name);
+        site.setWorkRequirements(siteCommand.workRequirements);
+        site.setNotes(siteCommand.notes);
+        const savedSite = await this.contractSiteRepository.create(site, tx);
+        const itemViews: ContractItemView[] = [];
+        for (const itemCommand of siteCommand.items) {
+          const item = new ContractItem();
+          item.tenantId = access.tenantId;
+          item.siteId = savedSite.id;
+          item.setName(itemCommand.name);
+          item.setFrequency(itemCommand.frequencyCount, itemCommand.frequencyUnit, itemCommand.frequencyRule);
+          item.setUnitPrice(itemCommand.unitPrice);
+          const savedItem = await this.contractItemRepository.create(item, tx);
+          itemViews.push(toContractItemView(savedItem));
+          for (const scheduledDate of this.scheduleGenerator.generate(
+            { from: savedContract.signedAt, to: savedContract.expiresAt },
+            { frequencyCount: savedItem.frequencyCount, frequencyUnit: savedItem.frequencyUnit },
+          )) {
+            const shift = new Shift();
+            shift.tenantId = access.tenantId;
+            shift.contractItemId = savedItem.id;
+            shift.assigneeId = null;
+            shift.scheduledDate = scheduledDate;
+            shift.completedAt = null;
+            shift.latitude = null;
+            shift.longitude = null;
+            shift.capturedAt = null;
+            shift.receiptPhotoUrl = null;
+            shift.status = ShiftStatus.Scheduled;
+            generatedShifts.push(shift);
+          }
         }
+        siteViews.push({
+          id: savedSite.id,
+          name: savedSite.name,
+          work_requirements: savedSite.workRequirements,
+          notes: savedSite.notes,
+          items: itemViews,
+        });
       }
-      siteViews.push({
-        id: savedSite.id,
-        name: savedSite.name,
-        work_requirements: savedSite.workRequirements,
-        notes: savedSite.notes,
-        items: itemViews,
-      });
-    }
-    await this.shiftRepository.createMany(generatedShifts);
-    return toContractView(savedContract, siteViews);
+      await this.shiftRepository.createMany(generatedShifts, tx);
+      return toContractView(savedContract, siteViews);
+    });
   }
   async delete(access: AccessContext, id: number): Promise<void> {
     await this.requireContract(access, id);

@@ -5,6 +5,7 @@ import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.
 import { EmployeeRepository } from '../../repositories/employees/employee.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
 import { TeamRepository } from '../../repositories/teams/team.repository';
+import { withUniqueViolation } from '../../repositories/unique-violation';
 import { AccessContext } from '../access-control/access-context';
 import { PASSWORD_HASHER, PasswordHasher } from '../auth/password-hasher.service';
 export interface EmployeeCommand {
@@ -47,7 +48,11 @@ export class EmployeeService {
     employee.status = EmployeeStatus.Active;
     await this.assertTeamLeadAllowed(access, employee);
     employee.setPasswordHash(await this.passwordHasher.hash(command.password ?? command.email));
-    return toEmployeeView(await this.employeeRepository.create(employee));
+    const saved = await withUniqueViolation(
+      () => this.employeeRepository.create(employee),
+      () => new EmployeeEmailTakenException(command.email),
+    );
+    return toEmployeeView(saved);
   }
   async update(access: AccessContext, id: number, command: EmployeeCommand): Promise<EmployeeView> {
     const employee = await this.requireEmployee(access, id);
@@ -71,7 +76,11 @@ export class EmployeeService {
     if (command.status !== undefined) {
       employee.setStatus(command.status);
     }
-    return toEmployeeView(await this.employeeRepository.update(employee));
+    const saved = await withUniqueViolation(
+      () => this.employeeRepository.update(employee),
+      () => new EmployeeEmailTakenException(command.email),
+    );
+    return toEmployeeView(saved);
   }
   async deactivate(access: AccessContext, id: number): Promise<EmployeeView> {
     const employee = await this.requireEmployee(access, id);

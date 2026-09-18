@@ -8,12 +8,14 @@ import { Statement, StatementStatus } from '../../../models/statements/statement
 import { ContractRepository } from '../../../repositories/contracts/contract.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { StatementRepository } from '../../../repositories/statements/statement.repository';
+import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
 import { DashboardService } from '../../../services/dashboard/dashboard.service';
 async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
   const dataSource = await createTestDataSource();
   const contracts = new ContractRepository(dataSource);
   const shifts = new ShiftRepository(dataSource);
   const statements = new StatementRepository(dataSource);
+  const tenants = new TenantRepository(dataSource);
   const clock = new FakeClock(now);
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1000000 });
@@ -23,10 +25,11 @@ async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
     contracts,
     shifts,
     statements,
+    tenants,
     tenant,
     chain,
     access: anAccessContext(director, { tenantId: tenant.id }),
-    service: new DashboardService(contracts, shifts, statements, clock),
+    service: new DashboardService(contracts, shifts, statements, tenants, clock),
   };
 }
 describe('DashboardService.get — FR2', () => {
@@ -143,6 +146,18 @@ describe('DashboardService.get — FR2', () => {
     const { service, access } = await world(new Date('2024-10-15T00:00:00.000Z'));
     const summary = await service.get(access, {});
     expect(summary.bucket_unit).toBe('month');
+  });
+  it('resolves the default month through the tenant timezone — already March in Vietnam, still Feb in UTC (D11)', async () => {
+    const { service, access, chain, dataSource, tenant } = await world(new Date('2026-02-28T18:00:00.000Z'));
+    await seedShift(dataSource, {
+      tenantId: tenant.id,
+      contractItemId: chain.itemId,
+      assigneeId: null,
+      scheduledDate: '2026-03-01',
+      status: 'completed',
+    });
+    const summary = await service.get(access, {});
+    expect(summary.projected_revenue).toBe(1000000);
   });
   it('resolves an explicit month', async () => {
     const { service, access, chain, tenant, dataSource } = await world(new Date('2024-10-15T00:00:00.000Z'));

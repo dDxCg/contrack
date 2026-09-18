@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource, EntityTarget, SelectQueryBuilder } from 'typeorm';
+import { DataSource, EntityManager, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Shift, ShiftStatus } from '../../models/shifts/shift.entity';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
@@ -12,18 +12,20 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
   ) {
     super(dataSource);
   }
-  async createMany(shifts: readonly Shift[]): Promise<void> {
+  async createMany(shifts: readonly Shift[], tx?: EntityManager): Promise<void> {
     if (shifts.length === 0) {
       return;
     }
-    const statusId = await this.lookupId('shift_statuses', shifts[0].status);
+    const statusId = await this.lookupId('shift_statuses', shifts[0].status, tx);
     for (const shift of shifts) {
       shift.statusId = statusId;
     }
-    await this.dataSource.getRepository(Shift).save([...shifts]);
+    await this.mgr(tx)
+      .getRepository(Shift)
+      .save([...shifts]);
   }
-  async findById(tenantId: number, id: number): Promise<Shift | null> {
-    const row = await this.selected(this.scopedTo(tenantId, 's'))
+  async findById(tenantId: number, id: number, tx?: EntityManager): Promise<Shift | null> {
+    const row = await this.selected(this.scopedTo(tenantId, 's', tx))
       .andWhere('s.id = :id', { id })
       .getRawOne<ShiftRow>();
     return row === undefined || row === null ? null : hydrateShift(row);
@@ -34,31 +36,35 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
       .getRawOne<ShiftRow>();
     return row === undefined || row === null ? null : hydrateShift(row);
   }
-  async update(shift: Shift): Promise<Shift> {
-    shift.statusId = await this.lookupId('shift_statuses', shift.status);
-    const saved = await this.dataSource.getRepository(Shift).save(shift);
-    const reloaded = await this.findById(saved.tenantId, saved.id);
+  async update(shift: Shift, tx?: EntityManager): Promise<Shift> {
+    shift.statusId = await this.lookupId('shift_statuses', shift.status, tx);
+    const saved = await this.mgr(tx).getRepository(Shift).save(shift);
+    const reloaded = await this.findById(saved.tenantId, saved.id, tx);
     if (reloaded === null) {
       throw new Error(`shifts row ${saved.id} disappeared right after it was written`);
     }
     return reloaded;
   }
   async revenueRows(tenantId: number, contractId: number, from: string, to: string): Promise<RevenueRow[]> {
-    const rows = (await this.dataSource.query(
-      `SELECT s.id, st.code AS status, s.scheduled_date, ci.unit_price
-       FROM shifts s
-       JOIN shift_statuses st ON st.id = s.status_id
-       JOIN contract_items ci ON ci.id = s.contract_item_id
-       JOIN contract_sites cs ON cs.id = ci.site_id
-       WHERE s.tenant_id = $1 AND cs.contract_id = $2 AND s.scheduled_date >= $3 AND s.scheduled_date < $4
-       ORDER BY s.id ASC`,
-      [tenantId, contractId, from, to],
-    )) as {
-      id: number;
-      status: string;
-      scheduled_date: Date;
-      unit_price: string;
-    }[];
+    const rows = await this.scopedTo(tenantId, 's')
+      .innerJoin('shift_statuses', 'st', 'st.id = s.status_id')
+      .innerJoin('contract_items', 'ci', 'ci.id = s.contract_item_id')
+      .innerJoin('contract_sites', 'cs', 'cs.id = ci.site_id')
+      .andWhere('cs.contract_id = :contractId', { contractId })
+      .andWhere('s.scheduled_date >= :from AND s.scheduled_date < :to', { from, to })
+      .orderBy('s.id', 'ASC')
+      .select([
+        's.id AS id',
+        'st.code AS status',
+        's.scheduled_date AS scheduled_date',
+        'ci.unit_price AS unit_price',
+      ])
+      .getRawMany<{
+        id: number;
+        status: string;
+        scheduled_date: Date;
+        unit_price: string;
+      }>();
     return rows.map((row) => ({
       id: row.id,
       status: row.status as ShiftStatus,
@@ -67,30 +73,26 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
     }));
   }
   async shiftsByContractForPeriod(tenantId: number, from: string, to: string): Promise<ContractShiftRow[]> {
-    const rows = (await this.dataSource.query(
-      `SELECT cs.contract_id, s.completed_at
-       FROM shifts s
-       JOIN contract_items ci ON ci.id = s.contract_item_id
-       JOIN contract_sites cs ON cs.id = ci.site_id
-       WHERE s.tenant_id = $1 AND s.scheduled_date >= $2 AND s.scheduled_date < $3`,
-      [tenantId, from, to],
-    )) as {
-      contract_id: number;
-      completed_at: Date | null;
-    }[];
+    const rows = await this.scopedTo(tenantId, 's')
+      .innerJoin('contract_items', 'ci', 'ci.id = s.contract_item_id')
+      .innerJoin('contract_sites', 'cs', 'cs.id = ci.site_id')
+      .andWhere('s.scheduled_date >= :from AND s.scheduled_date < :to', { from, to })
+      .select(['cs.contract_id AS contract_id', 's.completed_at AS completed_at'])
+      .getRawMany<{
+        contract_id: number;
+        completed_at: Date | null;
+      }>();
     return rows.map((row) => ({ contractId: row.contract_id, completed: row.completed_at !== null }));
   }
   async tenantRevenueCompleted(tenantId: number): Promise<number> {
-    const [row] = (await this.dataSource.query(
-      `SELECT COALESCE(SUM(ci.unit_price), 0) AS total
-       FROM shifts s
-       JOIN contract_items ci ON ci.id = s.contract_item_id
-       WHERE s.tenant_id = $1 AND s.completed_at IS NOT NULL`,
-      [tenantId],
-    )) as {
-      total: string;
-    }[];
-    return Number(row.total);
+    const row = await this.scopedTo(tenantId, 's')
+      .innerJoin('contract_items', 'ci', 'ci.id = s.contract_item_id')
+      .andWhere('s.completed_at IS NOT NULL')
+      .select('COALESCE(SUM(ci.unit_price), 0)', 'total')
+      .getRawOne<{
+        total: string;
+      }>();
+    return Number(row?.total ?? 0);
   }
   async overdue(
     tenantId: number,
@@ -100,16 +102,15 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
       id: number;
     }[]
   > {
-    return (await this.dataSource.query(
-      `SELECT s.id
-       FROM shifts s
-       JOIN shift_statuses st ON st.id = s.status_id
-       WHERE s.tenant_id = $1 AND s.scheduled_date < $2 AND st.code NOT IN ('completed', 'disputed')
-       ORDER BY s.id ASC`,
-      [tenantId, asOf],
-    )) as {
-      id: number;
-    }[];
+    return this.scopedTo(tenantId, 's')
+      .innerJoin('shift_statuses', 'st', 'st.id = s.status_id')
+      .andWhere('s.scheduled_date < :asOf', { asOf })
+      .andWhere("st.code NOT IN ('completed', 'disputed')")
+      .orderBy('s.id', 'ASC')
+      .select('s.id', 'id')
+      .getRawMany<{
+        id: number;
+      }>();
   }
   async statsRows(
     tenantId: number,
@@ -121,41 +122,31 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
       scheduledDate: Date;
     }[]
   > {
-    const rows = (await this.dataSource.query(
-      `SELECT st.code AS status, s.scheduled_date
-       FROM shifts s
-       JOIN shift_statuses st ON st.id = s.status_id
-       WHERE s.tenant_id = $1 AND s.scheduled_date >= $2 AND s.scheduled_date < $3`,
-      [tenantId, from, to],
-    )) as {
-      status: ShiftStatus;
-      scheduled_date: Date;
-    }[];
+    const rows = await this.scopedTo(tenantId, 's')
+      .innerJoin('shift_statuses', 'st', 'st.id = s.status_id')
+      .andWhere('s.scheduled_date >= :from AND s.scheduled_date < :to', { from, to })
+      .select(['st.code AS status', 's.scheduled_date AS scheduled_date'])
+      .getRawMany<{
+        status: ShiftStatus;
+        scheduled_date: Date;
+      }>();
     return rows.map((row) => ({ status: row.status, scheduledDate: row.scheduled_date }));
   }
   async tenantRevenueForPeriod(tenantId: number, from: string, to: string): Promise<number> {
-    const [row] = (await this.dataSource.query(
-      `SELECT COALESCE(SUM(ci.unit_price), 0) AS total
-       FROM shifts s
-       JOIN contract_items ci ON ci.id = s.contract_item_id
-       WHERE s.tenant_id = $1 AND s.scheduled_date >= $2 AND s.scheduled_date < $3`,
-      [tenantId, from, to],
-    )) as {
-      total: string;
-    }[];
-    return Number(row.total);
+    const row = await this.scopedTo(tenantId, 's')
+      .innerJoin('contract_items', 'ci', 'ci.id = s.contract_item_id')
+      .andWhere('s.scheduled_date >= :from AND s.scheduled_date < :to', { from, to })
+      .select('COALESCE(SUM(ci.unit_price), 0)', 'total')
+      .getRawOne<{
+        total: string;
+      }>();
+    return Number(row?.total ?? 0);
   }
   async countByStatus(tenantId: number, status: ShiftStatus): Promise<number> {
-    const [row] = (await this.dataSource.query(
-      `SELECT COUNT(*) AS total
-       FROM shifts s
-       JOIN shift_statuses st ON st.id = s.status_id
-       WHERE s.tenant_id = $1 AND st.code = $2`,
-      [tenantId, status],
-    )) as {
-      total: string;
-    }[];
-    return Number(row.total);
+    return this.scopedTo(tenantId, 's')
+      .innerJoin('shift_statuses', 'st', 'st.id = s.status_id')
+      .andWhere('st.code = :status', { status })
+      .getCount();
   }
   private selected(query: SelectQueryBuilder<Shift>): SelectQueryBuilder<Shift> {
     return query

@@ -168,6 +168,17 @@ describe('EmployeeService.create', () => {
     expect(error.getStatus()).toBe(409);
     expect(error.details).toEqual({ email: 'toan.nv@example.com' });
   });
+  it('still answers 409 employee.email_taken when a race slips past the pre-check', async () => {
+    const { service, access, employees } = await world();
+    jest.spyOn(employees, 'existsEmail').mockResolvedValue(false);
+
+    const error = await captureDomainErrorAsync(() =>
+      service.create(access, command({ email: 'toan.nv@example.com' })),
+    );
+
+    expect(error.code).toBe('employee.email_taken');
+    expect(error.getStatus()).toBe(409);
+  });
   it('refuses an email another tenant already uses (email is globally unique, D1)', async () => {
     const { employees, teams, otherTenant } = await world();
     const directorOfTenantTwo = await employees.create(

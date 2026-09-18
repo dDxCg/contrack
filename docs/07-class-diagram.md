@@ -10,6 +10,7 @@ classDiagram
         -id: int
         -name: string
         -status: TenantStatus
+        -timezone: string
     }
     class Customer {
         -id: int

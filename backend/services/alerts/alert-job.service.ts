@@ -6,7 +6,7 @@ import { ContractRepository } from '../../repositories/contracts/contract.reposi
 import { ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { CLOCK, IClock } from '../access-control/clock';
-import { addDaysUTC, toDateString } from '../../utils/period';
+import { addDaysUTC, toDateString, toDateStringInZone } from '../../utils/period';
 const EXPIRY_THRESHOLD_DAYS = 30;
 export interface AlertJobSummary {
   sent: number;
@@ -42,12 +42,14 @@ export class AlertJobService {
     return total;
   }
   async run(tenantId: number): Promise<AlertJobSummary> {
-    const today = toDateString(this.clock.now());
+    const timezone = await this.tenantRepository.timezoneOf(tenantId);
+    const today = toDateStringInZone(this.clock.now(), timezone);
+    const todayStart = new Date(`${today}T00:00:00.000Z`);
     const summary: AlertJobSummary = { sent: 0, skipped: 0 };
     const expiring = await this.contractRepository.expiringWithin(
       tenantId,
       today,
-      toDateString(addDaysUTC(this.clock.now(), EXPIRY_THRESHOLD_DAYS)),
+      toDateString(addDaysUTC(todayStart, EXPIRY_THRESHOLD_DAYS)),
     );
     for (const contract of expiring) {
       await this.fire(tenantId, AlertKind.ContractExpiring, contract.id, summary);

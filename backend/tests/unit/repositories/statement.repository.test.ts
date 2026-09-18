@@ -57,6 +57,38 @@ describe('StatementRepository', () => {
     expect(await statements.findByContractPeriod(tenant.id, contractId, '2024-01-01')).not.toBeNull();
     expect(await statements.findByContractPeriod(tenant.id, contractId, '2024-02-01')).toBeNull();
   });
+  describe('findByContractPeriodBatch', () => {
+    it('returns one row per contract that has a statement for the period, keyed by contract id', async () => {
+      const { dataSource, statements, tenant, contractId } = await world();
+      const { contractId: secondContractId } = await seedContractItemChain(dataSource, tenant.id);
+      await seedStatement(statements, tenant.id, contractId, { period: '2024-01-01' });
+      await seedStatement(statements, tenant.id, secondContractId, { period: '2024-01-01' });
+
+      const byContract = await statements.findByContractPeriodBatch(
+        tenant.id,
+        [contractId, secondContractId, 999999],
+        '2024-01-01',
+      );
+
+      expect(byContract.size).toBe(2);
+      expect(byContract.get(contractId)?.contractId).toBe(contractId);
+      expect(byContract.get(secondContractId)?.contractId).toBe(secondContractId);
+      expect(byContract.has(999999)).toBe(false);
+    });
+    it('ignores a statement for the same contract in a different period', async () => {
+      const { statements, tenant, contractId } = await world();
+      await seedStatement(statements, tenant.id, contractId, { period: '2024-02-01' });
+
+      const byContract = await statements.findByContractPeriodBatch(tenant.id, [contractId], '2024-01-01');
+
+      expect(byContract.size).toBe(0);
+    });
+    it('answers an empty map for an empty contract id list, without querying', async () => {
+      const { statements, tenant } = await world();
+
+      expect(await statements.findByContractPeriodBatch(tenant.id, [], '2024-01-01')).toEqual(new Map());
+    });
+  });
   describe('list', () => {
     it('pages a tenant ledger with every row hydrated, ordered by id', async () => {
       const { statements, tenant, contractId } = await world();

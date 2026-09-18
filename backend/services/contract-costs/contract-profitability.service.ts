@@ -2,21 +2,24 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ContractProfitMonthView } from '../../dtos/contract-costs/contract-costs.response.dto';
 import { ContractCostRepository } from '../../repositories/contract-costs/contract-cost.repository';
 import { ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { AccessContext } from '../access-control/access-context';
 import { CLOCK, IClock } from '../access-control/clock';
 import { CostEstimationService } from './cost-estimation.service';
-import { addMonthsUTC, round2, startOfMonthUTC, toDateString } from '../../utils/period';
+import { addMonthsUTC, round2, startOfMonthInZone, toDateString } from '../../utils/period';
 @Injectable()
 export class ContractProfitabilityService {
   constructor(
     private readonly shiftRepository: ShiftRepository,
     private readonly contractCostRepository: ContractCostRepository,
     private readonly costEstimationService: CostEstimationService,
+    private readonly tenantRepository: TenantRepository,
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}
   async get(access: AccessContext, contractId: number, months: number): Promise<ContractProfitMonthView[]> {
-    const currentMonth = startOfMonthUTC(this.clock.now());
+    const timezone = await this.tenantRepository.timezoneOf(access.tenantId);
+    const currentMonth = startOfMonthInZone(this.clock.now(), timezone);
     const results: ContractProfitMonthView[] = [];
     for (let i = months - 1; i >= 0; i--) {
       const period = addMonthsUTC(currentMonth, -i);

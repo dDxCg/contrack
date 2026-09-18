@@ -10,6 +10,7 @@ CREATE TABLE tenants (
     id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name        VARCHAR(255) NOT NULL,
     status_id   INTEGER NOT NULL DEFAULT 1,
+    timezone    VARCHAR(64) NOT NULL DEFAULT 'Asia/Ho_Chi_Minh',
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_tenants_status FOREIGN KEY (status_id) REFERENCES tenant_statuses(id)
 );
@@ -282,7 +283,8 @@ CREATE TABLE statements (
     CONSTRAINT fk_statements_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     CONSTRAINT fk_statements_contract FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
     CONSTRAINT fk_statements_status FOREIGN KEY (status_id) REFERENCES statement_statuses(id),
-    CONSTRAINT uq_statements_contract_period UNIQUE (contract_id, period)
+    CONSTRAINT uq_statements_contract_period UNIQUE (contract_id, period),
+    CONSTRAINT ck_statements_period_is_month_start CHECK (period = date_trunc('month', period)::date)
 );
 
 CREATE INDEX idx_statements_tenant ON statements(tenant_id);
@@ -302,7 +304,8 @@ CREATE TABLE contract_costs (
     CONSTRAINT fk_contract_costs_contract FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
     CONSTRAINT fk_contract_costs_category FOREIGN KEY (category_id) REFERENCES cost_categories(id),
     CONSTRAINT fk_contract_costs_created_by FOREIGN KEY (created_by) REFERENCES employees(id),
-    CONSTRAINT uq_contract_costs_period UNIQUE (contract_id, category_id, period)
+    CONSTRAINT uq_contract_costs_period UNIQUE (contract_id, category_id, period),
+    CONSTRAINT ck_contract_costs_period_is_month_start CHECK (period = date_trunc('month', period)::date)
 );
 
 CREATE INDEX idx_contract_costs_tenant ON contract_costs(tenant_id);

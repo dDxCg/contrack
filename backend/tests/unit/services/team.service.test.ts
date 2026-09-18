@@ -157,6 +157,17 @@ describe('TeamService.create', () => {
     expect(error.getStatus()).toBe(409);
     expect(error.details).toEqual({ code: 'T1' });
   });
+  it('still answers 409 team.code_taken when a race slips past the pre-check', async () => {
+    const { service, directorAccess, teams } = await world();
+    jest.spyOn(teams, 'existsCode').mockResolvedValue(false);
+
+    const error = await captureDomainErrorAsync(() =>
+      service.create(directorAccess, { name: 'Trùng mã', code: 'T1' }),
+    );
+
+    expect(error.code).toBe('team.code_taken');
+    expect(error.getStatus()).toBe(409);
+  });
   it('allows a code another tenant already uses (teams.code is unique per tenant)', async () => {
     const { teams, employees, otherTenant } = await world();
     const directorOfTenantTwo = await employees.create(

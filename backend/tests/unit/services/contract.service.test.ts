@@ -45,7 +45,7 @@ async function world() {
     otherTenant,
     customer,
     access: anAccessContext(director, { tenantId: tenant.id }),
-    service: new ContractService(contracts, sites, items, shifts, new ScheduleGeneratorService()),
+    service: new ContractService(contracts, sites, items, shifts, new ScheduleGeneratorService(), dataSource),
   };
 }
 function validCommand(

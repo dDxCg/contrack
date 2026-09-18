@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource, EntityTarget, SelectQueryBuilder } from 'typeorm';
+import { DataSource, EntityManager, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Contract, ContractStatus } from '../../models/contracts/contract.entity';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
@@ -21,13 +21,13 @@ export class ContractRepository extends TenantScopedRepository<Contract> {
     const total = await this.scopedTo(tenantId, 'c').getCount();
     return { items: rows.map(hydrateContract), total };
   }
-  async findById(tenantId: number, id: number): Promise<Contract | null> {
-    const row = await this.selected(tenantId).andWhere('c.id = :id', { id }).getRawOne<ContractRow>();
+  async findById(tenantId: number, id: number, tx?: EntityManager): Promise<Contract | null> {
+    const row = await this.selected(tenantId, tx).andWhere('c.id = :id', { id }).getRawOne<ContractRow>();
     return row === undefined || row === null ? null : hydrateContract(row);
   }
-  async create(contract: Contract): Promise<Contract> {
-    contract.statusId = await this.lookupId('contract_statuses', contract.status);
-    return this.saveAndReload(contract);
+  async create(contract: Contract, tx?: EntityManager): Promise<Contract> {
+    contract.statusId = await this.lookupId('contract_statuses', contract.status, tx);
+    return this.saveAndReload(contract, tx);
   }
   async update(contract: Contract): Promise<Contract> {
     contract.statusId = await this.lookupId('contract_statuses', contract.status);
@@ -49,8 +49,8 @@ export class ContractRepository extends TenantScopedRepository<Contract> {
       .andWhere('s.code = :status', { status })
       .getCount();
   }
-  private selected(tenantId: number): SelectQueryBuilder<Contract> {
-    return this.scopedTo(tenantId, 'c')
+  private selected(tenantId: number, tx?: EntityManager): SelectQueryBuilder<Contract> {
+    return this.scopedTo(tenantId, 'c', tx)
       .innerJoin('contract_statuses', 's', 's.id = c.status_id')
       .select([
         'c.id AS id',
@@ -63,9 +63,9 @@ export class ContractRepository extends TenantScopedRepository<Contract> {
         's.code AS status',
       ]);
   }
-  private async saveAndReload(contract: Contract): Promise<Contract> {
-    const saved = await this.dataSource.getRepository(Contract).save(contract);
-    const reloaded = await this.findById(saved.tenantId, saved.id);
+  private async saveAndReload(contract: Contract, tx?: EntityManager): Promise<Contract> {
+    const saved = await this.mgr(tx).getRepository(Contract).save(contract);
+    const reloaded = await this.findById(saved.tenantId, saved.id, tx);
     if (reloaded === null) {
       throw new Error(`contracts row ${saved.id} disappeared right after it was written`);
     }

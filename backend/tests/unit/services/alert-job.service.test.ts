@@ -138,6 +138,40 @@ describe('AlertJobService.run — FR26, US-13', () => {
     expect(second.sent).toBe(0);
     expect(second.skipped).toBe(1);
   });
+  it('resolves "today" through the tenant\'s own timezone, not UTC (D11)', async () => {
+    const now = new Date('2026-03-10T20:00:00.000Z');
+    const dataSource = await createTestDataSource();
+    const alerts = new AlertRepository(dataSource);
+    const contracts = new ContractRepository(dataSource);
+    const shifts = new ShiftRepository(dataSource);
+    const tenants = new TenantRepository(dataSource);
+    const clock = new FakeClock(now);
+    const channelClient = new FakeChannelClient();
+    const vnTenant = await seedTenant(dataSource, { name: 'VN Co', timezone: 'Asia/Ho_Chi_Minh' });
+    const vnChain = await seedContractItemChain(dataSource, vnTenant.id);
+    const vnShiftId = await seedShift(dataSource, {
+      tenantId: vnTenant.id,
+      contractItemId: vnChain.itemId,
+      assigneeId: null,
+      scheduledDate: '2026-03-10',
+    });
+    const utcTenant = await seedTenant(dataSource, { name: 'UTC Co', timezone: 'UTC' });
+    const utcChain = await seedContractItemChain(dataSource, utcTenant.id);
+    await seedShift(dataSource, {
+      tenantId: utcTenant.id,
+      contractItemId: utcChain.itemId,
+      assigneeId: null,
+      scheduledDate: '2026-03-10',
+    });
+    const service = new AlertJobService(contracts, shifts, alerts, tenants, channelClient, clock);
+
+    const vnSummary = await service.run(vnTenant.id);
+    const utcSummary = await service.run(utcTenant.id);
+
+    expect(vnSummary.sent).toBe(1);
+    expect((await alerts.list(vnTenant.id))[0]).toMatchObject({ subjectId: vnShiftId });
+    expect(utcSummary.sent).toBe(0);
+  });
 });
 describe('AlertJobService.run — delivery fallback (§8.3)', () => {
   it('still records the alert when both channels fail, flagged not_sent rather than dropped', async () => {

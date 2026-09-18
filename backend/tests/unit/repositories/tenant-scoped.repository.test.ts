@@ -48,7 +48,11 @@ class TestCustomerRepository extends TenantScopedRepository<Customer> {
 }
 describe('TenantScopedRepository', () => {
   const builder = new FakeSelectQueryBuilder();
-  const dataSource = { createQueryBuilder: jest.fn(() => builder) } as unknown as DataSource;
+  const createQueryBuilder = jest.fn(() => builder);
+  const dataSource = {
+    createQueryBuilder,
+    manager: { createQueryBuilder },
+  } as unknown as DataSource;
   const repository = new TestCustomerRepository(dataSource);
   beforeEach(() => {
     jest.clearAllMocks();

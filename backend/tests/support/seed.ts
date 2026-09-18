@@ -5,18 +5,20 @@ export async function seedTenant(
   overrides: {
     name?: string;
     status?: TenantStatus;
+    timezone?: string;
   } = {},
 ): Promise<Tenant> {
   const name = overrides.name ?? 'Tenant';
   const status = overrides.status ?? TenantStatus.Active;
+  const timezone = overrides.timezone ?? 'Asia/Ho_Chi_Minh';
   const [statusRow] = (await dataSource.query('SELECT id FROM tenant_statuses WHERE code = $1', [
     status,
   ])) as {
     id: number;
   }[];
   const [row] = (await dataSource.query(
-    'INSERT INTO tenants (name, status_id) VALUES ($1, $2) RETURNING id, created_at',
-    [name, statusRow.id],
+    'INSERT INTO tenants (name, status_id, timezone) VALUES ($1, $2, $3) RETURNING id, created_at',
+    [name, statusRow.id, timezone],
   )) as {
     id: number;
     created_at: Date;
@@ -25,6 +27,7 @@ export async function seedTenant(
   tenant.id = row.id;
   tenant.name = name;
   tenant.statusId = statusRow.id;
+  tenant.timezone = timezone;
   tenant.createdAt = row.created_at;
   tenant.status = status;
   return tenant;

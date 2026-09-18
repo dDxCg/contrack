@@ -12,6 +12,8 @@ export class Tenant {
   name!: string;
   @Column({ name: 'status_id', type: 'integer', default: 1 })
   statusId!: number;
+  @Column({ type: 'varchar', length: 64, default: 'Asia/Ho_Chi_Minh' })
+  timezone!: string;
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
   status!: TenantStatus;

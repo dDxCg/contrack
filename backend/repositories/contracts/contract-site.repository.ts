@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource, EntityTarget } from 'typeorm';
+import { DataSource, EntityManager, EntityTarget } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { ContractSite } from '../../models/contracts/contract-site.entity';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
@@ -12,7 +12,7 @@ export class ContractSiteRepository extends TenantScopedRepository<ContractSite>
   ) {
     super(dataSource);
   }
-  async create(site: ContractSite): Promise<ContractSite> {
-    return this.dataSource.getRepository(ContractSite).save(site);
+  async create(site: ContractSite, tx?: EntityManager): Promise<ContractSite> {
+    return this.mgr(tx).getRepository(ContractSite).save(site);
   }
 }

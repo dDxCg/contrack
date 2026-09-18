@@ -1,10 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { TenantPage, TenantView } from '../../dtos/platform/platform.response.dto';
+import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { EmployeeEmailTakenException, TenantNotFoundException } from '../../models/domain-errors';
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
 import { Tenant, TenantStatus } from '../../models/tenants/tenant.entity';
 import { EmployeeRepository } from '../../repositories/employees/employee.repository';
 import { TenantListQuery, TenantRepository } from '../../repositories/tenants/tenant.repository';
+import { withUniqueViolation } from '../../repositories/unique-violation';
 import { PASSWORD_HASHER, PasswordHasher } from '../auth/password-hasher.service';
 export interface TenantCreateCommand {
   name: string;
@@ -18,24 +21,32 @@ export class TenantService {
     private readonly employeeRepository: EmployeeRepository,
     @Inject(PASSWORD_HASHER)
     private readonly passwordHasher: PasswordHasher,
+    @Inject(DATA_SOURCE)
+    private readonly dataSource: DataSource,
   ) {}
   async create(command: TenantCreateCommand): Promise<TenantView> {
     if (await this.employeeRepository.existsEmail(command.directorEmail)) {
       throw new EmployeeEmailTakenException(command.directorEmail);
     }
-    const tenant = await this.tenantRepository.create(command.name);
-    const director = new Employee();
-    director.tenantId = tenant.id;
-    director.setName(command.directorEmail);
-    director.setContact(null);
-    director.email = command.directorEmail;
-    director.setRole(Role.Director);
-    director.setTeam(null);
-    director.setManager(null);
-    director.status = EmployeeStatus.Active;
-    director.setPasswordHash(await this.passwordHasher.hash(command.directorPassword));
-    const savedDirector = await this.employeeRepository.create(director);
-    return toTenantView(tenant, savedDirector.id);
+    const passwordHash = await this.passwordHasher.hash(command.directorPassword);
+    return this.dataSource.transaction(async (tx) => {
+      const tenant = await this.tenantRepository.create(command.name, tx);
+      const director = new Employee();
+      director.tenantId = tenant.id;
+      director.setName(command.directorEmail);
+      director.setContact(null);
+      director.email = command.directorEmail;
+      director.setRole(Role.Director);
+      director.setTeam(null);
+      director.setManager(null);
+      director.status = EmployeeStatus.Active;
+      director.setPasswordHash(passwordHash);
+      const savedDirector = await withUniqueViolation(
+        () => this.employeeRepository.create(director, tx),
+        () => new EmployeeEmailTakenException(command.directorEmail),
+      );
+      return toTenantView(tenant, savedDirector.id);
+    });
   }
   async list(query: TenantListQuery): Promise<TenantPage> {
     const { items, total } = await this.tenantRepository.list(query);

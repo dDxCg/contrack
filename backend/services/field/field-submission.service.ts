@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { ShiftView } from '../../dtos/shifts/shifts.response.dto';
+import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { FieldTokenInvalidException, ShiftEvidenceIncompleteException } from '../../models/domain-errors';
 import { PhotoType, ShiftPhoto } from '../../models/shifts/shift-photo.entity';
 import { ShiftPhotoRepository } from '../../repositories/shifts/shift-photo.repository';
@@ -24,6 +26,8 @@ export class FieldSubmissionService {
     private readonly shiftPhotoRepository: ShiftPhotoRepository,
     @Inject(CLOCK)
     private readonly clock: IClock,
+    @Inject(DATA_SOURCE)
+    private readonly dataSource: DataSource,
   ) {}
   async submit(token: string, command: FieldSubmissionCommand): Promise<ShiftView> {
     const claims = this.fieldTokenService.verify(token);
@@ -39,11 +43,17 @@ export class FieldSubmissionService {
       { receiptPhotoUrl: command.receiptPhotoKey, latitude: command.latitude, longitude: command.longitude },
       this.clock.now(),
     );
-    const saved = await this.shiftRepository.update(shift);
-    await this.shiftPhotoRepository.createMany([
-      ...command.photoKeys.before.map((url) => aPhoto(saved, PhotoType.Before, url)),
-      ...command.photoKeys.after.map((url) => aPhoto(saved, PhotoType.After, url)),
-    ]);
+    const saved = await this.dataSource.transaction(async (tx) => {
+      const updated = await this.shiftRepository.update(shift, tx);
+      await this.shiftPhotoRepository.createMany(
+        [
+          ...command.photoKeys.before.map((url) => aPhoto(updated, PhotoType.Before, url)),
+          ...command.photoKeys.after.map((url) => aPhoto(updated, PhotoType.After, url)),
+        ],
+        tx,
+      );
+      return updated;
+    });
     return toShiftView(saved);
   }
 }

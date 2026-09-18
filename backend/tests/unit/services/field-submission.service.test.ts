@@ -49,7 +49,7 @@ async function world() {
     clock,
     shiftId,
     tenant,
-    service: new FieldSubmissionService(tokens, shifts, shiftPhotos, clock),
+    service: new FieldSubmissionService(tokens, shifts, shiftPhotos, clock, dataSource),
   };
 }
 describe('FieldSubmissionService.submit — FR16, FR17, FR24', () => {

@@ -4,6 +4,7 @@ import { AuthOutOfScopeException, TeamCodeTakenException } from '../../models/do
 import { Team } from '../../models/teams/team.entity';
 import { EmployeeRepository } from '../../repositories/employees/employee.repository';
 import { TeamRepository } from '../../repositories/teams/team.repository';
+import { withUniqueViolation } from '../../repositories/unique-violation';
 import { AccessContext } from '../access-control/access-context';
 import { RowScope } from '../access-control/row-scope';
 export interface TeamCreateCommand {
@@ -43,7 +44,11 @@ export class TeamService {
     team.tenantId = access.tenantId;
     team.setName(command.name);
     team.setCode(command.code);
-    return this.toView(await this.teamRepository.create(team), []);
+    const saved = await withUniqueViolation(
+      () => this.teamRepository.create(team),
+      () => new TeamCodeTakenException(command.code),
+    );
+    return this.toView(saved, []);
   }
   async update(access: AccessContext, id: number, command: TeamUpdateCommand): Promise<TeamView> {
     const team = await this.requireTeam(access, id);
@@ -56,7 +61,11 @@ export class TeamService {
     if (command.name !== undefined) {
       team.setName(command.name);
     }
-    const [view] = await this.toViews(access, [await this.teamRepository.update(team)]);
+    const saved = await withUniqueViolation(
+      () => this.teamRepository.update(team),
+      () => new TeamCodeTakenException(command.code ?? team.code),
+    );
+    const [view] = await this.toViews(access, [saved]);
     return view;
   }
   async delete(access: AccessContext, id: number): Promise<void> {

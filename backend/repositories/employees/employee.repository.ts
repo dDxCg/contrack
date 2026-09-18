@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource, EntityTarget, SelectQueryBuilder } from 'typeorm';
+import { DataSource, EntityManager, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
@@ -22,8 +22,8 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
     const total = await this.scopedTo(tenantId, 'e').getCount();
     return { items: rows.map(hydrateEmployee), total };
   }
-  async findById(tenantId: number, id: number): Promise<Employee | null> {
-    const row = await this.selected(tenantId).andWhere('e.id = :id', { id }).getRawOne<EmployeeRow>();
+  async findById(tenantId: number, id: number, tx?: EntityManager): Promise<Employee | null> {
+    const row = await this.selected(tenantId, tx).andWhere('e.id = :id', { id }).getRawOne<EmployeeRow>();
     return row === undefined || row === null ? null : hydrateEmployee(row);
   }
   async findByEmail(email: string): Promise<Employee | null> {
@@ -58,13 +58,13 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
     }
     return chain;
   }
-  async create(employee: Employee): Promise<Employee> {
-    await this.resolveLookups(employee);
-    return this.saveAndReload(employee);
+  async create(employee: Employee, tx?: EntityManager): Promise<Employee> {
+    await this.resolveLookups(employee, tx);
+    return this.saveAndReload(employee, tx);
   }
-  async update(employee: Employee): Promise<Employee> {
-    await this.resolveLookups(employee);
-    return this.saveAndReload(employee);
+  async update(employee: Employee, tx?: EntityManager): Promise<Employee> {
+    await this.resolveLookups(employee, tx);
+    return this.saveAndReload(employee, tx);
   }
   async futureShiftIdsFor(tenantId: number, employeeId: number): Promise<number[]> {
     const rows = await this.scopedIds('shifts', tenantId, 's')
@@ -77,8 +77,8 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
       }>();
     return rows.map((row) => row.id);
   }
-  private selected(tenantId: number): SelectQueryBuilder<Employee> {
-    return this.withColumns(this.scopedTo(tenantId, 'e'));
+  private selected(tenantId: number, tx?: EntityManager): SelectQueryBuilder<Employee> {
+    return this.withColumns(this.scopedTo(tenantId, 'e', tx));
   }
   private withColumns(query: SelectQueryBuilder<Employee>): SelectQueryBuilder<Employee> {
     return query
@@ -100,13 +100,13 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
         's.code AS status',
       ]);
   }
-  private async resolveLookups(employee: Employee): Promise<void> {
-    employee.roleId = await this.lookupId('roles', employee.role);
-    employee.statusId = await this.lookupId('employee_statuses', employee.status);
+  private async resolveLookups(employee: Employee, tx?: EntityManager): Promise<void> {
+    employee.roleId = await this.lookupId('roles', employee.role, tx);
+    employee.statusId = await this.lookupId('employee_statuses', employee.status, tx);
   }
-  private async saveAndReload(employee: Employee): Promise<Employee> {
-    const saved = await this.dataSource.getRepository(Employee).save(employee);
-    const reloaded = await this.findById(saved.tenantId, saved.id);
+  private async saveAndReload(employee: Employee, tx?: EntityManager): Promise<Employee> {
+    const saved = await this.mgr(tx).getRepository(Employee).save(employee);
+    const reloaded = await this.findById(saved.tenantId, saved.id, tx);
     if (reloaded === null) {
       throw new Error(`employees row ${saved.id} disappeared right after it was written`);
     }

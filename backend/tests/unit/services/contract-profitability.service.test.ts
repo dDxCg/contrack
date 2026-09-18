@@ -7,6 +7,7 @@ import { Employee, EmployeeStatus, Role } from '../../../models/employees/employ
 import { ContractCostRepository } from '../../../repositories/contract-costs/contract-cost.repository';
 import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
 import { ContractProfitabilityService } from '../../../services/contract-costs/contract-profitability.service';
 import { CostEstimationService } from '../../../services/contract-costs/cost-estimation.service';
 function draftEmployee(overrides: Partial<Employee>): Employee {
@@ -27,6 +28,7 @@ async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
   const costs = new ContractCostRepository(dataSource);
   const shifts = new ShiftRepository(dataSource);
   const employees = new EmployeeRepository(dataSource);
+  const tenants = new TenantRepository(dataSource);
   const clock = new FakeClock(now);
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1000000 });
@@ -35,11 +37,18 @@ async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
     dataSource,
     costs,
     shifts,
+    tenants,
     tenant,
     chain,
     accountant,
     access: anAccessContext(accountant, { tenantId: tenant.id }),
-    service: new ContractProfitabilityService(shifts, costs, new CostEstimationService(costs, shifts), clock),
+    service: new ContractProfitabilityService(
+      shifts,
+      costs,
+      new CostEstimationService(costs, shifts),
+      tenants,
+      clock,
+    ),
   };
 }
 describe('ContractProfitabilityService.get — FR4, FR28', () => {

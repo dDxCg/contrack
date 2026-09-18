@@ -123,6 +123,7 @@ export function aTenant(overrides: Partial<Tenant> = {}): Tenant {
       id: 1,
       name: 'Tenant',
       statusId: 1,
+      timezone: 'Asia/Ho_Chi_Minh',
       createdAt: new Date('2024-01-15T00:00:00.000Z'),
       status: TenantStatus.Active,
     },

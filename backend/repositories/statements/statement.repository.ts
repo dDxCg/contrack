@@ -49,6 +49,20 @@ export class StatementRepository extends TenantScopedRepository<Statement> {
       .getRawOne<StatementRow>();
     return row === undefined || row === null ? null : hydrateStatement(row);
   }
+  async findByContractPeriodBatch(
+    tenantId: number,
+    contractIds: readonly number[],
+    period: string,
+  ): Promise<Map<number, Statement>> {
+    if (contractIds.length === 0) {
+      return new Map();
+    }
+    const rows = await this.selected(this.scopedTo(tenantId, 'st'))
+      .andWhere('st.contract_id IN (:...contractIds)', { contractIds: [...contractIds] })
+      .andWhere('st.period = :period', { period })
+      .getRawMany<StatementRow>();
+    return new Map(rows.map((row) => [row.contract_id, hydrateStatement(row)]));
+  }
   async create(statement: Statement): Promise<Statement> {
     statement.statusId = await this.lookupId('statement_statuses', statement.status);
     const saved = await this.dataSource.getRepository(Statement).save(statement);
