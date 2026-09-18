@@ -1,6 +1,7 @@
 import { INestApplication, Module, ValidationPipe } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ValidationFailedException } from './models/domain-errors';
 import { AlertsController } from './controllers/alerts/alerts.controller';
 import { AuthController } from './controllers/auth/auth.controller';
@@ -35,7 +36,7 @@ import { TeamRepository } from './repositories/teams/team.repository';
 import { TenantRepository } from './repositories/tenants/tenant.repository';
 import { AccessControlGuard } from './services/access-control/access-control.guard';
 import { AUTH_CONFIG, AuthConfig, loadAuthConfig } from './services/access-control/auth.config';
-import { CLOCK, SystemClock } from './services/access-control/clock';
+import { CLOCK, IClock, SystemClock } from './services/access-control/clock';
 import { CREDENTIAL_RESOLVERS, CredentialResolver } from './services/access-control/credential-resolver';
 import { DeskCredentialResolver } from './services/access-control/desk-credential-resolver';
 import {
@@ -46,8 +47,16 @@ import { PlatformCredentialResolver } from './services/access-control/platform-c
 import { RoleResolver } from './services/access-control/role-resolver';
 import { ScopeResolver } from './services/access-control/scope-resolver';
 import { TenantResolver } from './services/access-control/tenant-resolver';
+import { AlertJobScheduler } from './services/alerts/alert-job-scheduler.service';
 import { AlertJobService } from './services/alerts/alert-job.service';
 import { AlertService } from './services/alerts/alert.service';
+import {
+  DISTRIBUTED_LOCK,
+  InMemoryDistributedLock,
+  RedisDistributedLock,
+  type DistributedLock,
+} from './services/alerts/distributed-lock';
+import Redis from 'ioredis';
 import { AuthService } from './services/auth/auth.service';
 import { PlatformAuthService } from './services/platform/platform-auth.service';
 import { PlatformDashboardService } from './services/platform/platform-dashboard.service';
@@ -71,6 +80,7 @@ import { StatementService } from './services/statements/statement.service';
 import { TeamService } from './services/teams/team.service';
 import { TokenService } from './services/auth/token.service';
 @Module({
+  imports: [ScheduleModule.forRoot()],
   controllers: [
     AlertsController,
     AuthController,
@@ -105,6 +115,18 @@ import { TokenService } from './services/auth/token.service';
     { provide: APP_GUARD, useClass: AccessControlGuard },
     { provide: APP_FILTER, useClass: DomainExceptionFilter },
     { provide: CHANNEL_CLIENT, useClass: NullChannelClient },
+    {
+      provide: DISTRIBUTED_LOCK,
+      useFactory: (clock: IClock): DistributedLock => {
+        const url = process.env.REDIS_LOCK_URL;
+        if (url === undefined || url === '') {
+          return new InMemoryDistributedLock(clock);
+        }
+        return new RedisDistributedLock(new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 3 }));
+      },
+      inject: [CLOCK],
+    },
+    AlertJobScheduler,
     DeskCredentialResolver,
     PlatformCredentialResolver,
     {

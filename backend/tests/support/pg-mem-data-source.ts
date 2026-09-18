@@ -3,34 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { newDb } from 'pg-mem';
 import { DataSource } from 'typeorm';
-import { Alert } from '../../models/alerts/alert.entity';
-import { Contract } from '../../models/contracts/contract.entity';
-import { ContractCost } from '../../models/contract-costs/contract-cost.entity';
-import { ContractItem } from '../../models/contracts/contract-item.entity';
-import { ContractSite } from '../../models/contracts/contract-site.entity';
-import { Customer } from '../../models/customers/customer.entity';
-import { Employee } from '../../models/employees/employee.entity';
-import { PlatformAdmin } from '../../models/platform/platform-admin.entity';
-import { ShiftPhoto } from '../../models/shifts/shift-photo.entity';
-import { Shift } from '../../models/shifts/shift.entity';
-import { Statement } from '../../models/statements/statement.entity';
-import { Team } from '../../models/teams/team.entity';
-import { Tenant } from '../../models/tenants/tenant.entity';
-const ENTITIES = [
-  Tenant,
-  Customer,
-  Employee,
-  Team,
-  Contract,
-  ContractSite,
-  ContractItem,
-  Shift,
-  ShiftPhoto,
-  Statement,
-  ContractCost,
-  Alert,
-  PlatformAdmin,
-];
+import { ENTITIES } from '../../models/entities';
 const SCHEMA_SQL = readFileSync(join(__dirname, '../../../docs/04-schema.sql'), 'utf8');
 const openDataSources: DataSource[] = [];
 afterEach(async () => {
@@ -49,7 +22,7 @@ export async function createTestDataSource(): Promise<DataSource> {
     implementation: () => 'contrack_test',
   });
   mem.public.none(SCHEMA_SQL);
-  const dataSource = mem.adapters.createTypeormDataSource({ type: 'postgres', entities: ENTITIES });
+  const dataSource = mem.adapters.createTypeormDataSource({ type: 'postgres', entities: [...ENTITIES] });
   await dataSource.initialize();
   openDataSources.push(dataSource);
   return dataSource;

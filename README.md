@@ -714,6 +714,42 @@ Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
     └── public/
 ```
 
+## Backend — development
+
+The backend is a NestJS 11 + TypeORM API on PostgreSQL (`backend/`). The contract lives in
+[`docs/05-api.yaml`](docs/05-api.yaml).
+
+```bash
+cd backend
+cp .env.example .env        # then fill in the values
+npm ci
+npm run dev                 # build-watch; or: npm run build && npm start
+```
+
+Scripts (all run inside `backend/`):
+
+| Script | What it does |
+|---|---|
+| `npm run typecheck` | `tsc --noEmit` over the strict tsconfig |
+| `npm run lint` | ESLint |
+| `npm run format:check` | Prettier check (run `npm run format` to fix) |
+| `npm run test:cov` | Jest with coverage; fails below **80%** on statements/branches/functions/lines |
+| `npm run test` | Jest without coverage |
+
+Tests run on `pg-mem` with the schema loaded from [`docs/04-schema.sql`](docs/04-schema.sql) — no
+database needed. Entity registration comes from the single shared `ENTITIES` array in
+`backend/models/entities.ts`, imported by both the production data source and the test harness;
+a test asserts the two never diverge.
+
+**CI** — [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs typecheck, lint,
+format check and the coverage-gated test suite on every push and pull request to `main`, on a
+Linux runner. A new entity joins by adding it to `ENTITIES` once — never by editing a second
+hand-maintained list.
+
+**Alert job** — FR25/FR26 run daily at 06:00 via `@nestjs/schedule`, fanned out over every
+active tenant. In any multi-instance deployment set `REDIS_LOCK_URL` so two pods never
+double-fire the same daily run (see `docs/03-architecture.md` §9 D10).
+
 ## Documentation
 
 | # | Document | Contents |

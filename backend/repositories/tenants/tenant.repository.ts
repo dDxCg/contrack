@@ -65,6 +65,16 @@ export class TenantRepository {
       .andWhere('t.created_at >= :from AND t.created_at < :to', { from, to })
       .getCount();
   }
+  async activeIds(): Promise<number[]> {
+    const rows = await this.dataSource
+      .createQueryBuilder(Tenant, 't')
+      .innerJoin('tenant_statuses', 's', 's.id = t.status_id')
+      .andWhere('s.code = :status', { status: TenantStatus.Active })
+      .select('t.id', 'id')
+      .orderBy('t.id', 'ASC')
+      .getRawMany<{ id: number }>();
+    return rows.map((row) => row.id);
+  }
   private selected() {
     return this.dataSource
       .createQueryBuilder(Tenant, 't')

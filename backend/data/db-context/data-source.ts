@@ -1,8 +1,5 @@
 import { DataSource } from 'typeorm';
-import { Customer } from '../../models/customers/customer.entity';
-import { Employee } from '../../models/employees/employee.entity';
-import { Team } from '../../models/teams/team.entity';
-import { Tenant } from '../../models/tenants/tenant.entity';
+import { ENTITIES } from '../../models/entities';
 export const DATA_SOURCE = Symbol('DATA_SOURCE');
 export function createDataSource(env: NodeJS.ProcessEnv = process.env): DataSource {
   return new DataSource({
@@ -12,7 +9,7 @@ export function createDataSource(env: NodeJS.ProcessEnv = process.env): DataSour
     username: env.DB_USER ?? 'contrack',
     password: env.DB_PASSWORD ?? 'contrack',
     database: env.DB_NAME ?? 'contrack',
-    entities: [Tenant, Employee, Customer, Team],
+    entities: [...ENTITIES],
     synchronize: false,
     logging: false,
   });
