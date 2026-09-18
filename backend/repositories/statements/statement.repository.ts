@@ -7,8 +7,20 @@ export interface StatementListFilter {
   period?: string;
   status?: StatementStatus;
 }
+export interface IStatementRepository {
+  list(tenantId: number, filter: StatementListFilter, page: Page): Promise<PageOf<Statement>>;
+  findById(tenantId: number, id: number): Promise<Statement | null>;
+  findByContractPeriod(tenantId: number, contractId: number, period: string): Promise<Statement | null>;
+  findByContractPeriodBatch(
+    tenantId: number,
+    contractIds: readonly number[],
+    period: string,
+  ): Promise<Map<number, Statement>>;
+  create(statement: Statement): Promise<Statement>;
+  update(statement: Statement): Promise<Statement>;
+}
 @Injectable()
-export class StatementRepository extends TenantScopedRepository<Statement> {
+export class StatementRepository extends TenantScopedRepository<Statement> implements IStatementRepository {
   protected override readonly entity: EntityTarget<Statement> = Statement;
   constructor(
     @Inject(DATA_SOURCE)

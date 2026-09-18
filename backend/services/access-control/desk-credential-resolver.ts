@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AuthCredentialExpiredException } from '../../models/domain-errors';
-import { EmployeeRepository } from '../../repositories/employees/employee.repository';
+import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
 import { TenantRepository } from '../../repositories/tenants/tenant.repository';
 import type { TokenClaims } from '../auth/token.service';
 import { AccessContext } from './access-context';
@@ -22,7 +22,8 @@ function isDeskTokenClaims(claims: TokenClaims): claims is DeskTokenClaims {
 export class DeskCredentialResolver implements CredentialResolver {
   readonly kind = 'access';
   constructor(
-    private readonly employeeRepository: EmployeeRepository,
+    @Inject(EmployeeRepository)
+    private readonly employeeRepository: IEmployeeRepository,
     private readonly tenantRepository: TenantRepository,
     private readonly tenantResolver: TenantResolver,
     private readonly roleResolver: RoleResolver,

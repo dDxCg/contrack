@@ -3,8 +3,17 @@ import { DataSource, EntityManager, EntityTarget, SelectQueryBuilder } from 'typ
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Contract, ContractStatus } from '../../models/contracts/contract.entity';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
+export interface IContractRepository {
+  list(tenantId: number, page: Page): Promise<PageOf<Contract>>;
+  findById(tenantId: number, id: number, tx?: EntityManager): Promise<Contract | null>;
+  create(contract: Contract, tx?: EntityManager): Promise<Contract>;
+  update(contract: Contract): Promise<Contract>;
+  delete(tenantId: number, id: number): Promise<void>;
+  expiringWithin(tenantId: number, from: string, to: string): Promise<Contract[]>;
+  countByStatus(tenantId: number, status: ContractStatus): Promise<number>;
+}
 @Injectable()
-export class ContractRepository extends TenantScopedRepository<Contract> {
+export class ContractRepository extends TenantScopedRepository<Contract> implements IContractRepository {
   protected override readonly entity: EntityTarget<Contract> = Contract;
   constructor(
     @Inject(DATA_SOURCE)

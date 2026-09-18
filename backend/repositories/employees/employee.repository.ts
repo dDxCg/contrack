@@ -5,8 +5,19 @@ import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.
 import { CrossTenantLookup } from '../cross-tenant-lookup';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
 const MAX_MANAGER_CHAIN = 100;
+export interface IEmployeeRepository {
+  list(tenantId: number, page: Page): Promise<PageOf<Employee>>;
+  findById(tenantId: number, id: number, tx?: EntityManager): Promise<Employee | null>;
+  findByEmail(email: string): Promise<Employee | null>;
+  existsEmail(email: string): Promise<boolean>;
+  findByTeamIds(tenantId: number, teamIds: readonly number[]): Promise<Employee[]>;
+  managerChainOf(tenantId: number, employeeId: number): Promise<number[]>;
+  create(employee: Employee, tx?: EntityManager): Promise<Employee>;
+  update(employee: Employee, tx?: EntityManager): Promise<Employee>;
+  futureShiftIdsFor(tenantId: number, employeeId: number): Promise<number[]>;
+}
 @Injectable()
-export class EmployeeRepository extends TenantScopedRepository<Employee> {
+export class EmployeeRepository extends TenantScopedRepository<Employee> implements IEmployeeRepository {
   protected override readonly entity: EntityTarget<Employee> = Employee;
   private readonly crossTenant: CrossTenantLookup;
   constructor(

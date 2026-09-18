@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { EmployeeView, EmployeePage } from '../../dtos/employees/employees.response.dto';
+import { toEmployeeView } from '../../dtos/employees/employees.mapper';
 import { pageOf } from '../../dtos/page.dto';
 import { AuthOutOfScopeException, EmployeeEmailTakenException } from '../../models/domain-errors';
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
-import { EmployeeRepository } from '../../repositories/employees/employee.repository';
+import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
 import { TeamRepository } from '../../repositories/teams/team.repository';
 import { withUniqueViolation } from '../../repositories/unique-violation';
@@ -22,7 +23,8 @@ export interface EmployeeCommand {
 @Injectable()
 export class EmployeeService {
   constructor(
-    private readonly employeeRepository: EmployeeRepository,
+    @Inject(EmployeeRepository)
+    private readonly employeeRepository: IEmployeeRepository,
     private readonly teamRepository: TeamRepository,
     @Inject(PASSWORD_HASHER)
     private readonly passwordHasher: PasswordHasher,
@@ -106,16 +108,4 @@ export class EmployeeService {
     }
     return employee;
   }
-}
-export function toEmployeeView(employee: Employee): EmployeeView {
-  return {
-    id: employee.id,
-    name: employee.name,
-    contact: employee.contact,
-    email: employee.email,
-    role: employee.role,
-    manager_id: employee.managerId,
-    team_id: employee.teamId,
-    status: employee.status,
-  };
 }

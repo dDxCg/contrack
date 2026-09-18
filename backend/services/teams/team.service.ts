@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { TeamView, TeamPage } from '../../dtos/teams/teams.response.dto';
 import { AuthOutOfScopeException, TeamCodeTakenException } from '../../models/domain-errors';
 import { Team } from '../../models/teams/team.entity';
-import { EmployeeRepository } from '../../repositories/employees/employee.repository';
+import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
 import { TeamRepository } from '../../repositories/teams/team.repository';
 import { withUniqueViolation } from '../../repositories/unique-violation';
 import { AccessContext } from '../access-control/access-context';
@@ -19,7 +19,8 @@ export interface TeamUpdateCommand {
 export class TeamService {
   constructor(
     private readonly teamRepository: TeamRepository,
-    private readonly employeeRepository: EmployeeRepository,
+    @Inject(EmployeeRepository)
+    private readonly employeeRepository: IEmployeeRepository,
   ) {}
   async list(access: AccessContext): Promise<TeamPage> {
     const onlyTeamId = access.scope === RowScope.Team ? access.employee.teamId : null;

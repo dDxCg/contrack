@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CustomerView, CustomerPage } from '../../dtos/customers/customers.response.dto';
+import { toCustomerView } from '../../dtos/customers/customers.mapper';
 import { pageOf } from '../../dtos/page.dto';
 import { AuthOutOfScopeException } from '../../models/domain-errors';
 import { Customer, CustomerSegment } from '../../models/customers/customer.entity';
@@ -56,15 +57,4 @@ export class CustomerService {
     }
     return customer;
   }
-}
-export function toCustomerView(customer: Customer): CustomerView {
-  return {
-    id: customer.id,
-    name: customer.name,
-    company_name: customer.companyName,
-    contact: customer.contact,
-    address: customer.address,
-    segment: customer.segment,
-    created_at: customer.createdAt.toISOString(),
-  };
 }

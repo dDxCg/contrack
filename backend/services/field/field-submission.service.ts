@@ -7,7 +7,7 @@ import { PhotoType, ShiftPhoto } from '../../models/shifts/shift-photo.entity';
 import { ShiftPhotoRepository } from '../../repositories/shifts/shift-photo.repository';
 import { ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { CLOCK, IClock } from '../access-control/clock';
-import { toShiftView } from '../shifts/dispatch.service';
+import { toShiftView } from '../../dtos/shifts/shifts.mapper';
 import { FieldTokenService } from './field-token.service';
 export interface FieldSubmissionCommand {
   photoKeys: {

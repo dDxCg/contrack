@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ContractCostView } from '../../dtos/contract-costs/contract-costs.response.dto';
+import { toContractCostView } from '../../dtos/contract-costs/contract-costs.mapper';
 import { ContractCost, CostCategory } from '../../models/contract-costs/contract-cost.entity';
 import { ContractCostRepository } from '../../repositories/contract-costs/contract-cost.repository';
 import { AccessContext } from '../access-control/access-context';
@@ -34,15 +35,4 @@ export class ContractCostService {
     cost.createdBy = access.employee.id;
     return toContractCostView(await this.contractCostRepository.upsert(cost));
   }
-}
-function toContractCostView(cost: ContractCost): ContractCostView {
-  return {
-    id: cost.id,
-    contract_id: cost.contractId,
-    category: cost.category,
-    period: cost.period.toString(),
-    amount: cost.amount,
-    recorded_by: cost.createdBy,
-    recorded_at: cost.createdAt.toString(),
-  };
 }

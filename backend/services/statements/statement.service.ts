@@ -1,9 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import {
-  StatementLineView,
-  StatementView,
-  StatementPage,
-} from '../../dtos/statements/statements.response.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { StatementView, StatementPage } from '../../dtos/statements/statements.response.dto';
+import { toLine, toStatementView } from '../../dtos/statements/statements.mapper';
 import { pageOf } from '../../dtos/page.dto';
 import {
   AuthOutOfScopeException,
@@ -11,10 +8,14 @@ import {
   StatementPeriodIncompleteException,
 } from '../../models/domain-errors';
 import { Statement, StatementStatus } from '../../models/statements/statement.entity';
-import { ContractRepository } from '../../repositories/contracts/contract.repository';
+import { ContractRepository, IContractRepository } from '../../repositories/contracts/contract.repository';
 import { RevenueRow, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
-import { StatementListFilter, StatementRepository } from '../../repositories/statements/statement.repository';
+import {
+  IStatementRepository,
+  StatementListFilter,
+  StatementRepository,
+} from '../../repositories/statements/statement.repository';
 import { withUniqueViolation } from '../../repositories/unique-violation';
 import { AccessContext } from '../access-control/access-context';
 import { addMonthsUTC, round2, startOfMonthUTC, toDateString } from '../../utils/period';
@@ -25,9 +26,11 @@ export interface ComputeStatementCommand {
 @Injectable()
 export class StatementService {
   constructor(
-    private readonly statementRepository: StatementRepository,
+    @Inject(StatementRepository)
+    private readonly statementRepository: IStatementRepository,
     private readonly shiftRepository: ShiftRepository,
-    private readonly contractRepository: ContractRepository,
+    @Inject(ContractRepository)
+    private readonly contractRepository: IContractRepository,
   ) {}
   async list(access: AccessContext, filter: StatementListFilter, page: Page): Promise<StatementPage> {
     const { items, total } = await this.statementRepository.list(access.tenantId, filter, page);
@@ -108,23 +111,4 @@ function assertPeriodComplete(rows: readonly RevenueRow[]): void {
   if (blocking.length > 0) {
     throw new StatementPeriodIncompleteException(blocking);
   }
-}
-function toLine(row: RevenueRow): StatementLineView {
-  return {
-    shift_id: row.id,
-    scheduled_date: row.scheduledDate.toString(),
-    has_evidence: row.status === 'completed',
-    amount: row.unitPrice,
-  };
-}
-function toStatementView(statement: Statement, lines: StatementLineView[]): StatementView {
-  return {
-    id: statement.id,
-    contract_id: statement.contractId,
-    period: statement.period.toString(),
-    total_amount: statement.totalAmount,
-    status: statement.status,
-    pdf_url: statement.pdfUrl,
-    lines,
-  };
 }

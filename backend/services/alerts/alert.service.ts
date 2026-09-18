@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ChannelClient, CHANNEL_CLIENT } from '../../data/channel-client/channel-client';
 import { AlertView } from '../../dtos/alerts/alerts.response.dto';
+import { toAlertView } from '../../dtos/alerts/alerts.mapper';
 import { AuthOutOfScopeException, AlertChannelUnavailableException } from '../../models/domain-errors';
 import { Alert, AlertDeliveryStatus, AlertKind } from '../../models/alerts/alert.entity';
 import { AlertRepository } from '../../repositories/alerts/alert.repository';
@@ -37,14 +38,4 @@ function messageFor(alert: Alert): string {
   return alert.kind === AlertKind.ContractExpiring
     ? `Hợp đồng #${alert.subjectId} sắp hết hạn`
     : `Ca #${alert.subjectId} đã trễ hẹn`;
-}
-function toAlertView(alert: Alert): AlertView {
-  return {
-    id: alert.id,
-    kind: alert.kind,
-    subject_id: alert.subjectId,
-    due_in_days: null,
-    overdue_by_days: null,
-    delivery_status: alert.deliveryStatus,
-  };
 }

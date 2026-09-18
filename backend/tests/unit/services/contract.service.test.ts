@@ -11,6 +11,7 @@ import { ContractSiteRepository } from '../../../repositories/contracts/contract
 import { CustomerRepository } from '../../../repositories/customers/customer.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { ContractCreateCommand, ContractService } from '../../../services/contracts/contract.service';
+import { ContractAssembler } from '../../../services/contracts/contract-assembler';
 import { ScheduleGeneratorService } from '../../../services/contracts/schedule-generator.service';
 async function world() {
   const dataSource = await createTestDataSource();
@@ -45,7 +46,14 @@ async function world() {
     otherTenant,
     customer,
     access: anAccessContext(director, { tenantId: tenant.id }),
-    service: new ContractService(contracts, sites, items, shifts, new ScheduleGeneratorService(), dataSource),
+    service: new ContractService(
+      contracts,
+      sites,
+      items,
+      shifts,
+      new ContractAssembler(new ScheduleGeneratorService()),
+      dataSource,
+    ),
   };
 }
 function validCommand(

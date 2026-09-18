@@ -4,10 +4,10 @@ import { SessionView } from '../../dtos/auth/auth.response.dto';
 import { EmployeeView } from '../../dtos/employees/employees.response.dto';
 import { AuthCredentialExpiredException, AuthInvalidCredentialsException } from '../../models/domain-errors';
 import { Employee } from '../../models/employees/employee.entity';
-import { EmployeeRepository } from '../../repositories/employees/employee.repository';
+import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
 import { TenantRepository } from '../../repositories/tenants/tenant.repository';
+import { toEmployeeView } from '../../dtos/employees/employees.mapper';
 import { AccessContext } from '../access-control/access-context';
-import { toEmployeeView } from '../employees/employee.service';
 import { PASSWORD_HASHER, PasswordHasher } from './password-hasher.service';
 import { TokenService } from './token.service';
 export interface LoginCommand {
@@ -18,7 +18,8 @@ export interface LoginCommand {
 export class AuthService {
   constructor(
     private readonly tenantRepository: TenantRepository,
-    private readonly employeeRepository: EmployeeRepository,
+    @Inject(EmployeeRepository)
+    private readonly employeeRepository: IEmployeeRepository,
     private readonly tokenService: TokenService,
     @Inject(PASSWORD_HASHER)
     private readonly passwordHasher: PasswordHasher,

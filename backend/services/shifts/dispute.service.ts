@@ -4,7 +4,7 @@ import { AuthOutOfScopeException } from '../../models/domain-errors';
 import { Shift } from '../../models/shifts/shift.entity';
 import { ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { AccessContext } from '../access-control/access-context';
-import { toShiftView } from './dispatch.service';
+import { toShiftView } from '../../dtos/shifts/shifts.mapper';
 export interface DisputeCommand {
   reason: string;
   reportedVia?: 'phone' | 'in_person';

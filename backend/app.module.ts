@@ -73,6 +73,7 @@ import { PlatformDashboardService } from './services/platform/platform-dashboard
 import { TenantService } from './services/platform/tenant.service';
 import { ContractCostService } from './services/contract-costs/contract-cost.service';
 import { ContractProfitabilityService } from './services/contract-costs/contract-profitability.service';
+import { ContractAssembler } from './services/contracts/contract-assembler';
 import { ContractService } from './services/contracts/contract.service';
 import { CostEstimationService } from './services/contract-costs/cost-estimation.service';
 import { CustomerService } from './services/customers/customer.service';
@@ -184,6 +185,7 @@ const REDIS_CLIENT = Symbol('REDIS_CLIENT');
     EmployeeService,
     TeamService,
     ContractService,
+    ContractAssembler,
     ScheduleGeneratorService,
     DispatchService,
     DisputeService,
