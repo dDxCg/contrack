@@ -1,9 +1,9 @@
 import { anAccessContext, anEmployee } from '../../support/builders';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
-import { Role } from '../../../Models/employee.entity';
-import { ShiftRepository } from '../../../Repositories/shift.repository';
-import { ReconciliationService } from '../../../Services/reconciliation.service';
+import { Role } from '../../../models/employees/employee.entity';
+import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+import { ReconciliationService } from '../../../services/statements/reconciliation.service';
 
 async function world() {
   const dataSource = await createTestDataSource();

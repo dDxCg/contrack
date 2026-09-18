@@ -2,8 +2,8 @@ import {
   ShiftAlreadyCompletedException,
   ShiftAlreadyDisputedException,
   ShiftNotDisputedException,
-} from '../../../Models/domain-errors';
-import { Shift, ShiftStatus } from '../../../Models/shift.entity';
+} from '../../../models/domain-errors';
+import { Shift, ShiftStatus } from '../../../models/shifts/shift.entity';
 import { captureDomainError } from '../../support/domain-errors';
 
 function aScheduledShift(): Shift {

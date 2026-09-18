@@ -1,5 +1,5 @@
-import { StatementImmutableException, StatementNotIssuedException } from '../../../Models/domain-errors';
-import { Statement, StatementStatus } from '../../../Models/statement.entity';
+import { StatementImmutableException, StatementNotIssuedException } from '../../../models/domain-errors';
+import { Statement, StatementStatus } from '../../../models/statements/statement.entity';
 import { captureDomainError } from '../../support/domain-errors';
 
 function aDraftStatement(): Statement {

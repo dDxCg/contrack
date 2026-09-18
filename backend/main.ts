@@ -4,7 +4,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import { AppModule, configureApp } from './app.module';
-import { DATA_SOURCE } from './Data/DbContext/data-source';
+import { DATA_SOURCE } from './data/db-context/data-source';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);

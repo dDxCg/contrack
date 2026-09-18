@@ -1,7 +1,7 @@
 import { DataSource, EntityTarget, ObjectLiteral, SelectQueryBuilder } from 'typeorm';
-import { Customer } from '../../../Models/customer.entity';
-import { Employee } from '../../../Models/employee.entity';
-import { TenantScopedRepository } from '../../../Repositories/tenant-scoped.repository';
+import { Customer } from '../../../models/customers/customer.entity';
+import { Employee } from '../../../models/employees/employee.entity';
+import { TenantScopedRepository } from '../../../repositories/tenant-scoped.repository';
 
 class FakeSelectQueryBuilder {
   readonly calls: Array<{ method: string; args: unknown[] }> = [];
@@ -42,7 +42,11 @@ class TestCustomerRepository extends TenantScopedRepository<Customer> {
     return this.scopedTo(tenantId);
   }
 
-  byTenantOn<E extends ObjectLiteral>(entity: EntityTarget<E>, tenantId: number, alias: string): SelectQueryBuilder<E> {
+  byTenantOn<E extends ObjectLiteral>(
+    entity: EntityTarget<E>,
+    tenantId: number,
+    alias: string,
+  ): SelectQueryBuilder<E> {
     return this.scopedQuery(entity, tenantId, alias);
   }
 
@@ -66,7 +70,9 @@ describe('TenantScopedRepository', () => {
       repository.byTenant(7);
 
       expect(dataSource.createQueryBuilder).toHaveBeenCalledWith(Customer, 'entity');
-      expect(builder.calls).toEqual([{ method: 'where', args: ['entity.tenant_id = :tenantId', { tenantId: 7 }] }]);
+      expect(builder.calls).toEqual([
+        { method: 'where', args: ['entity.tenant_id = :tenantId', { tenantId: 7 }] },
+      ]);
     });
 
     it('binds the tenant as a query parameter, never as interpolated SQL', () => {
@@ -83,7 +89,9 @@ describe('TenantScopedRepository', () => {
       repository.byTenantOn(Employee, 7, 'e');
 
       expect(dataSource.createQueryBuilder).toHaveBeenCalledWith(Employee, 'e');
-      expect(builder.calls).toEqual([{ method: 'where', args: ['e.tenant_id = :tenantId', { tenantId: 7 }] }]);
+      expect(builder.calls).toEqual([
+        { method: 'where', args: ['e.tenant_id = :tenantId', { tenantId: 7 }] },
+      ]);
     });
   });
 

@@ -24,22 +24,20 @@ classDiagram
         -signedAt: Date
         -expiresAt: Date
         -status: ContractStatus
-        +addSite(site: ContractSite) void
-        +generateSchedule() void
     }
     class ContractSite {
         -id: int
         -name: string
         -workRequirements: string
         -notes: string
-        +addItem(item: ContractItem) void
     }
     class ContractItem {
         -id: int
         -name: string
-        -frequency: string
+        -frequencyCount: int
+        -frequencyUnit: FrequencyUnit
+        -frequencyRule: string
         -unitPrice: decimal
-        +generateShifts(term: DateRange) Shift[]
     }
     class Shift {
         -id: int
@@ -50,11 +48,10 @@ classDiagram
         -longitude: decimal
         -capturedAt: DateTime
         -receiptPhotoUrl: string
-        +complete(photos: Photo[], receipt: Photo, gps: GpsPoint) void
-        +dispute(reason: string) void
+        +complete(evidence: ShiftEvidence, now: DateTime) void
+        +dispute() void
         +resolveDispute() void
-        +reassign(employee: Employee) void
-        +reschedule(date: Date) void
+        +reassign(assigneeId: int, scheduledDate: Date) void
     }
     class ShiftPhoto {
         -id: int
@@ -68,7 +65,6 @@ classDiagram
         -totalAmount: decimal
         -status: StatementStatus
         -pdfUrl: string
-        +compute(shifts: Shift[]) void
         +export() void
         +send() void
     }
@@ -92,6 +88,12 @@ classDiagram
         -period: Date
         -amount: decimal
     }
+    class Alert {
+        -id: int
+        -kind: AlertKind
+        -deliveryStatus: AlertDeliveryStatus
+        +setDeliveryStatus(status: AlertDeliveryStatus) void
+    }
 
     Customer "1" --> "0..*" Contract
     Contract "1" *-- "1..*" ContractSite
@@ -108,4 +110,5 @@ classDiagram
     Tenant "1" --> "0..*" Employee
     Tenant "1" --> "0..*" Team
     Tenant "1" --> "0..*" Contract
+    Tenant "1" --> "0..*" Alert
 ```

@@ -99,6 +99,23 @@ CREATE TABLE photo_types (
 INSERT INTO photo_types (code) VALUES ('before');
 INSERT INTO photo_types (code) VALUES ('after');
 
+CREATE TABLE alert_kinds (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(30) NOT NULL UNIQUE
+);
+
+INSERT INTO alert_kinds (code) VALUES ('contract_expiring');
+INSERT INTO alert_kinds (code) VALUES ('shift_overdue');
+
+CREATE TABLE alert_delivery_statuses (
+    id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    code    VARCHAR(20) NOT NULL UNIQUE
+);
+
+INSERT INTO alert_delivery_statuses (code) VALUES ('sent');
+INSERT INTO alert_delivery_statuses (code) VALUES ('not_sent');
+INSERT INTO alert_delivery_statuses (code) VALUES ('fallback');
+
 CREATE TABLE statement_statuses (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code    VARCHAR(20) NOT NULL UNIQUE
@@ -291,3 +308,22 @@ CREATE TABLE contract_costs (
 CREATE INDEX idx_contract_costs_tenant ON contract_costs(tenant_id);
 CREATE INDEX idx_contract_costs_contract ON contract_costs(contract_id);
 CREATE INDEX idx_contract_costs_period ON contract_costs(period);
+
+-- subject_id is a contract id when kind = contract_expiring, a shift id when kind = shift_overdue
+-- (no FK — polymorphic by kind, mirrors 05-api.yaml's Alert schema). The unique constraint is what
+-- makes "one alert per contract/shift, never re-fires" (US-12, US-13) a DB guarantee rather than
+-- application state the alert job has to remember across runs.
+CREATE TABLE alerts (
+    id                  INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tenant_id           INTEGER NOT NULL,
+    kind_id             INTEGER NOT NULL,
+    subject_id          INTEGER NOT NULL,
+    delivery_status_id  INTEGER NOT NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_alerts_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    CONSTRAINT fk_alerts_kind FOREIGN KEY (kind_id) REFERENCES alert_kinds(id),
+    CONSTRAINT fk_alerts_delivery_status FOREIGN KEY (delivery_status_id) REFERENCES alert_delivery_statuses(id),
+    CONSTRAINT uq_alerts_kind_subject UNIQUE (tenant_id, kind_id, subject_id)
+);
+
+CREATE INDEX idx_alerts_tenant ON alerts(tenant_id);

@@ -212,6 +212,22 @@ export class StatementNotIssuedException extends DomainException {
   }
 }
 
+export class DashboardConflictingPeriodException extends DomainException {
+  readonly code = 'dashboard.conflicting_period';
+
+  constructor() {
+    super(HttpStatus.BAD_REQUEST, 'Pass either month, or from/to — not both.');
+  }
+}
+
+export class AlertChannelUnavailableException extends DomainException {
+  readonly code = 'alert.channel_unavailable';
+
+  constructor() {
+    super(HttpStatus.BAD_GATEWAY, 'Không gửi được qua Zalo/SMS, đã chuyển sang nhắc trong ứng dụng');
+  }
+}
+
 export class ValidationFailedException extends DomainException {
   readonly code = VALIDATION_FAILED_CODE;
 

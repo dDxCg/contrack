@@ -1,6 +1,6 @@
 import { anEmployee } from '../../support/builders';
 import { captureDomainError } from '../../support/domain-errors';
-import { EmployeeStatus, Role } from '../../../Models/employee.entity';
+import { EmployeeStatus, Role } from '../../../models/employees/employee.entity';
 
 describe('Employee', () => {
   describe('isTeamLead / isActive', () => {

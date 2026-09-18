@@ -1,5 +1,5 @@
 import { aContract } from '../../support/builders';
-import { ContractStatus } from '../../../Models/contract.entity';
+import { ContractStatus } from '../../../models/contracts/contract.entity';
 
 describe('Contract', () => {
   describe('field changes', () => {

@@ -3,10 +3,10 @@ import { anAccessContext, anEmployee } from '../../support/builders';
 import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedTenant } from '../../support/seed';
-import { Customer, CustomerSegment } from '../../../Models/customer.entity';
-import { Role } from '../../../Models/employee.entity';
-import { CustomerRepository } from '../../../Repositories/customer.repository';
-import { CustomerService } from '../../../Services/customer.service';
+import { Customer, CustomerSegment } from '../../../models/customers/customer.entity';
+import { Role } from '../../../models/employees/employee.entity';
+import { CustomerRepository } from '../../../repositories/customers/customer.repository';
+import { CustomerService } from '../../../services/customers/customer.service';
 
 async function world() {
   const dataSource = await createTestDataSource();

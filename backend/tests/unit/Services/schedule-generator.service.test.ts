@@ -1,5 +1,5 @@
-import { FrequencyUnit } from '../../../Models/contract-item.entity';
-import { ScheduleGeneratorService } from '../../../Services/schedule-generator.service';
+import { FrequencyUnit } from '../../../models/contracts/contract-item.entity';
+import { ScheduleGeneratorService } from '../../../services/contracts/schedule-generator.service';
 
 describe('ScheduleGeneratorService.generate — FR22', () => {
   const service = new ScheduleGeneratorService();

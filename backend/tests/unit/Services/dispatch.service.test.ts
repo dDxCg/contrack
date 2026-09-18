@@ -2,11 +2,11 @@ import { anAccessContext } from '../../support/builders';
 import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
-import { Employee, EmployeeStatus, Role } from '../../../Models/employee.entity';
-import { RowScope } from '../../../Services/AccessControl/row-scope';
-import { EmployeeRepository } from '../../../Repositories/employee.repository';
-import { ShiftRepository } from '../../../Repositories/shift.repository';
-import { DispatchService } from '../../../Services/dispatch.service';
+import { Employee, EmployeeStatus, Role } from '../../../models/employees/employee.entity';
+import { RowScope } from '../../../services/access-control/row-scope';
+import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
+import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+import { DispatchService } from '../../../services/shifts/dispatch.service';
 
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();

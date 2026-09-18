@@ -61,10 +61,10 @@
     },
     "coverageDirectory": "./coverage",
     "collectCoverageFrom": [
-      "Controllers/**/*.ts",
-      "Services/**/*.ts",
-      "Models/**/*.ts",
-      "Repositories/**/*.ts"
+      "controllers/**/*.ts",
+      "services/**/*.ts",
+      "models/**/*.ts",
+      "repositories/**/*.ts"
     ],
     "testEnvironment": "node"
   }

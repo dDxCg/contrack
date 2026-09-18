@@ -5,16 +5,16 @@ import { FakeClock } from '../../support/clock';
 import { captureDomainError, captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedTenant } from '../../support/seed';
-import { Employee, EmployeeStatus, Role } from '../../../Models/employee.entity';
-import { Tenant, TenantStatus } from '../../../Models/tenant.entity';
-import { EmployeeRepository } from '../../../Repositories/employee.repository';
-import { TenantRepository } from '../../../Repositories/tenant.repository';
-import { AuthConfig } from '../../../Services/AccessControl/auth.config';
-import { AccessContext } from '../../../Services/AccessControl/access-context';
-import { RowScope } from '../../../Services/AccessControl/row-scope';
-import { AuthService } from '../../../Services/auth.service';
-import { BcryptPasswordHasher } from '../../../Services/password-hasher.service';
-import { TokenService } from '../../../Services/token.service';
+import { Employee, EmployeeStatus, Role } from '../../../models/employees/employee.entity';
+import { Tenant, TenantStatus } from '../../../models/tenants/tenant.entity';
+import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
+import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
+import { AuthConfig } from '../../../services/access-control/auth.config';
+import { AccessContext } from '../../../services/access-control/access-context';
+import { RowScope } from '../../../services/access-control/row-scope';
+import { AuthService } from '../../../services/auth/auth.service';
+import { BcryptPasswordHasher } from '../../../services/auth/password-hasher.service';
+import { TokenService } from '../../../services/auth/token.service';
 
 const config: AuthConfig = {
   jwtSecret: 'test-secret',

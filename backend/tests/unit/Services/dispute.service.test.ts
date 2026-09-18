@@ -2,9 +2,9 @@ import { anAccessContext, anEmployee } from '../../support/builders';
 import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
-import { Role } from '../../../Models/employee.entity';
-import { ShiftRepository } from '../../../Repositories/shift.repository';
-import { DisputeService } from '../../../Services/dispute.service';
+import { Role } from '../../../models/employees/employee.entity';
+import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+import { DisputeService } from '../../../services/shifts/dispute.service';
 
 async function world() {
   const dataSource = await createTestDataSource();

@@ -1,13 +1,13 @@
-import { AccessContext } from '../../Services/AccessControl/access-context';
-import { RowScope } from '../../Services/AccessControl/row-scope';
-import { TokenClaims } from '../../Services/token.service';
-import { Contract, ContractStatus } from '../../Models/contract.entity';
-import { ContractItem, FrequencyUnit } from '../../Models/contract-item.entity';
-import { ContractSite } from '../../Models/contract-site.entity';
-import { Customer, CustomerSegment } from '../../Models/customer.entity';
-import { Employee, EmployeeStatus, Role } from '../../Models/employee.entity';
-import { Team } from '../../Models/team.entity';
-import { Tenant, TenantStatus } from '../../Models/tenant.entity';
+import { AccessContext } from '../../services/access-control/access-context';
+import { RowScope } from '../../services/access-control/row-scope';
+import { TokenClaims } from '../../services/auth/token.service';
+import { Contract, ContractStatus } from '../../models/contracts/contract.entity';
+import { ContractItem, FrequencyUnit } from '../../models/contracts/contract-item.entity';
+import { ContractSite } from '../../models/contracts/contract-site.entity';
+import { Customer, CustomerSegment } from '../../models/customers/customer.entity';
+import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
+import { Team } from '../../models/teams/team.entity';
+import { Tenant, TenantStatus } from '../../models/tenants/tenant.entity';
 
 export function anEmployee(overrides: Partial<Employee> = {}): Employee {
   const employee = new Employee();

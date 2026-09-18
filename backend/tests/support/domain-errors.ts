@@ -1,4 +1,4 @@
-import { DomainException } from '../../Models/domain-errors';
+import { DomainException } from '../../models/domain-errors';
 
 export function captureDomainError(run: () => unknown): DomainException {
   try {

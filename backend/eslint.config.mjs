@@ -10,8 +10,8 @@ export default tseslint.config(
     },
   },
   {
-    files: ['Repositories/**/*.ts'],
-    ignores: ['Repositories/tenant-scoped.repository.ts', 'Repositories/tenant.repository.ts'],
+    files: ['repositories/**/*.ts'],
+    ignores: ['repositories/tenant-scoped.repository.ts', 'repositories/tenants/tenant.repository.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -24,14 +24,14 @@ export default tseslint.config(
     },
   },
   {
-    files: ['Services/**/*.ts', 'Controllers/**/*.ts', 'Models/**/*.ts'],
+    files: ['services/**/*.ts', 'controllers/**/*.ts', 'models/**/*.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
         {
           selector: "NewExpression[callee.name='HttpException']",
           message:
-            'Throw a DomainException subclass from Models/domain-errors.ts so 05-api.md §9 stays single-sourced.',
+            'Throw a DomainException subclass from models/domain-errors.ts so 05-api.md §9 stays single-sourced.',
         },
       ],
     },

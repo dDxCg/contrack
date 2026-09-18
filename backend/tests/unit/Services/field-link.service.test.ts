@@ -4,11 +4,11 @@ import { FakeClock } from '../../support/clock';
 import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
-import { Role } from '../../../Models/employee.entity';
-import { AuthConfig } from '../../../Services/AccessControl/auth.config';
-import { FieldLinkService } from '../../../Services/field-link.service';
-import { FieldTokenService } from '../../../Services/field-token.service';
-import { ShiftRepository } from '../../../Repositories/shift.repository';
+import { Role } from '../../../models/employees/employee.entity';
+import { AuthConfig } from '../../../services/access-control/auth.config';
+import { FieldLinkService } from '../../../services/field/field-link.service';
+import { FieldTokenService } from '../../../services/field/field-token.service';
+import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 
 const config: AuthConfig = {
   jwtSecret: 'test-secret',

@@ -2,12 +2,12 @@ import { anAccessContext } from '../../support/builders';
 import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedTenant } from '../../support/seed';
-import { Employee, EmployeeStatus, Role } from '../../../Models/employee.entity';
-import { Team } from '../../../Models/team.entity';
-import { EmployeeRepository } from '../../../Repositories/employee.repository';
-import { TeamRepository } from '../../../Repositories/team.repository';
-import { RowScope } from '../../../Services/AccessControl/row-scope';
-import { TeamService } from '../../../Services/team.service';
+import { Employee, EmployeeStatus, Role } from '../../../models/employees/employee.entity';
+import { Team } from '../../../models/teams/team.entity';
+import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
+import { TeamRepository } from '../../../repositories/teams/team.repository';
+import { RowScope } from '../../../services/access-control/row-scope';
+import { TeamService } from '../../../services/teams/team.service';
 
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();

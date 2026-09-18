@@ -33,6 +33,9 @@ erDiagram
     contracts ||--o{ contract_costs : "incurs"
     cost_categories ||--o{ contract_costs : "category of"
     employees ||--o{ contract_costs : "recorded by"
+    tenants ||--o{ alerts : "owns"
+    alert_kinds ||--o{ alerts : "kind of"
+    alert_delivery_statuses ||--o{ alerts : "delivery status of"
 
     tenant_statuses {
         int id PK
@@ -207,6 +210,22 @@ erDiagram
         date period
         numeric amount
         int created_by FK
+        timestamp created_at
+    }
+    alert_kinds {
+        int id PK
+        varchar code
+    }
+    alert_delivery_statuses {
+        int id PK
+        varchar code
+    }
+    alerts {
+        int id PK
+        int tenant_id FK
+        int kind_id FK
+        int subject_id "contract id or shift id, by kind"
+        int delivery_status_id FK
         timestamp created_at
     }
 ```

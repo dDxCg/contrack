@@ -1,10 +1,6 @@
 import { DataSource } from 'typeorm';
-import { Tenant, TenantStatus } from '../../Models/tenant.entity';
+import { Tenant, TenantStatus } from '../../models/tenants/tenant.entity';
 
-/**
- * `tenants` has no repository `create()` (M1 never needed one) — seed it with a direct insert
- * and hydrate the same way `TenantRepository.findById` does.
- */
 export async function seedTenant(
   dataSource: DataSource,
   overrides: { name?: string; status?: TenantStatus } = {},
@@ -32,7 +28,6 @@ export async function seedTenant(
   return tenant;
 }
 
-/** Minimal customer → contract → site → item chain, for tests that only need a valid FK to hang a shift off. */
 export async function seedContractItemChain(
   dataSource: DataSource,
   tenantId: number,

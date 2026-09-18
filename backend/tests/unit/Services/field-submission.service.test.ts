@@ -3,11 +3,14 @@ import { FakeClock } from '../../support/clock';
 import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
-import { AuthConfig } from '../../../Services/AccessControl/auth.config';
-import { FieldTokenService } from '../../../Services/field-token.service';
-import { FieldSubmissionCommand, FieldSubmissionService } from '../../../Services/field-submission.service';
-import { ShiftPhotoRepository } from '../../../Repositories/shift-photo.repository';
-import { ShiftRepository } from '../../../Repositories/shift.repository';
+import { AuthConfig } from '../../../services/access-control/auth.config';
+import { FieldTokenService } from '../../../services/field/field-token.service';
+import {
+  FieldSubmissionCommand,
+  FieldSubmissionService,
+} from '../../../services/field/field-submission.service';
+import { ShiftPhotoRepository } from '../../../repositories/shifts/shift-photo.repository';
+import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 
 const config: AuthConfig = {
   jwtSecret: 'test-secret',

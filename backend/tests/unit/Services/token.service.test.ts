@@ -2,9 +2,9 @@ import { JwtService } from '@nestjs/jwt';
 import { anEmployee } from '../../support/builders';
 import { FakeClock } from '../../support/clock';
 import { captureDomainError } from '../../support/domain-errors';
-import { Role } from '../../../Models/employee.entity';
-import { AuthConfig } from '../../../Services/AccessControl/auth.config';
-import { TokenService } from '../../../Services/token.service';
+import { Role } from '../../../models/employees/employee.entity';
+import { AuthConfig } from '../../../services/access-control/auth.config';
+import { TokenService } from '../../../services/auth/token.service';
 
 const config: AuthConfig = {
   jwtSecret: 'test-secret',

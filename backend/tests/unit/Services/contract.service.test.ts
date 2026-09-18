@@ -2,16 +2,16 @@ import { anAccessContext, anEmployee } from '../../support/builders';
 import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedTenant } from '../../support/seed';
-import { Customer, CustomerSegment } from '../../../Models/customer.entity';
-import { FrequencyUnit } from '../../../Models/contract-item.entity';
-import { Role } from '../../../Models/employee.entity';
-import { ContractItemRepository } from '../../../Repositories/contract-item.repository';
-import { ContractRepository } from '../../../Repositories/contract.repository';
-import { ContractSiteRepository } from '../../../Repositories/contract-site.repository';
-import { CustomerRepository } from '../../../Repositories/customer.repository';
-import { ShiftRepository } from '../../../Repositories/shift.repository';
-import { ContractCreateCommand, ContractService } from '../../../Services/contract.service';
-import { ScheduleGeneratorService } from '../../../Services/schedule-generator.service';
+import { Customer, CustomerSegment } from '../../../models/customers/customer.entity';
+import { FrequencyUnit } from '../../../models/contracts/contract-item.entity';
+import { Role } from '../../../models/employees/employee.entity';
+import { ContractItemRepository } from '../../../repositories/contracts/contract-item.repository';
+import { ContractRepository } from '../../../repositories/contracts/contract.repository';
+import { ContractSiteRepository } from '../../../repositories/contracts/contract-site.repository';
+import { CustomerRepository } from '../../../repositories/customers/customer.repository';
+import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+import { ContractCreateCommand, ContractService } from '../../../services/contracts/contract.service';
+import { ScheduleGeneratorService } from '../../../services/contracts/schedule-generator.service';
 
 async function world() {
   const dataSource = await createTestDataSource();

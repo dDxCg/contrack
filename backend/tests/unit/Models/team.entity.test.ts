@@ -1,6 +1,6 @@
 import { aTeam, anEmployee } from '../../support/builders';
 import { captureDomainError } from '../../support/domain-errors';
-import { Role } from '../../../Models/employee.entity';
+import { Role } from '../../../models/employees/employee.entity';
 
 describe('Team', () => {
   describe('lead / memberCount — both derived from employees, never stored', () => {
@@ -29,7 +29,9 @@ describe('Team', () => {
       const existingLead = anEmployee({ id: 31, role: Role.TeamLead, teamId: 7 });
       const team = aTeam({ members: [existingLead] });
 
-      const error = captureDomainError(() => team.addMember(anEmployee({ id: 40, role: Role.TeamLead, teamId: 7 })));
+      const error = captureDomainError(() =>
+        team.addMember(anEmployee({ id: 40, role: Role.TeamLead, teamId: 7 })),
+      );
 
       expect(error.code).toBe('team.lead_conflict');
       expect(error.getStatus()).toBe(409);

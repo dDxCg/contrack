@@ -1,64 +1,74 @@
 import { INestApplication, Module, ValidationPipe } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { ValidationFailedException } from './Models/domain-errors';
-import { AuthController } from './Controllers/auth.controller';
-import { ContractCostsController } from './Controllers/contract-costs.controller';
-import { ContractsController } from './Controllers/contracts.controller';
-import { CustomersController } from './Controllers/customers.controller';
-import { EmployeesController } from './Controllers/employees.controller';
-import { FieldController } from './Controllers/field.controller';
-import { ReconciliationController } from './Controllers/reconciliation.controller';
-import { ShiftsController } from './Controllers/shifts.controller';
-import { StatementsController } from './Controllers/statements.controller';
-import { TeamsController } from './Controllers/teams.controller';
-import { DATA_SOURCE, createDataSource } from './Data/DbContext/data-source';
-import { ContractCostRepository } from './Repositories/contract-cost.repository';
-import { ContractItemRepository } from './Repositories/contract-item.repository';
-import { ContractRepository } from './Repositories/contract.repository';
-import { ContractSiteRepository } from './Repositories/contract-site.repository';
-import { CustomerRepository } from './Repositories/customer.repository';
-import { EmployeeRepository } from './Repositories/employee.repository';
-import { ShiftPhotoRepository } from './Repositories/shift-photo.repository';
-import { ShiftRepository } from './Repositories/shift.repository';
-import { StatementRepository } from './Repositories/statement.repository';
-import { TeamRepository } from './Repositories/team.repository';
-import { TenantRepository } from './Repositories/tenant.repository';
-import { AccessControlGuard } from './Services/AccessControl/access-control.guard';
-import { AUTH_CONFIG, AuthConfig, loadAuthConfig } from './Services/AccessControl/auth.config';
-import { CLOCK, SystemClock } from './Services/AccessControl/clock';
+import { ValidationFailedException } from './models/domain-errors';
+import { AlertsController } from './controllers/alerts/alerts.controller';
+import { AuthController } from './controllers/auth/auth.controller';
+import { ContractCostsController } from './controllers/contract-costs/contract-costs.controller';
+import { ContractsController } from './controllers/contracts/contracts.controller';
+import { CustomersController } from './controllers/customers/customers.controller';
+import { DashboardController } from './controllers/dashboard/dashboard.controller';
+import { EmployeesController } from './controllers/employees/employees.controller';
+import { FieldController } from './controllers/field/field.controller';
+import { ReconciliationController } from './controllers/statements/reconciliation.controller';
+import { ShiftsController } from './controllers/shifts/shifts.controller';
+import { StatementsController } from './controllers/statements/statements.controller';
+import { TeamsController } from './controllers/teams/teams.controller';
+import { CHANNEL_CLIENT } from './data/channel-client/channel-client';
+import { NullChannelClient } from './data/channel-client/null-channel-client';
+import { DATA_SOURCE, createDataSource } from './data/db-context/data-source';
+import { AlertRepository } from './repositories/alerts/alert.repository';
+import { ContractCostRepository } from './repositories/contract-costs/contract-cost.repository';
+import { ContractItemRepository } from './repositories/contracts/contract-item.repository';
+import { ContractRepository } from './repositories/contracts/contract.repository';
+import { ContractSiteRepository } from './repositories/contracts/contract-site.repository';
+import { CustomerRepository } from './repositories/customers/customer.repository';
+import { EmployeeRepository } from './repositories/employees/employee.repository';
+import { ShiftPhotoRepository } from './repositories/shifts/shift-photo.repository';
+import { ShiftRepository } from './repositories/shifts/shift.repository';
+import { StatementRepository } from './repositories/statements/statement.repository';
+import { TeamRepository } from './repositories/teams/team.repository';
+import { TenantRepository } from './repositories/tenants/tenant.repository';
+import { AccessControlGuard } from './services/access-control/access-control.guard';
+import { AUTH_CONFIG, AuthConfig, loadAuthConfig } from './services/access-control/auth.config';
+import { CLOCK, SystemClock } from './services/access-control/clock';
 import {
   DomainExceptionFilter,
   toValidationViolations,
-} from './Services/AccessControl/domain-exception.filter';
-import { RoleResolver } from './Services/AccessControl/role-resolver';
-import { ScopeResolver } from './Services/AccessControl/scope-resolver';
-import { TenantResolver } from './Services/AccessControl/tenant-resolver';
-import { AuthService } from './Services/auth.service';
-import { ContractCostService } from './Services/contract-cost.service';
-import { ContractProfitabilityService } from './Services/contract-profitability.service';
-import { ContractService } from './Services/contract.service';
-import { CostEstimationService } from './Services/cost-estimation.service';
-import { CustomerService } from './Services/customer.service';
-import { DispatchService } from './Services/dispatch.service';
-import { DisputeService } from './Services/dispute.service';
-import { EmployeeService } from './Services/employee.service';
-import { FieldLinkService } from './Services/field-link.service';
-import { FieldSubmissionService } from './Services/field-submission.service';
-import { FieldTokenService } from './Services/field-token.service';
-import { BcryptPasswordHasher, PASSWORD_HASHER } from './Services/password-hasher.service';
-import { ReconciliationService } from './Services/reconciliation.service';
-import { ScheduleGeneratorService } from './Services/schedule-generator.service';
-import { StatementService } from './Services/statement.service';
-import { TeamService } from './Services/team.service';
-import { TokenService } from './Services/token.service';
+} from './services/access-control/domain-exception.filter';
+import { RoleResolver } from './services/access-control/role-resolver';
+import { ScopeResolver } from './services/access-control/scope-resolver';
+import { TenantResolver } from './services/access-control/tenant-resolver';
+import { AlertJobService } from './services/alerts/alert-job.service';
+import { AlertService } from './services/alerts/alert.service';
+import { AuthService } from './services/auth/auth.service';
+import { ContractCostService } from './services/contract-costs/contract-cost.service';
+import { ContractProfitabilityService } from './services/contract-costs/contract-profitability.service';
+import { ContractService } from './services/contracts/contract.service';
+import { CostEstimationService } from './services/contract-costs/cost-estimation.service';
+import { CustomerService } from './services/customers/customer.service';
+import { DashboardService } from './services/dashboard/dashboard.service';
+import { DispatchService } from './services/shifts/dispatch.service';
+import { DisputeService } from './services/shifts/dispute.service';
+import { EmployeeService } from './services/employees/employee.service';
+import { FieldLinkService } from './services/field/field-link.service';
+import { FieldSubmissionService } from './services/field/field-submission.service';
+import { FieldTokenService } from './services/field/field-token.service';
+import { BcryptPasswordHasher, PASSWORD_HASHER } from './services/auth/password-hasher.service';
+import { ReconciliationService } from './services/statements/reconciliation.service';
+import { ScheduleGeneratorService } from './services/contracts/schedule-generator.service';
+import { StatementService } from './services/statements/statement.service';
+import { TeamService } from './services/teams/team.service';
+import { TokenService } from './services/auth/token.service';
 
 @Module({
   controllers: [
+    AlertsController,
     AuthController,
     ContractCostsController,
     ContractsController,
     CustomersController,
+    DashboardController,
     EmployeesController,
     FieldController,
     ReconciliationController,
@@ -82,6 +92,7 @@ import { TokenService } from './Services/token.service';
     },
     { provide: APP_GUARD, useClass: AccessControlGuard },
     { provide: APP_FILTER, useClass: DomainExceptionFilter },
+    { provide: CHANNEL_CLIENT, useClass: NullChannelClient },
     TenantRepository,
     CustomerRepository,
     EmployeeRepository,
@@ -93,6 +104,7 @@ import { TokenService } from './Services/token.service';
     ShiftPhotoRepository,
     StatementRepository,
     ContractCostRepository,
+    AlertRepository,
     TenantResolver,
     RoleResolver,
     ScopeResolver,
@@ -113,6 +125,9 @@ import { TokenService } from './Services/token.service';
     ContractCostService,
     CostEstimationService,
     ContractProfitabilityService,
+    AlertJobService,
+    AlertService,
+    DashboardService,
   ],
 })
 export class AppModule {}

@@ -9,7 +9,7 @@ import {
   TeamLeadConflictException,
   ValidationFailedException,
   toErrorEnvelope,
-} from '../../../Models/domain-errors';
+} from '../../../models/domain-errors';
 
 describe('domain errors', () => {
   describe('toErrorEnvelope — one envelope for the whole catalogue (05-api.md §1, §9)', () => {
@@ -28,7 +28,11 @@ describe('domain errors', () => {
 
       expect(teamHasMembers.body.error.details).toEqual({ employee_ids: [31, 40] });
       expect(managerCycle.body).toEqual({
-        error: { code: 'employee.manager_cycle', message: 'Sẽ tạo vòng lặp quản lý', details: { path: [12, 31, 12] } },
+        error: {
+          code: 'employee.manager_cycle',
+          message: 'Sẽ tạo vòng lặp quản lý',
+          details: { path: [12, 31, 12] },
+        },
       });
     });
 
@@ -53,11 +57,15 @@ describe('domain errors', () => {
     });
 
     it('maps validation failures to 400 validation.failed with the offending fields', () => {
-      const envelope = toErrorEnvelope(new ValidationFailedException([{ field: 'name', message: 'name must be a string' }]));
+      const envelope = toErrorEnvelope(
+        new ValidationFailedException([{ field: 'name', message: 'name must be a string' }]),
+      );
 
       expect(envelope.status).toBe(400);
       expect(envelope.body.error.code).toBe('validation.failed');
-      expect(envelope.body.error.details).toEqual({ fields: [{ field: 'name', message: 'name must be a string' }] });
+      expect(envelope.body.error.details).toEqual({
+        fields: [{ field: 'name', message: 'name must be a string' }],
+      });
     });
 
     it('derives a code from the status for a transport-level refusal', () => {

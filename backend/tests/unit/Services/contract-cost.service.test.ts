@@ -1,11 +1,11 @@
 import { anAccessContext } from '../../support/builders';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedTenant } from '../../support/seed';
-import { CostCategory } from '../../../Models/contract-cost.entity';
-import { Employee, EmployeeStatus, Role } from '../../../Models/employee.entity';
-import { ContractCostRepository } from '../../../Repositories/contract-cost.repository';
-import { EmployeeRepository } from '../../../Repositories/employee.repository';
-import { ContractCostService } from '../../../Services/contract-cost.service';
+import { CostCategory } from '../../../models/contract-costs/contract-cost.entity';
+import { Employee, EmployeeStatus, Role } from '../../../models/employees/employee.entity';
+import { ContractCostRepository } from '../../../repositories/contract-costs/contract-cost.repository';
+import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
+import { ContractCostService } from '../../../services/contract-costs/contract-cost.service';
 
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();

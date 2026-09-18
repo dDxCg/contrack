@@ -1,4 +1,4 @@
-import { FrequencyUnit } from '../../../Models/contract-item.entity';
+import { FrequencyUnit } from '../../../models/contracts/contract-item.entity';
 import { aContractItem } from '../../support/builders';
 
 describe('ContractItem', () => {

@@ -2,13 +2,13 @@ import { anAccessContext } from '../../support/builders';
 import { FakeClock } from '../../support/clock';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
-import { ContractCost, CostCategory } from '../../../Models/contract-cost.entity';
-import { Employee, EmployeeStatus, Role } from '../../../Models/employee.entity';
-import { ContractCostRepository } from '../../../Repositories/contract-cost.repository';
-import { EmployeeRepository } from '../../../Repositories/employee.repository';
-import { ShiftRepository } from '../../../Repositories/shift.repository';
-import { ContractProfitabilityService } from '../../../Services/contract-profitability.service';
-import { CostEstimationService } from '../../../Services/cost-estimation.service';
+import { ContractCost, CostCategory } from '../../../models/contract-costs/contract-cost.entity';
+import { Employee, EmployeeStatus, Role } from '../../../models/employees/employee.entity';
+import { ContractCostRepository } from '../../../repositories/contract-costs/contract-cost.repository';
+import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
+import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+import { ContractProfitabilityService } from '../../../services/contract-costs/contract-profitability.service';
+import { CostEstimationService } from '../../../services/contract-costs/cost-estimation.service';
 
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();

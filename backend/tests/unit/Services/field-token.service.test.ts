@@ -1,7 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { captureDomainError } from '../../support/domain-errors';
-import { AuthConfig } from '../../../Services/AccessControl/auth.config';
-import { FieldTokenService } from '../../../Services/field-token.service';
+import { AuthConfig } from '../../../services/access-control/auth.config';
+import { FieldTokenService } from '../../../services/field/field-token.service';
 
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
