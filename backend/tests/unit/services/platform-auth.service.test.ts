@@ -5,6 +5,7 @@ import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { AuthConfig } from '../../../services/access-control/auth.config';
 import { PlatformAdminRepository } from '../../../repositories/platform/platform-admin.repository';
 import { BcryptPasswordHasher } from '../../../services/auth/password-hasher.service';
+import { InMemoryRevocationStore } from '../../../services/auth/revocation-store';
 import { PlatformAuthService } from '../../../services/platform/platform-auth.service';
 import { TokenService } from '../../../services/auth/token.service';
 const config: AuthConfig = {
@@ -21,7 +22,7 @@ async function world() {
   const tokenService = new TokenService(
     new JwtService({ secret: config.jwtSecret }),
     config,
-    new FakeClock(),
+    new InMemoryRevocationStore(new FakeClock()),
   );
   const service = new PlatformAuthService(repository, tokenService, hasher);
   await dataSource.query(
@@ -35,7 +36,8 @@ describe('PlatformAuthService.login', () => {
     const { service, tokenService } = await world();
     const session = await service.login({ username: 'ops.admin', password: 'correct-password' });
     expect(session.platform_admin).toMatchObject({ name: 'Ops Admin' });
-    expect(tokenService.verifyPlatform(session.token).sub).toBe(session.platform_admin.id);
+    const claims = await tokenService.verifyPlatform(session.token);
+    expect(claims.sub).toBe(session.platform_admin.id);
   });
   it('rejects an unknown username', async () => {
     const { service } = await world();

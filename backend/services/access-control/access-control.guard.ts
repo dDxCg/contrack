@@ -23,7 +23,7 @@ export class AccessControlGuard implements CanActivate {
       return true;
     }
     const request = context.switchToHttp().getRequest<DeskRequest>();
-    const claims = this.tokenService.verifyAny(this.bearerToken(request));
+    const claims = await this.tokenService.verifyAny(this.bearerToken(request));
     const resolver = this.resolvers.find((candidate) => candidate.kind === claims.typ);
     if (resolver === undefined) {
       throw new AuthCredentialExpiredException();

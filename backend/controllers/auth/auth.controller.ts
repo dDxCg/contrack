@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from '../../services/auth/auth.service';
 import { AccessContext } from '../../services/access-control/access-context';
 import { CurrentAccess, Public } from '../../services/access-control/access.decorator';
@@ -9,6 +10,7 @@ import { EmployeeView } from '../../dtos/employees/employees.response.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @Post('login')
   @HttpCode(200)
   login(
@@ -18,6 +20,7 @@ export class AuthController {
     return this.authService.login({ email: body.email, password: body.password });
   }
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 20 } })
   @Post('refresh')
   @HttpCode(200)
   refresh(

@@ -2,6 +2,7 @@ import { INestApplication, MiddlewareConsumer, Module, NestModule, ValidationPip
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ValidationFailedException } from './models/domain-errors';
 import { AlertsController } from './controllers/alerts/alerts.controller';
 import { AuthController } from './controllers/auth/auth.controller';
@@ -61,6 +62,12 @@ import {
 } from './services/alerts/distributed-lock';
 import Redis from 'ioredis';
 import { AuthService } from './services/auth/auth.service';
+import {
+  InMemoryRevocationStore,
+  RedisRevocationStore,
+  REVOCATION_STORE,
+  type RevocationStore,
+} from './services/auth/revocation-store';
 import { PlatformAuthService } from './services/platform/platform-auth.service';
 import { PlatformDashboardService } from './services/platform/platform-dashboard.service';
 import { TenantService } from './services/platform/tenant.service';
@@ -82,8 +89,9 @@ import { ScheduleGeneratorService } from './services/contracts/schedule-generato
 import { StatementService } from './services/statements/statement.service';
 import { TeamService } from './services/teams/team.service';
 import { TokenService } from './services/auth/token.service';
+const REDIS_CLIENT = Symbol('REDIS_CLIENT');
 @Module({
-  imports: [ScheduleModule.forRoot()],
+  imports: [ScheduleModule.forRoot(), ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }])],
   controllers: [
     AlertsController,
     AuthController,
@@ -116,19 +124,31 @@ import { TokenService } from './services/auth/token.service';
       useFactory: (config: AuthConfig) => new BcryptPasswordHasher(config.bcryptRounds),
       inject: [AUTH_CONFIG],
     },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AccessControlGuard },
     { provide: APP_FILTER, useClass: DomainExceptionFilter },
     { provide: CHANNEL_CLIENT, useClass: NullChannelClient },
     {
-      provide: DISTRIBUTED_LOCK,
-      useFactory: (clock: IClock): DistributedLock => {
+      provide: REDIS_CLIENT,
+      useFactory: (): Redis | null => {
         const url = process.env.REDIS_LOCK_URL;
         if (url === undefined || url === '') {
-          return new InMemoryDistributedLock(clock);
+          return null;
         }
-        return new RedisDistributedLock(new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 3 }));
+        return new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 3 });
       },
-      inject: [CLOCK],
+    },
+    {
+      provide: DISTRIBUTED_LOCK,
+      useFactory: (clock: IClock, redis: Redis | null): DistributedLock =>
+        redis === null ? new InMemoryDistributedLock(clock) : new RedisDistributedLock(redis),
+      inject: [CLOCK, REDIS_CLIENT],
+    },
+    {
+      provide: REVOCATION_STORE,
+      useFactory: (clock: IClock, redis: Redis | null): RevocationStore =>
+        redis === null ? new InMemoryRevocationStore(clock) : new RedisRevocationStore(redis, clock),
+      inject: [CLOCK, REDIS_CLIENT],
     },
     AlertJobScheduler,
     DeskCredentialResolver,

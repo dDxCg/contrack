@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { SessionView } from '../../dtos/auth/auth.response.dto';
 import { EmployeeView } from '../../dtos/employees/employees.response.dto';
 import { AuthCredentialExpiredException, AuthInvalidCredentialsException } from '../../models/domain-errors';
@@ -22,37 +23,48 @@ export class AuthService {
     @Inject(PASSWORD_HASHER)
     private readonly passwordHasher: PasswordHasher,
   ) {}
+  private dummyHashPromise: Promise<string> | null = null;
+  private dummyHash(): Promise<string> {
+    this.dummyHashPromise ??= this.passwordHasher.hash(randomUUID());
+    return this.dummyHashPromise;
+  }
   async login(command: LoginCommand): Promise<SessionView> {
-    const employee = await this.employeeRepository.findByEmail(command.email);
-    if (employee === null || !employee.isActive() || employee.passwordHash === null) {
-      throw new AuthInvalidCredentialsException();
+    const found = await this.employeeRepository.findByEmail(command.email);
+    const employee = found !== null && found.isActive() && found.passwordHash !== null ? found : null;
+    const tenant = employee !== null ? await this.tenantRepository.findById(employee.tenantId) : null;
+    if (tenant !== null) {
+      tenant.assertActive();
     }
-    const tenant = await this.tenantRepository.findById(employee.tenantId);
-    if (tenant === null) {
-      throw new AuthInvalidCredentialsException();
-    }
-    tenant.assertActive();
-    if (!(await this.passwordHasher.verify(command.password, employee.passwordHash))) {
+    const passwordMatches = await this.passwordHasher.verify(
+      command.password,
+      employee?.passwordHash ?? (await this.dummyHash()),
+    );
+    if (employee === null || tenant === null || !passwordMatches) {
       throw new AuthInvalidCredentialsException();
     }
     return this.issue(employee);
   }
   async refresh(refreshToken: string): Promise<SessionView> {
-    const payload = this.tokenService.verifyRefresh(refreshToken);
+    const payload = await this.tokenService.verifyRefresh(refreshToken);
     const employee = await this.employeeRepository.findById(payload.tenant_id, payload.sub);
     if (employee === null || !employee.isActive()) {
       throw new AuthCredentialExpiredException();
     }
-    this.tokenService.revoke(payload);
+    const tenant = await this.tenantRepository.findById(payload.tenant_id);
+    if (tenant === null) {
+      throw new AuthCredentialExpiredException();
+    }
+    tenant.assertActive();
+    await this.tokenService.revoke(payload);
     return this.issue(employee);
   }
   async logout(access: AccessContext, refreshToken?: string): Promise<void> {
-    this.tokenService.revoke(access.credential);
+    await this.tokenService.revoke(access.credential);
     if (refreshToken === undefined) {
       return;
     }
     try {
-      this.tokenService.revoke(this.tokenService.verifyRefresh(refreshToken));
+      await this.tokenService.revoke(await this.tokenService.verifyRefresh(refreshToken));
     } catch {}
   }
   me(access: AccessContext): EmployeeView {

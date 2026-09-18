@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AuthCredentialExpiredException } from '../../models/domain-errors';
 import { EmployeeRepository } from '../../repositories/employees/employee.repository';
+import { TenantRepository } from '../../repositories/tenants/tenant.repository';
 import type { AccessTokenPayload, TokenClaims } from '../auth/token.service';
 import { AccessContext } from './access-context';
 import { AccessRequirement } from './access.decorator';
@@ -14,6 +15,7 @@ export class DeskCredentialResolver implements CredentialResolver {
   readonly kind = 'access';
   constructor(
     private readonly employeeRepository: EmployeeRepository,
+    private readonly tenantRepository: TenantRepository,
     private readonly tenantResolver: TenantResolver,
     private readonly roleResolver: RoleResolver,
     private readonly scopeResolver: ScopeResolver,
@@ -28,6 +30,11 @@ export class DeskCredentialResolver implements CredentialResolver {
     if (employee === null || !employee.isActive()) {
       throw new AuthCredentialExpiredException();
     }
+    const tenant = await this.tenantRepository.findById(tenantId);
+    if (tenant === null) {
+      throw new AuthCredentialExpiredException();
+    }
+    tenant.assertActive();
     if (requirement !== undefined) {
       this.roleResolver.requireRole(requirement.resource, requirement.operation, employee.role);
     }

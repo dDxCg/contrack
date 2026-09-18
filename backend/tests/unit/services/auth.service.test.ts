@@ -2,7 +2,7 @@ import { JwtService } from '@nestjs/jwt';
 import { DataSource } from 'typeorm';
 import { anAccessContext } from '../../support/builders';
 import { FakeClock } from '../../support/clock';
-import { captureDomainError, captureDomainErrorAsync } from '../../support/domain-errors';
+import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedTenant } from '../../support/seed';
 import { Employee, EmployeeStatus, Role } from '../../../models/employees/employee.entity';
@@ -14,6 +14,7 @@ import { AccessContext } from '../../../services/access-control/access-context';
 import { RowScope } from '../../../services/access-control/row-scope';
 import { AuthService } from '../../../services/auth/auth.service';
 import { BcryptPasswordHasher } from '../../../services/auth/password-hasher.service';
+import { InMemoryRevocationStore } from '../../../services/auth/revocation-store';
 import { TokenService } from '../../../services/auth/token.service';
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
@@ -43,7 +44,7 @@ async function loadWorld(
   const tokenService = new TokenService(
     new JwtService({ secret: config.jwtSecret }),
     config,
-    new FakeClock(),
+    new InMemoryRevocationStore(new FakeClock()),
   );
   const hasher = new BcryptPasswordHasher(config.bcryptRounds);
   const tenant = await seedTenant(dataSource, { status: setup.tenant?.status });
@@ -68,11 +69,11 @@ async function loadWorld(
     service: new AuthService(new TenantRepository(dataSource), employeeRepository, tokenService, hasher),
   };
 }
-function sessionContext(world: World, token: string): AccessContext {
+async function sessionContext(world: World, token: string): Promise<AccessContext> {
   return anAccessContext(world.employee, {
     tenantId: world.employee.tenantId,
     scope: RowScope.All,
-    credential: world.tokenService.verifyAccess(token),
+    credential: await world.tokenService.verifyAccess(token),
   });
 }
 describe('AuthService.login — FR22', () => {
@@ -92,7 +93,7 @@ describe('AuthService.login — FR22', () => {
   it('issues a credential the caller can present on the next request', async () => {
     const { service, tokenService, tenant, employee } = await loadWorld();
     const session = await service.login({ email: 'mai.lt@example.com', password: 'secret' });
-    expect(tokenService.verifyAccess(session.token)).toMatchObject({
+    await expect(tokenService.verifyAccess(session.token)).resolves.toMatchObject({
       sub: employee.id,
       tenant_id: tenant.id,
       role: Role.Manager,
@@ -116,6 +117,22 @@ describe('AuthService.login — FR22', () => {
       service.login({ email: 'mai.lt@example.com', password: 'wrong' }),
     );
     expect(error.code).toBe('auth.invalid_credentials');
+  });
+  it('still runs a password comparison for an unknown email — no early return before the hash cost', async () => {
+    const { service, hasher } = await loadWorld();
+    const verify = jest.spyOn(hasher, 'verify');
+    await captureDomainErrorAsync(() => service.login({ email: 'nobody@example.com', password: 'whatever' }));
+    expect(verify).toHaveBeenCalledTimes(1);
+  });
+  it('reuses the same cached dummy hash across unknown-email attempts', async () => {
+    const { service, hasher, employee } = await loadWorld();
+    const verify = jest.spyOn(hasher, 'verify');
+    await captureDomainErrorAsync(() => service.login({ email: 'a@example.com', password: 'x' }));
+    await captureDomainErrorAsync(() => service.login({ email: 'b@example.com', password: 'x' }));
+    const [, firstHash] = verify.mock.calls[0];
+    const [, secondHash] = verify.mock.calls[1];
+    expect(secondHash).toBe(firstHash);
+    expect(firstHash).not.toBe(employee.passwordHash);
   });
   it('refuses a suspended tenant before checking the password (FR24)', async () => {
     const { service, hasher } = await loadWorld({ tenant: { status: TenantStatus.Suspended } });
@@ -179,42 +196,50 @@ describe('AuthService.refresh', () => {
     const error = await captureDomainErrorAsync(() => service.refresh('not-a-token'));
     expect(error.details).toEqual({});
   });
+  it('refuses to refresh once the tenant is suspended — a signed-in session cannot outlive suspension', async () => {
+    const { service, dataSource, tenant } = await loadWorld();
+    const session = await service.login({ email: 'mai.lt@example.com', password: 'secret' });
+    await dataSource.query(
+      `UPDATE tenants SET status_id = (SELECT id FROM tenant_statuses WHERE code = 'suspended') WHERE id = $1`,
+      [tenant.id],
+    );
+    const error = await captureDomainErrorAsync(() => service.refresh(session.refresh_token));
+    expect(error.code).toBe('tenant.suspended');
+  });
 });
 describe('AuthService.logout', () => {
   it('invalidates the credential it was called with', async () => {
     const world = await loadWorld();
     const session = await world.service.login({ email: 'mai.lt@example.com', password: 'secret' });
-    await world.service.logout(sessionContext(world, session.token));
-    expect(captureDomainError(() => world.tokenService.verifyAccess(session.token)).code).toBe(
-      'auth.credential_expired',
-    );
+    await world.service.logout(await sessionContext(world, session.token));
+    const error = await captureDomainErrorAsync(() => world.tokenService.verifyAccess(session.token));
+    expect(error.code).toBe('auth.credential_expired');
   });
   it('invalidates the refresh token too, so a logged-out client cannot silently re-arm', async () => {
     const world = await loadWorld();
     const session = await world.service.login({ email: 'mai.lt@example.com', password: 'secret' });
-    await world.service.logout(sessionContext(world, session.token), session.refresh_token);
+    await world.service.logout(await sessionContext(world, session.token), session.refresh_token);
     const error = await captureDomainErrorAsync(() => world.service.refresh(session.refresh_token));
     expect(error.code).toBe('auth.credential_expired');
   });
   it('still logs out when the client does not send its refresh token', async () => {
     const world = await loadWorld();
     const session = await world.service.login({ email: 'mai.lt@example.com', password: 'secret' });
-    await expect(world.service.logout(sessionContext(world, session.token))).resolves.toBeUndefined();
-    expect(captureDomainError(() => world.tokenService.verifyAccess(session.token)).code).toBe(
-      'auth.credential_expired',
-    );
+    await expect(world.service.logout(await sessionContext(world, session.token))).resolves.toBeUndefined();
+    const error = await captureDomainErrorAsync(() => world.tokenService.verifyAccess(session.token));
+    expect(error.code).toBe('auth.credential_expired');
   });
   it('ignores a garbage refresh token rather than failing the logout', async () => {
     const world = await loadWorld();
     const session = await world.service.login({ email: 'mai.lt@example.com', password: 'secret' });
     await expect(
-      world.service.logout(sessionContext(world, session.token), 'not-a-token'),
+      world.service.logout(await sessionContext(world, session.token), 'not-a-token'),
     ).resolves.toBeUndefined();
   });
   it('leaves another idempotent logout call harmless', async () => {
     const world = await loadWorld();
     const session = await world.service.login({ email: 'mai.lt@example.com', password: 'secret' });
-    const access = sessionContext(world, session.token);
+    const access = await sessionContext(world, session.token);
     await world.service.logout(access);
     await world.service.logout(access);
   });

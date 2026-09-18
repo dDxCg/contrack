@@ -5,7 +5,7 @@ import { AuthCredentialExpiredException } from '../../models/domain-errors';
 import { Employee, Role } from '../../models/employees/employee.entity';
 import { PlatformAdmin } from '../../models/platform/platform-admin.entity';
 import { AUTH_CONFIG, AuthConfig } from '../access-control/auth.config';
-import { CLOCK, IClock } from '../access-control/clock';
+import { REVOCATION_STORE, RevocationStore } from './revocation-store';
 export interface TokenClaims {
   readonly typ: string;
   readonly jti: string;
@@ -29,13 +29,12 @@ export interface PlatformTokenPayload extends TokenClaims {
 }
 @Injectable()
 export class TokenService {
-  private readonly revoked = new Map<string, number>();
   constructor(
     private readonly jwt: JwtService,
     @Inject(AUTH_CONFIG)
     private readonly config: AuthConfig,
-    @Inject(CLOCK)
-    private readonly clock: IClock,
+    @Inject(REVOCATION_STORE)
+    private readonly revocations: RevocationStore,
   ) {}
   get accessTtlSeconds(): number {
     return this.config.accessTtlSeconds;
@@ -58,59 +57,48 @@ export class TokenService {
   signPlatform(admin: PlatformAdmin): string {
     return this.sign({ sub: admin.id, typ: 'platform' }, this.accessTtlSeconds);
   }
-  verifyAny(raw: string): TokenClaims {
+  async verifyAny(raw: string): Promise<TokenClaims> {
     return this.verifyGeneric(raw);
   }
-  verifyAccess(raw: string): AccessTokenPayload {
-    const claims = this.verifyGeneric(raw);
+  async verifyAccess(raw: string): Promise<AccessTokenPayload> {
+    const claims = await this.verifyGeneric(raw);
     if (claims.typ !== 'access' || typeof claims.sub !== 'number' || typeof claims.tenant_id !== 'number') {
       throw new AuthCredentialExpiredException();
     }
     return claims as unknown as AccessTokenPayload;
   }
-  verifyRefresh(raw: string): RefreshTokenPayload {
-    const claims = this.verifyGeneric(raw);
+  async verifyRefresh(raw: string): Promise<RefreshTokenPayload> {
+    const claims = await this.verifyGeneric(raw);
     if (claims.typ !== 'refresh' || typeof claims.sub !== 'number' || typeof claims.tenant_id !== 'number') {
       throw new AuthCredentialExpiredException();
     }
     return claims as unknown as RefreshTokenPayload;
   }
-  verifyPlatform(raw: string): PlatformTokenPayload {
-    const claims = this.verifyGeneric(raw);
+  async verifyPlatform(raw: string): Promise<PlatformTokenPayload> {
+    const claims = await this.verifyGeneric(raw);
     if (claims.typ !== 'platform' || typeof claims.sub !== 'number') {
       throw new AuthCredentialExpiredException();
     }
     return claims as unknown as PlatformTokenPayload;
   }
-  revoke(claims: TokenClaims): void {
-    if (claims.exp * 1000 > this.clock.now().getTime()) {
-      this.revoked.set(claims.jti, claims.exp);
-    }
+  async revoke(claims: TokenClaims): Promise<void> {
+    await this.revocations.revoke(claims.jti, claims.exp);
   }
-  isRevoked(jti: string): boolean {
-    const expiresAt = this.revoked.get(jti);
-    if (expiresAt === undefined) {
-      return false;
-    }
-    if (expiresAt * 1000 <= this.clock.now().getTime()) {
-      this.revoked.delete(jti);
-      return false;
-    }
-    return true;
+  async isRevoked(jti: string): Promise<boolean> {
+    return this.revocations.isRevoked(jti);
   }
   private sign(payload: Record<string, unknown>, expiresInSeconds: number): string {
     return this.jwt.sign({ ...payload, jti: randomUUID() }, { expiresIn: expiresInSeconds });
   }
-  private verifyGeneric(raw: string): Record<string, unknown> & TokenClaims {
+  private async verifyGeneric(raw: string): Promise<Record<string, unknown> & TokenClaims> {
     try {
       const payload = this.jwt.verify<Record<string, unknown>>(raw);
-      const usable =
+      const structurallyUsable =
         typeof payload.typ === 'string' &&
         typeof payload.jti === 'string' &&
         typeof payload.exp === 'number' &&
-        typeof payload.iat === 'number' &&
-        !this.isRevoked(payload.jti);
-      if (!usable) {
+        typeof payload.iat === 'number';
+      if (!structurallyUsable || (await this.isRevoked(payload.jti as string))) {
         throw new Error('unusable credential');
       }
       return payload as Record<string, unknown> & TokenClaims;

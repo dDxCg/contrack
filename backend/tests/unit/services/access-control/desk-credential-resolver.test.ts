@@ -3,7 +3,9 @@ import { captureDomainErrorAsync } from '../../../support/domain-errors';
 import { createTestDataSource } from '../../../support/pg-mem-data-source';
 import { seedTenant } from '../../../support/seed';
 import { EmployeeStatus, Role } from '../../../../models/employees/employee.entity';
+import { TenantStatus } from '../../../../models/tenants/tenant.entity';
 import { EmployeeRepository } from '../../../../repositories/employees/employee.repository';
+import { TenantRepository } from '../../../../repositories/tenants/tenant.repository';
 import { AccessRequirement } from '../../../../services/access-control/access.decorator';
 import { DeskCredentialResolver } from '../../../../services/access-control/desk-credential-resolver';
 import { Operation, Resource, RoleResolver } from '../../../../services/access-control/role-resolver';
@@ -16,13 +18,18 @@ async function world(
     role?: Role;
     status?: EmployeeStatus;
   } = {},
+  tenantOverrides: {
+    status?: TenantStatus;
+  } = {},
 ) {
   const dataSource = await createTestDataSource();
   const employees = new EmployeeRepository(dataSource);
-  const tenant = await seedTenant(dataSource);
+  const tenants = new TenantRepository(dataSource);
+  const tenant = await seedTenant(dataSource, { status: tenantOverrides.status ?? TenantStatus.Active });
   const roleResolver = new RoleResolver();
   const resolver = new DeskCredentialResolver(
     employees,
+    tenants,
     new TenantResolver(),
     roleResolver,
     new ScopeResolver(roleResolver),
@@ -89,5 +96,12 @@ describe('DeskCredentialResolver', () => {
     const { resolver, tenant, employee } = await world();
     const access = await resolver.resolve(claimsFor(employee.id, tenant.id));
     expect(access.scope).toBe(RowScope.None);
+  });
+  it('refuses a suspended tenant even with an otherwise valid, still-live token', async () => {
+    const { resolver, tenant, employee } = await world({}, { status: TenantStatus.Suspended });
+    const error = await captureDomainErrorAsync(() =>
+      resolver.resolve(claimsFor(employee.id, tenant.id), readCustomers),
+    );
+    expect(error.code).toBe('tenant.suspended');
   });
 });
