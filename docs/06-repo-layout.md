@@ -15,9 +15,9 @@ backend/
 │   ├── contracts.controller.ts
 │   ├── shifts.controller.ts
 │   ├── field.controller.ts
-│   ├── StatementsController
-│   ├── ReconciliationController
-│   ├── ContractCostsController
+│   ├── statements.controller.ts
+│   ├── reconciliation.controller.ts
+│   ├── contract-costs.controller.ts
 │   ├── AlertsController
 │   ├── DashboardController
 │   ├── customers.controller.ts
@@ -31,15 +31,13 @@ backend/
 │   ├── teams.dto.ts
 │   ├── shifts.dto.ts
 │   ├── field.dto.ts
+│   ├── statements.dto.ts
+│   ├── contract-costs.dto.ts
 │   └── page-query.dto.ts
 ├── Services/
 │   ├── TenantService
 │   ├── PlatformDashboardService
 │   ├── AlertJobService
-│   ├── StatementService
-│   ├── ReconciliationService
-│   ├── ContractProfitabilityService
-│   ├── CostEstimationService
 │   ├── DashboardService
 │   ├── auth.service.ts
 │   ├── token.service.ts
@@ -54,6 +52,12 @@ backend/
 │   ├── field-token.service.ts
 │   ├── field-link.service.ts
 │   ├── field-submission.service.ts
+│   ├── statement.service.ts
+│   ├── reconciliation.service.ts
+│   ├── contract-cost.service.ts
+│   ├── cost-estimation.service.ts
+│   ├── contract-profitability.service.ts
+│   ├── period.ts
 │   └── AccessControl/
 │       ├── access-context.ts
 │       ├── auth.config.ts
@@ -75,8 +79,8 @@ backend/
 │   ├── contract-item.repository.ts
 │   ├── shift.repository.ts
 │   ├── shift-photo.repository.ts
-│   ├── StatementRepository
-│   └── ContractCostRepository
+│   ├── statement.repository.ts
+│   └── contract-cost.repository.ts
 ├── Models/
 │   ├── domain-errors.ts
 │   ├── tenant.entity.ts
@@ -88,9 +92,9 @@ backend/
 │   ├── contract-item.entity.ts
 │   ├── shift.entity.ts
 │   ├── shift-photo.entity.ts
-│   ├── PlatformAdmin
-│   ├── Statement
-│   └── ContractCost
+│   ├── statement.entity.ts
+│   ├── contract-cost.entity.ts
+│   └── PlatformAdmin
 ├── Data/
 │   ├── DbContext/data-source.ts
 │   ├── Migrations/

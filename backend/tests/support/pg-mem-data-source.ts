@@ -4,16 +4,30 @@ import { join } from 'node:path';
 import { newDb } from 'pg-mem';
 import { DataSource } from 'typeorm';
 import { Contract } from '../../Models/contract.entity';
+import { ContractCost } from '../../Models/contract-cost.entity';
 import { ContractItem } from '../../Models/contract-item.entity';
 import { ContractSite } from '../../Models/contract-site.entity';
 import { Customer } from '../../Models/customer.entity';
 import { Employee } from '../../Models/employee.entity';
 import { ShiftPhoto } from '../../Models/shift-photo.entity';
 import { Shift } from '../../Models/shift.entity';
+import { Statement } from '../../Models/statement.entity';
 import { Team } from '../../Models/team.entity';
 import { Tenant } from '../../Models/tenant.entity';
 
-const ENTITIES = [Tenant, Customer, Employee, Team, Contract, ContractSite, ContractItem, Shift, ShiftPhoto];
+const ENTITIES = [
+  Tenant,
+  Customer,
+  Employee,
+  Team,
+  Contract,
+  ContractSite,
+  ContractItem,
+  Shift,
+  ShiftPhoto,
+  Statement,
+  ContractCost,
+];
 const SCHEMA_SQL = readFileSync(join(__dirname, '../../../docs/04-schema.sql'), 'utf8');
 
 const openDataSources: DataSource[] = [];

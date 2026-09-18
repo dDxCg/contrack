@@ -180,6 +180,38 @@ export class FieldTokenInvalidException extends DomainException {
   }
 }
 
+export class StatementPeriodIncompleteException extends DomainException {
+  readonly code = 'statement.period_incomplete';
+
+  constructor(shiftIds: readonly number[]) {
+    super(HttpStatus.CONFLICT, 'Còn ca chưa đủ bằng chứng hoặc đang khiếu nại', { shift_ids: [...shiftIds] });
+  }
+}
+
+export class StatementAlreadyExistsException extends DomainException {
+  readonly code = 'statement.already_exists';
+
+  constructor(statementId: number) {
+    super(HttpStatus.CONFLICT, 'Bảng kê kỳ này đã tồn tại', { statement_id: statementId });
+  }
+}
+
+export class StatementImmutableException extends DomainException {
+  readonly code = 'statement.immutable';
+
+  constructor(status: string) {
+    super(HttpStatus.CONFLICT, 'Bảng kê đã chốt, không thể sửa', { status });
+  }
+}
+
+export class StatementNotIssuedException extends DomainException {
+  readonly code = 'statement.not_issued';
+
+  constructor(status: string) {
+    super(HttpStatus.CONFLICT, 'Chưa xuất PDF', { status });
+  }
+}
+
 export class ValidationFailedException extends DomainException {
   readonly code = VALIDATION_FAILED_CODE;
 

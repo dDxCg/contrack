@@ -36,14 +36,19 @@ export async function seedTenant(
 export async function seedContractItemChain(
   dataSource: DataSource,
   tenantId: number,
+  overrides: { unitPrice?: number; signedAt?: string; expiresAt?: string } = {},
 ): Promise<{ contractId: number; siteId: number; itemId: number }> {
+  const unitPrice = overrides.unitPrice ?? 100_000;
+  const signedAt = overrides.signedAt ?? '2024-01-01';
+  const expiresAt = overrides.expiresAt ?? '2025-12-31';
+
   const [customer] = (await dataSource.query(
     `INSERT INTO customers (tenant_id, name) VALUES ($1, 'Seed Customer') RETURNING id`,
     [tenantId],
   )) as { id: number }[];
   const [contract] = (await dataSource.query(
-    `INSERT INTO contracts (tenant_id, customer_id, signed_at, expires_at) VALUES ($1, $2, '2024-01-01', '2025-12-31') RETURNING id`,
-    [tenantId, customer.id],
+    `INSERT INTO contracts (tenant_id, customer_id, signed_at, expires_at) VALUES ($1, $2, $3, $4) RETURNING id`,
+    [tenantId, customer.id, signedAt, expiresAt],
   )) as { id: number }[];
   const [site] = (await dataSource.query(
     `INSERT INTO contract_sites (tenant_id, contract_id, name) VALUES ($1, $2, 'Seed Site') RETURNING id`,
@@ -54,8 +59,8 @@ export async function seedContractItemChain(
   }[];
   const [item] = (await dataSource.query(
     `INSERT INTO contract_items (tenant_id, site_id, name, frequency_count, frequency_unit_id, unit_price)
-     VALUES ($1, $2, 'Seed Item', 1, $3, 100000) RETURNING id`,
-    [tenantId, site.id, weekUnit.id],
+     VALUES ($1, $2, 'Seed Item', 1, $3, $4) RETURNING id`,
+    [tenantId, site.id, weekUnit.id, unitPrice],
   )) as { id: number }[];
 
   return { contractId: contract.id, siteId: site.id, itemId: item.id };
@@ -63,15 +68,37 @@ export async function seedContractItemChain(
 
 export async function seedShift(
   dataSource: DataSource,
-  params: { tenantId: number; contractItemId: number; assigneeId: number | null; scheduledDate: string },
+  params: {
+    tenantId: number;
+    contractItemId: number;
+    assigneeId: number | null;
+    scheduledDate: string;
+    status?: string;
+    completedAt?: string | null;
+  },
 ): Promise<number> {
-  const [scheduled] = (await dataSource.query(`SELECT id FROM shift_statuses WHERE code = 'scheduled'`)) as {
+  const status = params.status ?? 'scheduled';
+  const [statusRow] = (await dataSource.query(`SELECT id FROM shift_statuses WHERE code = $1`, [status])) as {
     id: number;
   }[];
+  const completedAt =
+    params.completedAt !== undefined
+      ? params.completedAt
+      : status === 'completed'
+        ? params.scheduledDate
+        : null;
+
   const [row] = (await dataSource.query(
-    `INSERT INTO shifts (tenant_id, contract_item_id, assignee_id, scheduled_date, status_id)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [params.tenantId, params.contractItemId, params.assigneeId, params.scheduledDate, scheduled.id],
+    `INSERT INTO shifts (tenant_id, contract_item_id, assignee_id, scheduled_date, status_id, completed_at)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [
+      params.tenantId,
+      params.contractItemId,
+      params.assigneeId,
+      params.scheduledDate,
+      statusRow.id,
+      completedAt,
+    ],
   )) as { id: number }[];
 
   return row.id;

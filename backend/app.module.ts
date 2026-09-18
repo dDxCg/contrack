@@ -3,13 +3,17 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ValidationFailedException } from './Models/domain-errors';
 import { AuthController } from './Controllers/auth.controller';
+import { ContractCostsController } from './Controllers/contract-costs.controller';
 import { ContractsController } from './Controllers/contracts.controller';
 import { CustomersController } from './Controllers/customers.controller';
 import { EmployeesController } from './Controllers/employees.controller';
 import { FieldController } from './Controllers/field.controller';
+import { ReconciliationController } from './Controllers/reconciliation.controller';
 import { ShiftsController } from './Controllers/shifts.controller';
+import { StatementsController } from './Controllers/statements.controller';
 import { TeamsController } from './Controllers/teams.controller';
 import { DATA_SOURCE, createDataSource } from './Data/DbContext/data-source';
+import { ContractCostRepository } from './Repositories/contract-cost.repository';
 import { ContractItemRepository } from './Repositories/contract-item.repository';
 import { ContractRepository } from './Repositories/contract.repository';
 import { ContractSiteRepository } from './Repositories/contract-site.repository';
@@ -17,6 +21,7 @@ import { CustomerRepository } from './Repositories/customer.repository';
 import { EmployeeRepository } from './Repositories/employee.repository';
 import { ShiftPhotoRepository } from './Repositories/shift-photo.repository';
 import { ShiftRepository } from './Repositories/shift.repository';
+import { StatementRepository } from './Repositories/statement.repository';
 import { TeamRepository } from './Repositories/team.repository';
 import { TenantRepository } from './Repositories/tenant.repository';
 import { AccessControlGuard } from './Services/AccessControl/access-control.guard';
@@ -30,7 +35,10 @@ import { RoleResolver } from './Services/AccessControl/role-resolver';
 import { ScopeResolver } from './Services/AccessControl/scope-resolver';
 import { TenantResolver } from './Services/AccessControl/tenant-resolver';
 import { AuthService } from './Services/auth.service';
+import { ContractCostService } from './Services/contract-cost.service';
+import { ContractProfitabilityService } from './Services/contract-profitability.service';
 import { ContractService } from './Services/contract.service';
+import { CostEstimationService } from './Services/cost-estimation.service';
 import { CustomerService } from './Services/customer.service';
 import { DispatchService } from './Services/dispatch.service';
 import { DisputeService } from './Services/dispute.service';
@@ -39,18 +47,23 @@ import { FieldLinkService } from './Services/field-link.service';
 import { FieldSubmissionService } from './Services/field-submission.service';
 import { FieldTokenService } from './Services/field-token.service';
 import { BcryptPasswordHasher, PASSWORD_HASHER } from './Services/password-hasher.service';
+import { ReconciliationService } from './Services/reconciliation.service';
 import { ScheduleGeneratorService } from './Services/schedule-generator.service';
+import { StatementService } from './Services/statement.service';
 import { TeamService } from './Services/team.service';
 import { TokenService } from './Services/token.service';
 
 @Module({
   controllers: [
     AuthController,
+    ContractCostsController,
     ContractsController,
     CustomersController,
     EmployeesController,
     FieldController,
+    ReconciliationController,
     ShiftsController,
+    StatementsController,
     TeamsController,
   ],
   providers: [
@@ -78,6 +91,8 @@ import { TokenService } from './Services/token.service';
     ContractItemRepository,
     ShiftRepository,
     ShiftPhotoRepository,
+    StatementRepository,
+    ContractCostRepository,
     TenantResolver,
     RoleResolver,
     ScopeResolver,
@@ -93,6 +108,11 @@ import { TokenService } from './Services/token.service';
     DisputeService,
     FieldLinkService,
     FieldSubmissionService,
+    StatementService,
+    ReconciliationService,
+    ContractCostService,
+    CostEstimationService,
+    ContractProfitabilityService,
   ],
 })
 export class AppModule {}

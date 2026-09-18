@@ -91,23 +91,35 @@ The use-case view of the user stories and FRs above. Each use case carries a `UC
 traced back to its user story and FR in [§ Use case traceability](#use-case-traceability) —
 FR1–FR29 and US-01–US-24 all appear there.
 
-How to read it:
+How to read it — one diagram per role:
 
-- **One area per actor**: every actor outside the boundary has exactly one association line, into
-  the area holding the use cases that role performs. A use case two roles share (`UC-01`, `UC-09`,
-  `UC-10`, `UC-11`, `UC-14`, `UC-15`, `UC-17`) carries the same id in both areas; the requirement
+- **One diagram per role**: Platform Admin, Director, Manager, Accountant, Team Lead, Employee and
+  System-triggered each get their own diagram, so a role reads its own view standalone. Inside each
+  diagram the actor outside the boundary links to every use case it performs; the use cases stack in
+  one vertical column, and each `«include»` target sits in a column to the right of its base use
+  case. A use case two roles share (`UC-01`, `UC-09`, `UC-10`, `UC-11`,
+  `UC-14`, `UC-15`, `UC-17`) carries the same id in every diagram that shows it; the requirement
   tables above and the traceability table below name who may perform it, and under which rule.
 - **`«include»`** (dashed) means the base use case always performs the included one: a contract is
   never saved without its sites, items and generated schedule (FR5–FR7, FR22); evidence is never
   submitted without photos, receipt and GPS/timestamp (FR17, FR18, FR24); a statement is never
   exported without its data (FR10, FR11); a dashboard never leaves an unclosed month blank — it
   estimates it (FR28).
-- **`System-triggered`** is the one area no role owns — and the only one with two association lines:
+- **Duplicated system use cases**: `UC-29 · Generate shift schedule` and `UC-34 · Estimate month
+  cost` have no actor of their own — the system computes them when a role use case includes them.
+  Each role diagram therefore carries its own dashed duplicate of the system use cases it reaches
+  (`UC-29` in Director and Manager, `UC-34` in Director and Accountant), so every `«include»` arrow
+  resolves inside one diagram instead of crossing role boundaries.
+- **`System-triggered`** is the one area no role owns — and the only one with two actors:
   `Scheduler` for the clock-driven use cases (FR23, FR25, FR26) and `Zalo ZNS / SMS` as the delivery
-  gateway (FR27). The role areas reach its use cases with `«include»` instead: the schedule is
-  generated at contract save (FR22) and an unclosed month is estimated on read (FR28).
+  gateway (FR27). `UC-29` and `UC-34` are not drawn here: they are triggered by the role use cases
+  that include them, so they live as duplicates in those role diagrams.
+- **Team Lead's `UC-18`** arrives pushed by the Scheduler (`UC-30`, FR23) — a runtime trigger, not an
+  `«include»`, so no arrow connects the two.
 - **Role rules** live in the traceability table: where a role owns only part of a use case, the
   table names the boundary (Manager creates and edits a contract, only Director deletes it, FR5).
+
+#### Platform Admin
 
 ```mermaid
 ---
@@ -120,22 +132,49 @@ config:
 ---
 flowchart LR
     PlatformAdmin((Platform<br/>Admin))
-    Director((Director))
-    Manager((Manager))
-    Accountant((Accountant))
-    TeamLead((Team<br/>Lead))
-    Employee((Employee))
-    Scheduler((Scheduler<br/><i>time-driven</i>))
-    Zalo((Zalo ZNS / SMS<br/><i>gateway</i>))
 
     subgraph Contrack["Contrack"]
-        subgraph PlatformAdminBox["Platform Admin — outside every tenant"]
+        subgraph PlatformAdminBox["Platform Admin"]
             PA_Login(["UC-01 · Sign in"])
             PA_Onboard(["UC-02 · Onboard tenant"])
-            PA_FirstDirector(["UC-03 · Create first Director account"])
             PA_TenantStatus(["UC-04 · Suspend / reactivate tenant"])
             PA_PlatformDash(["UC-05 · View platform dashboard"])
+            PA_FirstDirector(["UC-03 · Create first Director account"])
         end
+    end
+
+    classDef box fill:#f8fafc,stroke:#94a3b8,color:#0f172a
+    classDef actor fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef uc fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
+    class Contrack,PlatformAdminBox box
+    class PlatformAdmin actor
+    class PA_Login,PA_Onboard,PA_TenantStatus,PA_PlatformDash uc
+    class PA_FirstDirector inc
+
+    PlatformAdmin --- PA_Login
+    PlatformAdmin --- PA_Onboard
+    PlatformAdmin --- PA_TenantStatus
+    PlatformAdmin --- PA_PlatformDash
+
+    PA_Onboard -.->|"&laquo;include&raquo;"| PA_FirstDirector
+```
+
+#### Director
+
+```mermaid
+---
+config:
+  flowchart:
+    nodeSpacing: 22
+    rankSpacing: 45
+    padding: 8
+    subGraphTitleMargin: { top: 4, bottom: 4 }
+---
+flowchart LR
+    Director((Director))
+
+    subgraph Contrack["Contrack"]
         subgraph DirectorBox["Director"]
             D_Login(["UC-01 · Sign in"])
             D_Dashboard(["UC-06 · View dashboard"])
@@ -144,39 +183,192 @@ flowchart LR
             D_ProfitLoss(["UC-09 · View profit / loss"])
             D_Customers(["UC-10 · Manage customers"])
             D_Contract(["UC-11 · Manage contract"])
-            D_Sites(["UC-12 · Manage sites"])
-            D_Items(["UC-13 · Manage service items"])
             D_ViewShifts(["UC-14 · View shifts and evidence"])
             D_Dispute(["UC-15 · Flag shift disputed"])
-            D_Review(["UC-16 · Review shift evidence"])
             D_Reconcile(["UC-17 · View reconciliation"])
+            D_Sites(["UC-12 · Manage sites"])
+            D_Items(["UC-13 · Manage service items"])
+            SYS_Schedule(["UC-29 · Generate shift schedule"])
+            D_Review(["UC-16 · Review shift evidence"])
+            SYS_Estimate(["UC-34 · Estimate month cost"])
         end
+    end
 
+    classDef box fill:#f8fafc,stroke:#94a3b8,color:#0f172a
+    classDef actor fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef uc fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
+    class Contrack,DirectorBox box
+    class Director actor
+    class D_Login,D_Dashboard,D_Accounts,D_Teams,D_ProfitLoss,D_Customers,D_Contract,D_ViewShifts,D_Dispute,D_Reconcile uc
+    class D_Sites,D_Items,D_Review,SYS_Schedule,SYS_Estimate inc
+
+    Director --- D_Login
+    Director --- D_Dashboard
+    Director --- D_Accounts
+    Director --- D_Teams
+    Director --- D_ProfitLoss
+    Director --- D_Customers
+    Director --- D_Contract
+    Director --- D_ViewShifts
+    Director --- D_Dispute
+    Director --- D_Reconcile
+
+    D_Dashboard -.->|"&laquo;include&raquo;"| SYS_Estimate
+    D_ProfitLoss -.->|"&laquo;include&raquo;"| SYS_Estimate
+    D_Contract -.->|"&laquo;include&raquo;"| D_Sites
+    D_Contract -.->|"&laquo;include&raquo;"| D_Items
+    D_Contract -.->|"&laquo;include&raquo;"| SYS_Schedule
+    D_Dispute -.->|"&laquo;include&raquo;"| D_Review
+```
+
+#### Manager
+
+```mermaid
+---
+config:
+  flowchart:
+    nodeSpacing: 22
+    rankSpacing: 45
+    padding: 8
+    subGraphTitleMargin: { top: 4, bottom: 4 }
+---
+flowchart LR
+    Manager((Manager))
+
+    subgraph Contrack["Contrack"]
         subgraph ManagerBox["Manager"]
             M_Login(["UC-01 · Sign in"])
             M_Customers(["UC-10 · Manage customers"])
             M_Contract(["UC-11 · Manage contract"])
-            M_Sites(["UC-12 · Manage sites"])
-            M_Items(["UC-13 · Manage service items"])
             M_ViewShifts(["UC-14 · View shifts and evidence"])
             M_Dispute(["UC-15 · Flag shift disputed"])
+            M_Sites(["UC-12 · Manage sites"])
+            M_Items(["UC-13 · Manage service items"])
+            SYS_Schedule(["UC-29 · Generate shift schedule"])
             M_Review(["UC-16 · Review shift evidence"])
         end
+    end
+
+    classDef box fill:#f8fafc,stroke:#94a3b8,color:#0f172a
+    classDef actor fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef uc fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
+    class Contrack,ManagerBox box
+    class Manager actor
+    class M_Login,M_Customers,M_Contract,M_ViewShifts,M_Dispute uc
+    class M_Sites,M_Items,M_Review,SYS_Schedule inc
+
+    Manager --- M_Login
+    Manager --- M_Customers
+    Manager --- M_Contract
+    Manager --- M_ViewShifts
+    Manager --- M_Dispute
+
+    M_Contract -.->|"&laquo;include&raquo;"| M_Sites
+    M_Contract -.->|"&laquo;include&raquo;"| M_Items
+    M_Contract -.->|"&laquo;include&raquo;"| SYS_Schedule
+    M_Dispute -.->|"&laquo;include&raquo;"| M_Review
+```
+
+#### Accountant
+
+```mermaid
+---
+config:
+  flowchart:
+    nodeSpacing: 22
+    rankSpacing: 45
+    padding: 8
+    subGraphTitleMargin: { top: 4, bottom: 4 }
+---
+flowchart LR
+    Accountant((Accountant))
+
+    subgraph Contrack["Contrack"]
         subgraph AccountantBox["Accountant"]
             A_Login(["UC-01 · Sign in"])
             A_ProfitLoss(["UC-09 · View profit / loss"])
             A_Reconcile(["UC-17 · View reconciliation"])
             A_Cost(["UC-25 · Record monthly cost"])
-            A_StmtData(["UC-26 · Generate statement data"])
-            A_Export(["UC-27 · Export statement as PDF"])
             A_Send(["UC-28 · Send statement to customer"])
+            SYS_Estimate(["UC-34 · Estimate month cost"])
+            A_Export(["UC-27 · Export statement as PDF"])
+            A_StmtData(["UC-26 · Generate statement data"])
         end
+    end
+
+    classDef box fill:#f8fafc,stroke:#94a3b8,color:#0f172a
+    classDef actor fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef uc fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
+    class Contrack,AccountantBox box
+    class Accountant actor
+    class A_Login,A_Reconcile,A_Cost,A_Export,A_Send uc
+    class A_StmtData,SYS_Estimate inc
+
+    Accountant --- A_Login
+    Accountant --- A_ProfitLoss
+    Accountant --- A_Reconcile
+    Accountant --- A_Cost
+    Accountant --- A_Send
+
+    A_ProfitLoss -.->|"&laquo;include&raquo;"| SYS_Estimate
+    A_Send -.->|"&laquo;include&raquo;"| A_Export
+    A_Export -.->|"&laquo;include&raquo;"| A_StmtData
+```
+
+#### Team Lead
+
+```mermaid
+---
+config:
+  flowchart:
+    nodeSpacing: 22
+    rankSpacing: 45
+    padding: 8
+    subGraphTitleMargin: { top: 4, bottom: 4 }
+---
+flowchart LR
+    TeamLead((Team<br/>Lead))
+
+    subgraph Contrack["Contrack"]
         subgraph TeamLeadBox["Team Lead"]
             T_Login(["UC-01 · Sign in"])
             T_Week(["UC-18 · View this week's shifts"])
             T_Reschedule(["UC-19 · Reassign / reschedule shift"])
         end
-        subgraph EmployeeBox["Employee — no nav, each shift arrives as a link"]
+    end
+
+    classDef box fill:#f8fafc,stroke:#94a3b8,color:#0f172a
+    classDef actor fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef uc fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
+    class Contrack,TeamLeadBox box
+    class TeamLead actor
+    class T_Login,T_Week,T_Reschedule uc
+
+    TeamLead --- T_Login
+    TeamLead --- T_Week
+    TeamLead --- T_Reschedule
+```
+
+#### Employee
+
+```mermaid
+---
+config:
+  flowchart:
+    nodeSpacing: 22
+    rankSpacing: 45
+    padding: 8
+    subGraphTitleMargin: { top: 4, bottom: 4 }
+---
+flowchart LR
+    Employee((Employee))
+
+    subgraph Contrack["Contrack"]
+        subgraph EmployeeBox["Employee"]
             E_Login(["UC-01 · Sign in"])
             E_OpenShift(["UC-20 · Open shift from phone link"])
             E_Submit(["UC-21 · Submit shift evidence"])
@@ -184,12 +376,46 @@ flowchart LR
             E_Receipt(["UC-23 · Capture signed-receipt photo"])
             E_GPS(["UC-24 · Capture GPS and timestamp"])
         end
+    end
+
+    classDef box fill:#f8fafc,stroke:#94a3b8,color:#0f172a
+    classDef actor fill:#f1f5f9,stroke:#64748b,color:#0f172a
+    classDef uc fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
+    classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
+    class Contrack,EmployeeBox box
+    class Employee actor
+    class E_Login,E_OpenShift,E_Submit uc
+    class E_Photos,E_Receipt,E_GPS inc
+
+    Employee --- E_Login
+    Employee --- E_OpenShift
+    Employee --- E_Submit
+
+    E_Submit -.->|"&laquo;include&raquo;"| E_Photos
+    E_Submit -.->|"&laquo;include&raquo;"| E_Receipt
+    E_Submit -.->|"&laquo;include&raquo;"| E_GPS
+```
+
+#### System-triggered
+
+```mermaid
+---
+config:
+  flowchart:
+    nodeSpacing: 22
+    rankSpacing: 45
+    padding: 8
+    subGraphTitleMargin: { top: 4, bottom: 4 }
+---
+flowchart LR
+    Scheduler((Scheduler))
+    Zalo((Zalo ZNS / SMS))
+
+    subgraph Contrack["Contrack"]
         subgraph SystemBox["System-triggered"]
             S_Push(["UC-30 · Push this week's shifts"])
             S_Expiry(["UC-31 · Alert: contract within 30 days of expiry"])
             S_Missed(["UC-32 · Alert: shift past due and not completed"])
-            S_Schedule(["UC-29 · Generate shift schedule"])
-            S_Estimate(["UC-34 · Estimate month cost"])
             S_Alert(["UC-33 · Send alert via Zalo (ZNS) / SMS"])
         end
     end
@@ -198,47 +424,25 @@ flowchart LR
     classDef actor fill:#f1f5f9,stroke:#64748b,color:#0f172a
     classDef uc fill:#dbeafe,stroke:#1d4ed8,color:#0f172a
     classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
-    class Contrack,PlatformAdminBox,DirectorBox,ManagerBox,AccountantBox,TeamLeadBox,EmployeeBox,SystemBox box
-    class PlatformAdmin,Director,Manager,Accountant,TeamLead,Employee,Scheduler,Zalo actor
-    class PA_Login,PA_Onboard,PA_TenantStatus,PA_PlatformDash,D_Login,D_Dashboard,D_Accounts,D_Teams,D_ProfitLoss,D_Customers,D_Contract,D_ViewShifts,D_Dispute,D_Reconcile,M_Login,M_Customers,M_Contract,M_ViewShifts,M_Dispute,A_Login,A_ProfitLoss,A_Reconcile,A_Cost,A_Export,A_Send,T_Login,T_Week,T_Reschedule,E_Login,E_OpenShift,E_Submit,S_Push,S_Expiry,S_Missed uc
-    class PA_FirstDirector,D_Sites,D_Items,D_Review,M_Sites,M_Items,M_Review,A_StmtData,E_Photos,E_Receipt,E_GPS,S_Schedule,S_Estimate,S_Alert inc
+    class Contrack,SystemBox box
+    class Scheduler,Zalo actor
+    class S_Push,S_Expiry,S_Missed uc
+    class S_Alert inc
 
-    %% Actor-to-use-case — one association per actor, into that actor's own area
-    PlatformAdmin --- PlatformAdminBox
-    Director --- DirectorBox
-    Manager --- ManagerBox
-    Accountant --- AccountantBox
-    TeamLead --- TeamLeadBox
-    Employee --- EmployeeBox
-    Scheduler --- SystemBox
-    Zalo --- SystemBox
+    Scheduler --- S_Push
+    Scheduler --- S_Expiry
+    Scheduler --- S_Missed
+    Zalo --- S_Alert
 
-    %% «include»
-    PA_Onboard -.->|"&laquo;include&raquo;"| PA_FirstDirector
-    D_Dashboard -.->|"&laquo;include&raquo;"| S_Estimate
-    D_ProfitLoss -.->|"&laquo;include&raquo;"| S_Estimate
-    D_Contract -.->|"&laquo;include&raquo;"| D_Sites
-    D_Contract -.->|"&laquo;include&raquo;"| D_Items
-    D_Contract -.->|"&laquo;include&raquo;"| S_Schedule
-    D_Dispute -.->|"&laquo;include&raquo;"| D_Review
-    M_Contract -.->|"&laquo;include&raquo;"| M_Sites
-    M_Contract -.->|"&laquo;include&raquo;"| M_Items
-    M_Contract -.->|"&laquo;include&raquo;"| S_Schedule
-    M_Dispute -.->|"&laquo;include&raquo;"| M_Review
-    A_Export -.->|"&laquo;include&raquo;"| A_StmtData
-    A_Send -.->|"&laquo;include&raquo;"| A_Export
-    A_ProfitLoss -.->|"&laquo;include&raquo;"| S_Estimate
-    E_Submit -.->|"&laquo;include&raquo;"| E_Photos
-    E_Submit -.->|"&laquo;include&raquo;"| E_Receipt
-    E_Submit -.->|"&laquo;include&raquo;"| E_GPS
     S_Expiry -.->|"&laquo;include&raquo;"| S_Alert
     S_Missed -.->|"&laquo;include&raquo;"| S_Alert
 ```
 
 #### Use case traceability
 
-Ids match the diagram above: a use case two roles perform keeps one id and appears in both role
-areas. A `—` in the FR column means the use case is the surface a screen
+Ids match the diagrams above: a use case two roles perform keeps one id and appears in every role
+diagram that shows it, and a use case a role diagram reaches only through `«include»` appears there
+as the dashed duplicate noted above. A `—` in the FR column means the use case is the surface a screen
 `02-screens-heriarchy.md` gives a role rather than an FR of its own; every other row traces to
 both a US# and an FR#.
 

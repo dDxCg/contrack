@@ -54,6 +54,54 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
     return reloaded;
   }
 
+  /** Every shift for one contract in [from, to) with its item's unit_price — statements (FR10) and profitability (FR4). */
+  async revenueRows(tenantId: number, contractId: number, from: string, to: string): Promise<RevenueRow[]> {
+    const rows = (await this.dataSource.query(
+      `SELECT s.id, st.code AS status, s.scheduled_date, ci.unit_price
+       FROM shifts s
+       JOIN shift_statuses st ON st.id = s.status_id
+       JOIN contract_items ci ON ci.id = s.contract_item_id
+       JOIN contract_sites cs ON cs.id = ci.site_id
+       WHERE s.tenant_id = $1 AND cs.contract_id = $2 AND s.scheduled_date >= $3 AND s.scheduled_date < $4
+       ORDER BY s.id ASC`,
+      [tenantId, contractId, from, to],
+    )) as { id: number; status: string; scheduled_date: Date; unit_price: string }[];
+
+    return rows.map((row) => ({
+      id: row.id,
+      status: row.status as ShiftStatus,
+      scheduledDate: row.scheduled_date,
+      unitPrice: Number(row.unit_price),
+    }));
+  }
+
+  /** Every contract's shifts in [from, to) tenant-wide, for reconciliation (FR13). */
+  async shiftsByContractForPeriod(tenantId: number, from: string, to: string): Promise<ContractShiftRow[]> {
+    const rows = (await this.dataSource.query(
+      `SELECT cs.contract_id, s.completed_at
+       FROM shifts s
+       JOIN contract_items ci ON ci.id = s.contract_item_id
+       JOIN contract_sites cs ON cs.id = ci.site_id
+       WHERE s.tenant_id = $1 AND s.scheduled_date >= $2 AND s.scheduled_date < $3`,
+      [tenantId, from, to],
+    )) as { contract_id: number; completed_at: Date | null }[];
+
+    return rows.map((row) => ({ contractId: row.contract_id, completed: row.completed_at !== null }));
+  }
+
+  /** All-time completed-shift revenue tenant-wide — the denominator of FR28's cost-to-revenue ratio. */
+  async tenantRevenueCompleted(tenantId: number): Promise<number> {
+    const [row] = (await this.dataSource.query(
+      `SELECT COALESCE(SUM(ci.unit_price), 0) AS total
+       FROM shifts s
+       JOIN contract_items ci ON ci.id = s.contract_item_id
+       WHERE s.tenant_id = $1 AND s.completed_at IS NOT NULL`,
+      [tenantId],
+    )) as { total: string }[];
+
+    return Number(row.total);
+  }
+
   private selected(query: SelectQueryBuilder<Shift>): SelectQueryBuilder<Shift> {
     return query
       .innerJoin('shift_statuses', 'st', 'st.id = s.status_id')
@@ -73,6 +121,18 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
         'st.code AS status',
       ]);
   }
+}
+
+export interface RevenueRow {
+  id: number;
+  status: ShiftStatus;
+  scheduledDate: Date;
+  unitPrice: number;
+}
+
+export interface ContractShiftRow {
+  contractId: number;
+  completed: boolean;
 }
 
 interface ShiftRow {

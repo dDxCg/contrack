@@ -32,7 +32,7 @@ restating them — follow the citations back when a decision's rationale isn't o
 
 | File | Contents |
 |---|---|
-| [`01-requirements-analysis.md`](01-requirements-analysis.md) | Project overview, user stories (INVEST-checked), FR1–FR29, NFR1–NFR7, use-case diagram (UC-01…UC-34, one area per role, each traced to its US#/FR#) |
+| [`01-requirements-analysis.md`](01-requirements-analysis.md) | Project overview, user stories (INVEST-checked), FR1–FR29, NFR1–NFR7, use-case diagrams (UC-01…UC-34, one diagram per role, each traced to its US#/FR#) |
 | [`02-screens-heriarchy.md`](02-screens-heriarchy.md) | Screens hierarchy, per role |
 | [`03-architecture.md`](03-architecture.md) | arc42-structured: constraints, context, solution strategy, building blocks, deployment, decisions, quality requirements, risks, glossary |
 | [`04-erd.md`](04-erd.md) | Entity-relationship diagram (mermaid) |
