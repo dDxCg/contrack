@@ -4,6 +4,7 @@ import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Shift, ShiftStatus } from '../../models/shifts/shift.entity';
 import { CrossTenantLookup } from '../cross-tenant-lookup';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
+import { Money } from '../../utils/money';
 @Injectable()
 export class ShiftRepository extends TenantScopedRepository<Shift> {
   protected override readonly entity: EntityTarget<Shift> = Shift;
@@ -72,7 +73,7 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
       id: row.id,
       status: row.status as ShiftStatus,
       scheduledDate: row.scheduled_date,
-      unitPrice: Number(row.unit_price),
+      unitPrice: Money.fromString(row.unit_price),
     }));
   }
   async shiftsByContractForPeriod(tenantId: number, from: string, to: string): Promise<ContractShiftRow[]> {
@@ -87,7 +88,7 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
       }>();
     return rows.map((row) => ({ contractId: row.contract_id, completed: row.completed_at !== null }));
   }
-  async tenantRevenueCompleted(tenantId: number): Promise<number> {
+  async tenantRevenueCompleted(tenantId: number): Promise<Money> {
     const row = await this.scopedTo(tenantId, 's')
       .innerJoin('contract_items', 'ci', 'ci.id = s.contract_item_id')
       .andWhere('s.completed_at IS NOT NULL')
@@ -95,7 +96,7 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
       .getRawOne<{
         total: string;
       }>();
-    return Number(row?.total ?? 0);
+    return Money.fromString(row?.total ?? '0');
   }
   async overdue(
     tenantId: number,
@@ -135,7 +136,7 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
       }>();
     return rows.map((row) => ({ status: row.status, scheduledDate: row.scheduled_date }));
   }
-  async tenantRevenueForPeriod(tenantId: number, from: string, to: string): Promise<number> {
+  async tenantRevenueForPeriod(tenantId: number, from: string, to: string): Promise<Money> {
     const row = await this.scopedTo(tenantId, 's')
       .innerJoin('contract_items', 'ci', 'ci.id = s.contract_item_id')
       .andWhere('s.scheduled_date >= :from AND s.scheduled_date < :to', { from, to })
@@ -143,7 +144,7 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
       .getRawOne<{
         total: string;
       }>();
-    return Number(row?.total ?? 0);
+    return Money.fromString(row?.total ?? '0');
   }
   async countByStatus(tenantId: number, status: ShiftStatus): Promise<number> {
     return this.scopedTo(tenantId, 's')
@@ -175,7 +176,7 @@ export interface RevenueRow {
   id: number;
   status: ShiftStatus;
   scheduledDate: Date;
-  unitPrice: number;
+  unitPrice: Money;
 }
 export interface ContractShiftRow {
   contractId: number;

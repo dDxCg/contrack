@@ -1,13 +1,14 @@
 import { StatementImmutableException, StatementNotIssuedException } from '../../../models/domain-errors';
 import { Statement, StatementStatus } from '../../../models/statements/statement.entity';
 import { captureDomainError } from '../../support/domain-errors';
+import { Money } from '../../../utils/money';
 function aDraftStatement(): Statement {
   const statement = new Statement();
   statement.id = 1;
   statement.tenantId = 1;
   statement.contractId = 1;
   statement.period = new Date('2024-10-01');
-  statement.totalAmount = 1700000;
+  statement.totalAmount = Money.fromNumber(1700000);
   statement.pdfUrl = null;
   statement.createdAt = new Date('2024-11-01T00:00:00.000Z');
   statement.status = StatementStatus.Draft;

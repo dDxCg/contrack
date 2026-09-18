@@ -67,7 +67,7 @@ export class StatementService {
     statement.tenantId = access.tenantId;
     statement.contractId = command.contractId;
     statement.period = period;
-    statement.totalAmount = Money.sumOf(rows.map((row) => row.unitPrice)).toNumber();
+    statement.totalAmount = Money.sumOf(rows.map((row) => row.unitPrice));
     statement.pdfUrl = null;
     statement.status = StatementStatus.Draft;
     const saved = await withUniqueViolation(

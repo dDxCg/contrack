@@ -6,7 +6,7 @@ export function toLine(row: RevenueRow): StatementLineView {
     shift_id: row.id,
     scheduled_date: row.scheduledDate.toString(),
     has_evidence: row.status === 'completed',
-    amount: row.unitPrice,
+    amount: row.unitPrice.toNumber(),
   };
 }
 export function toStatementView(statement: Statement, lines: StatementLineView[]): StatementView {
@@ -14,7 +14,7 @@ export function toStatementView(statement: Statement, lines: StatementLineView[]
     id: statement.id,
     contract_id: statement.contractId,
     period: statement.period.toString(),
-    total_amount: statement.totalAmount,
+    total_amount: statement.totalAmount.toNumber(),
     status: statement.status,
     pdf_url: statement.pdfUrl,
     lines,

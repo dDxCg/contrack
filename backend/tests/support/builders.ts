@@ -8,6 +8,7 @@ import { Customer, CustomerSegment } from '../../models/customers/customer.entit
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
 import { Team } from '../../models/teams/team.entity';
 import { Tenant, TenantStatus } from '../../models/tenants/tenant.entity';
+import { Money } from '../../utils/money';
 export function anEmployee(overrides: Partial<Employee> = {}): Employee {
   const employee = new Employee();
   return Object.assign(
@@ -108,7 +109,7 @@ export function aContractItem(overrides: Partial<ContractItem> = {}): ContractIt
       frequencyCount: 1,
       frequencyUnitId: 1,
       frequencyRule: null,
-      unitPrice: 500000,
+      unitPrice: Money.fromNumber(500000),
       createdAt: new Date('2024-01-01T00:00:00.000Z'),
       frequencyUnit: FrequencyUnit.Week,
     },

@@ -33,9 +33,6 @@ export class AuthService {
     const found = await this.employeeRepository.findByEmail(command.email);
     const employee = found !== null && found.isActive() && found.passwordHash !== null ? found : null;
     const tenant = employee !== null ? await this.tenantRepository.findById(employee.tenantId) : null;
-    if (tenant !== null) {
-      tenant.assertActive();
-    }
     const passwordMatches = await this.passwordHasher.verify(
       command.password,
       employee?.passwordHash ?? (await this.dummyHash()),
@@ -43,6 +40,7 @@ export class AuthService {
     if (employee === null || tenant === null || !passwordMatches) {
       throw new AuthInvalidCredentialsException();
     }
+    tenant.assertActive();
     return this.issue(employee);
   }
   async refresh(refreshToken: string): Promise<SessionView> {

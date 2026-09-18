@@ -5,6 +5,7 @@ import { ContractCost, CostCategory } from '../../models/contract-costs/contract
 import { ContractCostRepository } from '../../repositories/contract-costs/contract-cost.repository';
 import { AccessContext } from '../access-control/access-context';
 import { toDateString } from '../../utils/period';
+import { Money } from '../../utils/money';
 export interface UpsertCostCommand {
   category: CostCategory;
   period: Date;
@@ -31,7 +32,7 @@ export class ContractCostService {
     cost.contractId = contractId;
     cost.category = command.category;
     cost.period = command.period;
-    cost.amount = command.amount;
+    cost.amount = Money.fromNumber(command.amount);
     cost.createdBy = access.employee.id;
     return toContractCostView(await this.contractCostRepository.upsert(cost));
   }

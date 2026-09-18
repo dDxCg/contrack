@@ -40,14 +40,21 @@ export class ContractProfitabilityService {
       periodStart,
       toDateString(addMonthsUTC(period, 1)),
     );
-    const revenue = Money.sumOf(rows.map((row) => row.unitPrice)).toNumber();
+    const revenue = Money.sumOf(rows.map((row) => row.unitPrice));
     const recorded = await this.contractCostRepository.totalForMonth(tenantId, contractId, periodStart);
     const isEstimated = recorded === null;
     const cost = isEstimated
       ? await this.costEstimationService.estimate(tenantId, contractId, period)
       : recorded;
-    const profit = Money.fromNumber(revenue).subtract(Money.fromNumber(cost)).toNumber();
-    const marginPct = revenue === 0 ? 0 : round2((profit / revenue) * 100);
-    return { period: periodStart, revenue, cost, profit, margin_pct: marginPct, is_estimated: isEstimated };
+    const profit = revenue.subtract(cost);
+    const marginPct = revenue.isZero() ? 0 : round2((profit.toNumber() / revenue.toNumber()) * 100);
+    return {
+      period: periodStart,
+      revenue: revenue.toNumber(),
+      cost: cost.toNumber(),
+      profit: profit.toNumber(),
+      margin_pct: marginPct,
+      is_estimated: isEstimated,
+    };
   }
 }

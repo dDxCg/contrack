@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { StatementImmutableException, StatementNotIssuedException } from '../domain-errors';
+import { Money, moneyTransformer } from '../../utils/money';
 export enum StatementStatus {
   Draft = 'draft',
   Issued = 'issued',
@@ -15,8 +16,15 @@ export class Statement {
   contractId!: number;
   @Column({ type: 'date' })
   period!: Date;
-  @Column({ name: 'total_amount', type: 'numeric', precision: 14, scale: 2, default: 0 })
-  totalAmount!: number;
+  @Column({
+    name: 'total_amount',
+    type: 'numeric',
+    precision: 14,
+    scale: 2,
+    default: 0,
+    transformer: moneyTransformer,
+  })
+  totalAmount!: Money;
   @Column({ name: 'status_id', type: 'integer', default: 1 })
   statusId!: number;
   @Column({ name: 'pdf_url', type: 'varchar', length: 500, nullable: true })

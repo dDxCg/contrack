@@ -68,7 +68,7 @@ export class DashboardService {
       active_contracts: activeContracts,
       expiring_soon: expiring.length,
       disputed_shifts: disputedShifts,
-      projected_revenue: round2(projectedRevenue),
+      projected_revenue: projectedRevenue.toNumber(),
       statements_closed: await this.statementsClosed(access.tenantId, contractShiftRows, from),
       shifts_summary: computeShiftStats(statsRows, today),
       bucket_unit: period.bucketUnit,

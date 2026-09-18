@@ -3,6 +3,7 @@ import { DataSource, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Statement, StatementStatus } from '../../models/statements/statement.entity';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
+import { Money } from '../../utils/money';
 export interface StatementListFilter {
   period?: string;
   status?: StatementStatus;
@@ -126,7 +127,7 @@ function hydrateStatement(row: StatementRow): Statement {
   statement.tenantId = row.tenant_id;
   statement.contractId = row.contract_id;
   statement.period = row.period;
-  statement.totalAmount = Number(row.total_amount);
+  statement.totalAmount = Money.fromString(row.total_amount);
   statement.statusId = row.status_id;
   statement.pdfUrl = row.pdf_url;
   statement.createdAt = row.created_at;

@@ -10,6 +10,7 @@ import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { StatementRepository } from '../../../repositories/statements/statement.repository';
 import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
 import { DashboardService } from '../../../services/dashboard/dashboard.service';
+import { Money } from '../../../utils/money';
 async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
   const dataSource = await createTestDataSource();
   const contracts = new ContractRepository(dataSource);
@@ -135,7 +136,7 @@ describe('DashboardService.get — FR2', () => {
     statement.tenantId = tenant.id;
     statement.contractId = chain.contractId;
     statement.period = new Date('2024-10-01');
-    statement.totalAmount = 1000000;
+    statement.totalAmount = Money.fromNumber(1000000);
     statement.pdfUrl = null;
     statement.status = StatementStatus.Sent;
     await statements.create(statement);

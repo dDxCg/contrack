@@ -4,6 +4,7 @@ import { ContractStatus } from '../../../models/contracts/contract.entity';
 import { ContractCreateCommand } from '../../../services/contracts/contract.service';
 import { ContractAssembler } from '../../../services/contracts/contract-assembler';
 import { ScheduleGeneratorService } from '../../../services/contracts/schedule-generator.service';
+import { Money } from '../../../utils/money';
 function aCommand(overrides: Partial<ContractCreateCommand> = {}): ContractCreateCommand {
   return {
     customerId: 9,
@@ -54,7 +55,7 @@ describe('ContractAssembler — pure command-to-entity-graph, no DB', () => {
     const item = assembled.sites[0].items[0].entity;
     expect(item.tenantId).toBe(4);
     expect(item.name).toBe('Vệ sinh sảnh');
-    expect(item.unitPrice).toBe(500000);
+    expect(item.unitPrice).toEqual(Money.fromNumber(500000));
     expect(item.siteId).toBeUndefined();
   });
   it('precomputes each item’s shift schedule from the contract term and its own frequency', () => {

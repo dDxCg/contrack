@@ -134,7 +134,7 @@ describe('AuthService.login — FR22', () => {
     expect(secondHash).toBe(firstHash);
     expect(firstHash).not.toBe(employee.passwordHash);
   });
-  it('refuses a suspended tenant before checking the password (FR24)', async () => {
+  it('refuses a suspended tenant only after the password checks out (FR24, M2 — no pre-password oracle)', async () => {
     const { service, hasher } = await loadWorld({ tenant: { status: TenantStatus.Suspended } });
     const verify = jest.spyOn(hasher, 'verify');
     const error = await captureDomainErrorAsync(() =>
@@ -142,7 +142,14 @@ describe('AuthService.login — FR22', () => {
     );
     expect(error.code).toBe('tenant.suspended');
     expect(error.getStatus()).toBe(401);
-    expect(verify).not.toHaveBeenCalled();
+    expect(verify).toHaveBeenCalled();
+  });
+  it('gives a wrong password against a suspended tenant the same generic failure as any other wrong password', async () => {
+    const { service } = await loadWorld({ tenant: { status: TenantStatus.Suspended } });
+    const error = await captureDomainErrorAsync(() =>
+      service.login({ email: 'mai.lt@example.com', password: 'wrong' }),
+    );
+    expect(error.code).toBe('auth.invalid_credentials');
   });
   it('refuses a terminated employee (FR18 — deactivation applies to their next request)', async () => {
     const { service } = await loadWorld({ employee: { status: EmployeeStatus.Terminated } });

@@ -3,6 +3,7 @@ import { DataSource, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { ContractCost, CostCategory } from '../../models/contract-costs/contract-cost.entity';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
+import { Money } from '../../utils/money';
 @Injectable()
 export class ContractCostRepository extends TenantScopedRepository<ContractCost> {
   protected override readonly entity: EntityTarget<ContractCost> = ContractCost;
@@ -53,7 +54,7 @@ export class ContractCostRepository extends TenantScopedRepository<ContractCost>
     contractId: number,
     beforePeriod: string,
     limit: number,
-  ): Promise<number[]> {
+  ): Promise<Money[]> {
     const rows = await this.scopedTo(tenantId, 'cc')
       .andWhere('cc.contract_id = :contractId', { contractId })
       .andWhere('cc.period < :beforePeriod', { beforePeriod })
@@ -64,9 +65,9 @@ export class ContractCostRepository extends TenantScopedRepository<ContractCost>
       .getRawMany<{
         total: string;
       }>();
-    return rows.map((row) => Number(row.total));
+    return rows.map((row) => Money.fromString(row.total));
   }
-  async totalForMonth(tenantId: number, contractId: number, period: string): Promise<number | null> {
+  async totalForMonth(tenantId: number, contractId: number, period: string): Promise<Money | null> {
     const rows = await this.scopedTo(tenantId, 'cc')
       .andWhere('cc.contract_id = :contractId', { contractId })
       .andWhere('cc.period = :period', { period })
@@ -77,13 +78,13 @@ export class ContractCostRepository extends TenantScopedRepository<ContractCost>
     if (rows.length === 0) {
       return null;
     }
-    return rows.reduce((sum, row) => sum + Number(row.amount), 0);
+    return Money.sumOf(rows.map((row) => Money.fromString(row.amount)));
   }
-  async tenantTotalCost(tenantId: number): Promise<number> {
+  async tenantTotalCost(tenantId: number): Promise<Money> {
     const row = await this.scopedTo(tenantId, 'cc').select('COALESCE(SUM(cc.amount), 0)', 'total').getRawOne<{
       total: string;
     }>();
-    return Number(row?.total ?? 0);
+    return Money.fromString(row?.total ?? '0');
   }
   private selected(query: SelectQueryBuilder<ContractCost>): SelectQueryBuilder<ContractCost> {
     return query
@@ -119,7 +120,7 @@ function hydrateContractCost(row: ContractCostRow): ContractCost {
   cost.contractId = row.contract_id;
   cost.categoryId = row.category_id;
   cost.period = row.period;
-  cost.amount = Number(row.amount);
+  cost.amount = Money.fromString(row.amount);
   cost.createdBy = row.created_by;
   cost.createdAt = row.created_at;
   cost.category = row.category;

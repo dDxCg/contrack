@@ -2,6 +2,7 @@ import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedTenant } from '../../support/seed';
 import { Statement, StatementStatus } from '../../../models/statements/statement.entity';
 import { StatementRepository } from '../../../repositories/statements/statement.repository';
+import { Money } from '../../../utils/money';
 
 async function world() {
   const dataSource = await createTestDataSource();
@@ -21,7 +22,7 @@ async function seedStatement(
   statement.tenantId = tenantId;
   statement.contractId = contractId;
   statement.period = new Date(`${overrides.period ?? '2024-01-01'}T00:00:00.000Z`);
-  statement.totalAmount = overrides.totalAmount ?? 150;
+  statement.totalAmount = Money.fromNumber(overrides.totalAmount ?? 150);
   statement.status = overrides.status ?? StatementStatus.Draft;
   statement.pdfUrl = null;
   return repository.create(statement);
@@ -36,7 +37,7 @@ describe('StatementRepository', () => {
       tenantId: tenant.id,
       contractId,
       status: StatementStatus.Draft,
-      totalAmount: 150,
+      totalAmount: Money.fromNumber(150),
       pdfUrl: null,
     });
   });

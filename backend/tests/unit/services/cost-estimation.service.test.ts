@@ -7,6 +7,7 @@ import { ContractCostRepository } from '../../../repositories/contract-costs/con
 import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { CostEstimationService } from '../../../services/contract-costs/cost-estimation.service';
+import { Money } from '../../../utils/money';
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Kế toán');
@@ -52,7 +53,7 @@ async function recordCost(
   cost.contractId = contractId;
   cost.category = CostCategory.Labor;
   cost.period = new Date(period);
-  cost.amount = amount;
+  cost.amount = Money.fromNumber(amount);
   cost.createdBy = createdBy;
   await costs.upsert(cost);
 }
@@ -63,7 +64,7 @@ describe('CostEstimationService.estimate — FR28', () => {
     await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-08-01', 2000000);
     await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-09-01', 3000000);
     const estimate = await service.estimate(tenant.id, chain.contractId, new Date('2024-10-01'));
-    expect(estimate).toBe(2000000);
+    expect(estimate.toNumber()).toBe(2000000);
   });
   it('averages only the trailing 3 months even when more history exists', async () => {
     const { service, costs, tenant, chain, accountant } = await world();
@@ -72,7 +73,7 @@ describe('CostEstimationService.estimate — FR28', () => {
     await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-08-01', 1000000);
     await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-09-01', 1000000);
     const estimate = await service.estimate(tenant.id, chain.contractId, new Date('2024-10-01'));
-    expect(estimate).toBe(1000000);
+    expect(estimate.toNumber()).toBe(1000000);
   });
   it('falls back to the tenant cost-to-revenue ratio when the contract has no cost history', async () => {
     const { service, costs, tenant, chain, dataSource, accountant } = await world();
@@ -100,11 +101,11 @@ describe('CostEstimationService.estimate — FR28', () => {
       status: 'completed',
     });
     const estimate = await service.estimate(tenant.id, chain.contractId, new Date('2024-10-01'));
-    expect(estimate).toBe(333333.33);
+    expect(estimate.toNumber()).toBe(333333.33);
   });
   it('estimates zero when the tenant has no cost or revenue history at all', async () => {
     const { service, tenant, chain } = await world();
     const estimate = await service.estimate(tenant.id, chain.contractId, new Date('2024-10-01'));
-    expect(estimate).toBe(0);
+    expect(estimate.toNumber()).toBe(0);
   });
 });

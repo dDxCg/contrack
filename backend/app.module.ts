@@ -61,6 +61,7 @@ import {
   type DistributedLock,
 } from './services/alerts/distributed-lock';
 import Redis from 'ioredis';
+import { REDIS_CLIENT, createRedisClient } from './data/redis-client';
 import { AuthService } from './services/auth/auth.service';
 import {
   InMemoryRevocationStore,
@@ -90,7 +91,6 @@ import { ScheduleGeneratorService } from './services/contracts/schedule-generato
 import { StatementService } from './services/statements/statement.service';
 import { TeamService } from './services/teams/team.service';
 import { TokenService } from './services/auth/token.service';
-const REDIS_CLIENT = Symbol('REDIS_CLIENT');
 @Module({
   imports: [ScheduleModule.forRoot(), ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }])],
   controllers: [
@@ -129,16 +129,7 @@ const REDIS_CLIENT = Symbol('REDIS_CLIENT');
     { provide: APP_GUARD, useClass: AccessControlGuard },
     { provide: APP_FILTER, useClass: DomainExceptionFilter },
     { provide: CHANNEL_CLIENT, useClass: NullChannelClient },
-    {
-      provide: REDIS_CLIENT,
-      useFactory: (): Redis | null => {
-        const url = process.env.REDIS_LOCK_URL;
-        if (url === undefined || url === '') {
-          return null;
-        }
-        return new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 3 });
-      },
-    },
+    { provide: REDIS_CLIENT, useFactory: (): Redis | null => createRedisClient(process.env) },
     {
       provide: DISTRIBUTED_LOCK,
       useFactory: (clock: IClock, redis: Redis | null): DistributedLock =>

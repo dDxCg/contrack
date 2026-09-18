@@ -8,7 +8,7 @@ export function toContractItemView(item: ContractItem): ContractItemView {
     frequency_count: item.frequencyCount,
     frequency_unit: item.frequencyUnit,
     frequency_rule: item.frequencyRule,
-    unit_price: item.unitPrice,
+    unit_price: item.unitPrice.toNumber(),
   };
 }
 export function toContractView(contract: Contract, sites: ContractSiteView[]): ContractView {

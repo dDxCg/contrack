@@ -10,6 +10,7 @@ import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
 import { ContractProfitabilityService } from '../../../services/contract-costs/contract-profitability.service';
 import { CostEstimationService } from '../../../services/contract-costs/cost-estimation.service';
+import { Money } from '../../../utils/money';
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Kế toán');
@@ -66,7 +67,7 @@ describe('ContractProfitabilityService.get — FR4, FR28', () => {
     cost.contractId = chain.contractId;
     cost.category = CostCategory.Labor;
     cost.period = new Date('2024-10-01');
-    cost.amount = 300000;
+    cost.amount = Money.fromNumber(300000);
     cost.createdBy = accountant.id;
     await costs.upsert(cost);
     const months = await service.get(access, chain.contractId, 1);

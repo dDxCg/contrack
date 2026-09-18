@@ -6,7 +6,7 @@ export function toContractCostView(cost: ContractCost): ContractCostView {
     contract_id: cost.contractId,
     category: cost.category,
     period: cost.period.toString(),
-    amount: cost.amount,
+    amount: cost.amount.toNumber(),
     recorded_by: cost.createdBy,
     recorded_at: cost.createdAt.toString(),
   };

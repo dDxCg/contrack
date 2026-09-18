@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { FieldViolation } from '../domain-errors';
+import { Money, moneyTransformer } from '../../utils/money';
 export enum FrequencyUnit {
   Day = 'day',
   Week = 'week',
@@ -23,8 +24,8 @@ export class ContractItem {
   frequencyUnitId!: number;
   @Column({ name: 'frequency_rule', type: 'varchar', length: 255, nullable: true })
   frequencyRule!: string | null;
-  @Column({ name: 'unit_price', type: 'numeric', precision: 14, scale: 2 })
-  unitPrice!: number;
+  @Column({ name: 'unit_price', type: 'numeric', precision: 14, scale: 2, transformer: moneyTransformer })
+  unitPrice!: Money;
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
   frequencyUnit!: FrequencyUnit;
@@ -37,14 +38,14 @@ export class ContractItem {
     this.frequencyRule = rule;
   }
   setUnitPrice(unitPrice: number): void {
-    this.unitPrice = unitPrice;
+    this.unitPrice = Money.fromNumber(unitPrice);
   }
   assertValid(): FieldViolation[] {
     const violations: FieldViolation[] = [];
     if (!Number.isInteger(this.frequencyCount) || this.frequencyCount < 1) {
       violations.push({ field: 'frequency_count', message: 'Frequency count must be a positive integer' });
     }
-    if (typeof this.unitPrice !== 'number' || this.unitPrice < 0) {
+    if (!(this.unitPrice instanceof Money) || this.unitPrice.isNegative()) {
       violations.push({ field: 'unit_price', message: 'Unit price must be zero or greater' });
     }
     return violations;
