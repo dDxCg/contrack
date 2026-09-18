@@ -7,6 +7,7 @@ export interface ShiftView {
   status: string;
   latitude: number | null;
   longitude: number | null;
+  geo_verified: boolean;
   captured_at: string | null;
   receipt_photo_url: string | null;
 }

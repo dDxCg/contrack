@@ -2,14 +2,22 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Shift, ShiftStatus } from '../../models/shifts/shift.entity';
+import { ContractItem } from '../../models/contracts/contract-item.entity';
 import { CrossTenantLookup } from '../cross-tenant-lookup';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
 import { Money } from '../../utils/money';
+export interface SiteGeofence {
+  latitude: number | null;
+  longitude: number | null;
+  radiusMeters: number;
+}
 export interface IShiftRepository {
   createMany(shifts: readonly Shift[], tx?: EntityManager): Promise<void>;
   findById(tenantId: number, id: number, tx?: EntityManager): Promise<Shift | null>;
   findByIdUnscoped(id: number): Promise<Shift | null>;
   update(shift: Shift, tx?: EntityManager): Promise<Shift>;
+  siteGeofenceFor(contractItemId: number): Promise<SiteGeofence | null>;
+  claimFieldToken(id: number, now: Date, tx?: EntityManager): Promise<boolean>;
   revenueRows(tenantId: number, contractId: number, from: string, to: string): Promise<RevenueRow[]>;
   shiftsByContractForPeriod(tenantId: number, from: string, to: string): Promise<ContractShiftRow[]>;
   tenantRevenueCompleted(tenantId: number): Promise<Money>;
@@ -169,6 +177,35 @@ export class ShiftRepository extends TenantScopedRepository<Shift> implements IS
       .andWhere('st.code = :status', { status })
       .getCount();
   }
+  async siteGeofenceFor(contractItemId: number): Promise<SiteGeofence | null> {
+    const row = await this.crossTenant
+      .queryFor(ContractItem, 'ci')
+      .innerJoin('contract_sites', 'cs', 'cs.id = ci.site_id')
+      .where('ci.id = :contractItemId', { contractItemId })
+      .select(['cs.latitude AS latitude', 'cs.longitude AS longitude', 'cs.radius_meters AS radius_meters'])
+      .getRawOne<{
+        latitude: string | null;
+        longitude: string | null;
+        radius_meters: number;
+      }>();
+    if (row === undefined || row === null) {
+      return null;
+    }
+    return {
+      latitude: row.latitude === null ? null : Number(row.latitude),
+      longitude: row.longitude === null ? null : Number(row.longitude),
+      radiusMeters: row.radius_meters,
+    };
+  }
+  async claimFieldToken(id: number, now: Date, tx?: EntityManager): Promise<boolean> {
+    const result = await this.crossTenant
+      .queryFor(Shift, 's', tx)
+      .update(Shift)
+      .set({ fieldTokenUsedAt: now })
+      .where('id = :id AND field_token_used_at IS NULL', { id })
+      .execute();
+    return (result.affected ?? 0) > 0;
+  }
   private selected(query: SelectQueryBuilder<Shift>): SelectQueryBuilder<Shift> {
     return query
       .innerJoin('shift_statuses', 'st', 'st.id = s.status_id')
@@ -184,6 +221,8 @@ export class ShiftRepository extends TenantScopedRepository<Shift> implements IS
         's.longitude AS longitude',
         's.captured_at AS captured_at',
         's.receipt_photo_url AS receipt_photo_url',
+        's.geo_verified AS geo_verified',
+        's.field_token_used_at AS field_token_used_at',
         's.created_at AS created_at',
         'st.code AS status',
       ]);
@@ -211,6 +250,8 @@ interface ShiftRow {
   longitude: string | null;
   captured_at: Date | null;
   receipt_photo_url: string | null;
+  geo_verified: boolean;
+  field_token_used_at: Date | null;
   created_at: Date;
   status: ShiftStatus;
 }
@@ -227,6 +268,8 @@ function hydrateShift(row: ShiftRow): Shift {
   shift.longitude = row.longitude === null ? null : Number(row.longitude);
   shift.capturedAt = row.captured_at;
   shift.receiptPhotoUrl = row.receipt_photo_url;
+  shift.geoVerified = row.geo_verified;
+  shift.fieldTokenUsedAt = row.field_token_used_at;
   shift.createdAt = row.created_at;
   shift.status = row.status;
   return shift;

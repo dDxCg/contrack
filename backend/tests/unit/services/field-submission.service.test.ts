@@ -28,7 +28,13 @@ function validCommand(overrides: Partial<FieldSubmissionCommand> = {}): FieldSub
     ...overrides,
   };
 }
-async function world() {
+async function world(
+  siteOverrides: {
+    siteLatitude?: number | null;
+    siteLongitude?: number | null;
+    siteRadiusMeters?: number;
+  } = {},
+) {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
   const shiftPhotos = new ShiftPhotoRepository(dataSource);
@@ -39,7 +45,7 @@ async function world() {
   );
   const clock = new FakeClock(new Date('2024-10-21T08:30:00.000Z'));
   const tenant = await seedTenant(dataSource);
-  const chain = await seedContractItemChain(dataSource, tenant.id);
+  const chain = await seedContractItemChain(dataSource, tenant.id, siteOverrides);
   const shiftId = await seedShift(dataSource, {
     tenantId: tenant.id,
     contractItemId: chain.itemId,
@@ -131,5 +137,51 @@ describe('FieldSubmissionService.submit — FR16, FR17, FR24', () => {
       service.submit(expiredTokens.sign(shiftId), validCommand()),
     );
     expect(error.code).toBe('token.expired');
+  });
+});
+describe('FieldSubmissionService.submit — geofence (M3)', () => {
+  it('marks geo_verified when the submitted coordinates fall within the site radius', async () => {
+    const { service, tokens, shiftId, shifts, tenant } = await world({
+      siteLatitude: 21.0176,
+      siteLongitude: 105.7833,
+      siteRadiusMeters: 200,
+    });
+    const view = await service.submit(
+      tokens.sign(shiftId),
+      validCommand({ latitude: 21.0177, longitude: 105.7834 }),
+    );
+    expect(view.geo_verified).toBe(true);
+    const reloaded = await shifts.findById(tenant.id, shiftId);
+    expect(reloaded?.geoVerified).toBe(true);
+  });
+  it('marks geo_verified false, but still accepts the submission, when outside the site radius', async () => {
+    const { service, tokens, shiftId } = await world({
+      siteLatitude: 21.0176,
+      siteLongitude: 105.7833,
+      siteRadiusMeters: 200,
+    });
+    const view = await service.submit(
+      tokens.sign(shiftId),
+      validCommand({ latitude: 10.762622, longitude: 106.660172 }),
+    );
+    expect(view.status).toBe('completed');
+    expect(view.geo_verified).toBe(false);
+  });
+  it('marks geo_verified false when the site has no coordinates configured', async () => {
+    const { service, tokens, shiftId } = await world();
+    const view = await service.submit(tokens.sign(shiftId), validCommand());
+    expect(view.geo_verified).toBe(false);
+  });
+  it('marks geo_verified false when the submission has no coordinates, even inside a configured site', async () => {
+    const { service, tokens, shiftId } = await world({
+      siteLatitude: 21.0176,
+      siteLongitude: 105.7833,
+      siteRadiusMeters: 200,
+    });
+    const view = await service.submit(
+      tokens.sign(shiftId),
+      validCommand({ latitude: null, longitude: null }),
+    );
+    expect(view.geo_verified).toBe(false);
   });
 });

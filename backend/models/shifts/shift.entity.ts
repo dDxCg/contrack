@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import {
   ShiftAlreadyCompletedException,
   ShiftAlreadyDisputedException,
@@ -12,6 +12,7 @@ export interface ShiftEvidence {
   receiptPhotoUrl: string;
   latitude: number | null;
   longitude: number | null;
+  geoVerified: boolean;
 }
 export enum ShiftStatus {
   Scheduled = 'scheduled',
@@ -20,6 +21,7 @@ export enum ShiftStatus {
   Disputed = 'disputed',
 }
 @Entity('shifts')
+@Unique('uq_shifts_id_tenant', ['id', 'tenantId'])
 export class Shift {
   @PrimaryGeneratedColumn('identity')
   id!: number;
@@ -33,13 +35,31 @@ export class Shift {
   @Column({ name: 'contract_item_id', type: 'integer' })
   contractItemId!: number;
   @ManyToOne(() => ContractItem, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'contract_item_id', foreignKeyConstraintName: 'fk_shifts_contract_item' })
+  @JoinColumn([
+    {
+      name: 'contract_item_id',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_shifts_contract_item',
+    },
+    {
+      name: 'tenant_id',
+      referencedColumnName: 'tenantId',
+      foreignKeyConstraintName: 'fk_shifts_contract_item',
+    },
+  ])
   contractItem?: ContractItem;
   @Index('idx_shifts_assignee')
   @Column({ name: 'assignee_id', type: 'integer', nullable: true })
   assigneeId!: number | null;
   @ManyToOne(() => Employee)
-  @JoinColumn({ name: 'assignee_id', foreignKeyConstraintName: 'fk_shifts_assignee' })
+  @JoinColumn([
+    { name: 'assignee_id', referencedColumnName: 'id', foreignKeyConstraintName: 'fk_shifts_assignee' },
+    {
+      name: 'tenant_id',
+      referencedColumnName: 'tenantId',
+      foreignKeyConstraintName: 'fk_shifts_assignee',
+    },
+  ])
   assignee?: Employee;
   @Index('idx_shifts_scheduled_date')
   @Column({ name: 'scheduled_date', type: 'date' })
@@ -60,6 +80,10 @@ export class Shift {
   capturedAt!: Date | null;
   @Column({ name: 'receipt_photo_url', type: 'varchar', length: 500, nullable: true })
   receiptPhotoUrl!: string | null;
+  @Column({ name: 'geo_verified', type: 'boolean', default: false })
+  geoVerified!: boolean;
+  @Column({ name: 'field_token_used_at', type: 'timestamp', nullable: true })
+  fieldTokenUsedAt!: Date | null;
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
   status!: ShiftStatus;
@@ -72,6 +96,7 @@ export class Shift {
     this.receiptPhotoUrl = evidence.receiptPhotoUrl;
     this.latitude = evidence.latitude;
     this.longitude = evidence.longitude;
+    this.geoVerified = evidence.geoVerified;
     this.status = ShiftStatus.Completed;
   }
   dispute(): void {

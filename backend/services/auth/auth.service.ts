@@ -64,6 +64,8 @@ export class AuthService {
       return;
     }
     try {
+      // Best-effort: an already-expired/invalid refresh token means there's nothing left to revoke.
+      // Logout must still succeed either way — the access token above is already revoked.
       await this.tokenService.revoke(await this.tokenService.verifyRefresh(refreshToken));
     } catch {}
   }

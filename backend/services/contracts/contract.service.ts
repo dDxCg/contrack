@@ -41,6 +41,9 @@ export interface ContractSiteCommand {
   name: string;
   workRequirements: string | null;
   notes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  radiusMeters: number;
   items: ContractItemCommand[];
 }
 export interface ContractCreateCommand {
@@ -106,6 +109,9 @@ export class ContractService {
         name: savedSite.name,
         work_requirements: savedSite.workRequirements,
         notes: savedSite.notes,
+        latitude: savedSite.latitude,
+        longitude: savedSite.longitude,
+        radius_meters: savedSite.radiusMeters,
         items: itemViews,
       });
     }
@@ -135,6 +141,8 @@ function aScheduledShift(access: AccessContext, item: ContractItem, scheduledDat
   shift.longitude = null;
   shift.capturedAt = null;
   shift.receiptPhotoUrl = null;
+  shift.geoVerified = false;
+  shift.fieldTokenUsedAt = null;
   shift.status = ShiftStatus.Scheduled;
   return shift;
 }

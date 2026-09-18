@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { FieldViolation } from '../domain-errors';
 import { Money, moneyTransformer } from '../../utils/money';
 import { FrequencyUnitLookup } from '../lookups/frequency-unit.entity';
@@ -12,6 +12,7 @@ export enum FrequencyUnit {
   Year = 'year',
 }
 @Entity('contract_items')
+@Unique('uq_contract_items_id_tenant', ['id', 'tenantId'])
 export class ContractItem {
   @PrimaryGeneratedColumn('identity')
   id!: number;
@@ -25,7 +26,14 @@ export class ContractItem {
   @Column({ name: 'site_id', type: 'integer' })
   siteId!: number;
   @ManyToOne(() => ContractSite, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'site_id', foreignKeyConstraintName: 'fk_contract_items_site' })
+  @JoinColumn([
+    { name: 'site_id', referencedColumnName: 'id', foreignKeyConstraintName: 'fk_contract_items_site' },
+    {
+      name: 'tenant_id',
+      referencedColumnName: 'tenantId',
+      foreignKeyConstraintName: 'fk_contract_items_site',
+    },
+  ])
   site?: ContractSite;
   @Column({ type: 'varchar', length: 255 })
   name!: string;

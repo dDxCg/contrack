@@ -4,6 +4,7 @@ import { Employee } from '../employees/employee.entity';
 import { Tenant } from '../tenants/tenant.entity';
 @Entity('teams')
 @Unique('uq_teams_tenant_code', ['tenantId', 'code'])
+@Unique('uq_teams_id_tenant', ['id', 'tenantId'])
 export class Team {
   @PrimaryGeneratedColumn('identity')
   id!: number;

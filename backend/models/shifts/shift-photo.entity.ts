@@ -20,7 +20,14 @@ export class ShiftPhoto {
   @Column({ name: 'shift_id', type: 'integer' })
   shiftId!: number;
   @ManyToOne(() => Shift, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'shift_id', foreignKeyConstraintName: 'fk_shift_photos_shift' })
+  @JoinColumn([
+    { name: 'shift_id', referencedColumnName: 'id', foreignKeyConstraintName: 'fk_shift_photos_shift' },
+    {
+      name: 'tenant_id',
+      referencedColumnName: 'tenantId',
+      foreignKeyConstraintName: 'fk_shift_photos_shift',
+    },
+  ])
   shift?: Shift;
   @Index('idx_shift_photos_type')
   @Column({ name: 'type_id', type: 'integer' })

@@ -25,7 +25,18 @@ export class ContractCost {
   @Column({ name: 'contract_id', type: 'integer' })
   contractId!: number;
   @ManyToOne(() => Contract, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'contract_id', foreignKeyConstraintName: 'fk_contract_costs_contract' })
+  @JoinColumn([
+    {
+      name: 'contract_id',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_contract_costs_contract',
+    },
+    {
+      name: 'tenant_id',
+      referencedColumnName: 'tenantId',
+      foreignKeyConstraintName: 'fk_contract_costs_contract',
+    },
+  ])
   contract?: Contract;
   @Column({ name: 'category_id', type: 'integer' })
   categoryId!: number;
@@ -40,7 +51,18 @@ export class ContractCost {
   @Column({ name: 'created_by', type: 'integer' })
   createdBy!: number;
   @ManyToOne(() => Employee)
-  @JoinColumn({ name: 'created_by', foreignKeyConstraintName: 'fk_contract_costs_created_by' })
+  @JoinColumn([
+    {
+      name: 'created_by',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_contract_costs_created_by',
+    },
+    {
+      name: 'tenant_id',
+      referencedColumnName: 'tenantId',
+      foreignKeyConstraintName: 'fk_contract_costs_created_by',
+    },
+  ])
   createdByEmployee?: Employee;
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;

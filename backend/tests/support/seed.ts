@@ -39,6 +39,9 @@ export async function seedContractItemChain(
     unitPrice?: number;
     signedAt?: string;
     expiresAt?: string;
+    siteLatitude?: number | null;
+    siteLongitude?: number | null;
+    siteRadiusMeters?: number;
   } = {},
 ): Promise<{
   contractId: number;
@@ -48,6 +51,9 @@ export async function seedContractItemChain(
   const unitPrice = overrides.unitPrice ?? 100000;
   const signedAt = overrides.signedAt ?? '2024-01-01';
   const expiresAt = overrides.expiresAt ?? '2025-12-31';
+  const siteLatitude = overrides.siteLatitude ?? null;
+  const siteLongitude = overrides.siteLongitude ?? null;
+  const siteRadiusMeters = overrides.siteRadiusMeters ?? 200;
   const [customer] = (await dataSource.query(
     `INSERT INTO customers (tenant_id, name) VALUES ($1, 'Seed Customer') RETURNING id`,
     [tenantId],
@@ -61,8 +67,9 @@ export async function seedContractItemChain(
     id: number;
   }[];
   const [site] = (await dataSource.query(
-    `INSERT INTO contract_sites (tenant_id, contract_id, name) VALUES ($1, $2, 'Seed Site') RETURNING id`,
-    [tenantId, contract.id],
+    `INSERT INTO contract_sites (tenant_id, contract_id, name, latitude, longitude, radius_meters)
+     VALUES ($1, $2, 'Seed Site', $3, $4, $5) RETURNING id`,
+    [tenantId, contract.id, siteLatitude, siteLongitude, siteRadiusMeters],
   )) as {
     id: number;
   }[];

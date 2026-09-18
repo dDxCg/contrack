@@ -69,6 +69,9 @@ function validCommand(
         name: 'Toà A',
         workRequirements: null,
         notes: null,
+        latitude: null,
+        longitude: null,
+        radiusMeters: 200,
         items: [
           {
             name: 'Vệ sinh sảnh',
@@ -100,6 +103,9 @@ describe('ContractService.create — FR5, FR6, FR7, FR22', () => {
       sites: [
         {
           name: 'Toà A',
+          latitude: null,
+          longitude: null,
+          radius_meters: 200,
           items: [
             { name: 'Vệ sinh sảnh', frequency_count: 1, frequency_unit: 'week', unit_price: 500000 },
             { name: 'Vệ sinh kính', frequency_count: 1, frequency_unit: 'month', unit_price: 1200000 },
@@ -107,6 +113,34 @@ describe('ContractService.create — FR5, FR6, FR7, FR22', () => {
         },
       ],
     });
+  });
+  it('stores the site geofence when coordinates are given', async () => {
+    const { service, access, customer } = await world();
+    const view = await service.create(
+      access,
+      validCommand(customer.id, {
+        sites: [
+          {
+            name: 'Toà B',
+            workRequirements: null,
+            notes: null,
+            latitude: 21.0176,
+            longitude: 105.7833,
+            radiusMeters: 150,
+            items: [
+              {
+                name: 'Vệ sinh sảnh',
+                frequencyCount: 1,
+                frequencyUnit: FrequencyUnit.Week,
+                frequencyRule: null,
+                unitPrice: 500000,
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(view.sites[0]).toMatchObject({ latitude: 21.0176, longitude: 105.7833, radius_meters: 150 });
   });
   it('generates the full shift schedule immediately, one item at a time', async () => {
     const { service, access, customer, dataSource, tenant } = await world();
@@ -138,7 +172,17 @@ describe('ContractService.create — FR5, FR6, FR7, FR22', () => {
   it('rejects with the specific field named when a site has no service item', async () => {
     const { service, access, customer } = await world();
     const command = validCommand(customer.id, {
-      sites: [{ name: 'Toà A', workRequirements: null, notes: null, items: [] }],
+      sites: [
+        {
+          name: 'Toà A',
+          workRequirements: null,
+          notes: null,
+          latitude: null,
+          longitude: null,
+          radiusMeters: 200,
+          items: [],
+        },
+      ],
     });
     const error = await captureDomainErrorAsync(() => service.create(access, command));
     expect(error.code).toBe('validation.failed');

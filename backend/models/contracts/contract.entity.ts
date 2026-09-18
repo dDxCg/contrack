@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { Customer } from '../customers/customer.entity';
 import { ContractStatusLookup } from '../lookups/contract-status.entity';
 import { Tenant } from '../tenants/tenant.entity';
@@ -9,6 +9,7 @@ export enum ContractStatus {
   Renewed = 'renewed',
 }
 @Entity('contracts')
+@Unique('uq_contracts_id_tenant', ['id', 'tenantId'])
 export class Contract {
   @PrimaryGeneratedColumn('identity')
   id!: number;
@@ -22,7 +23,14 @@ export class Contract {
   @Column({ name: 'customer_id', type: 'integer' })
   customerId!: number;
   @ManyToOne(() => Customer)
-  @JoinColumn({ name: 'customer_id', foreignKeyConstraintName: 'fk_contracts_customer' })
+  @JoinColumn([
+    { name: 'customer_id', referencedColumnName: 'id', foreignKeyConstraintName: 'fk_contracts_customer' },
+    {
+      name: 'tenant_id',
+      referencedColumnName: 'tenantId',
+      foreignKeyConstraintName: 'fk_contracts_customer',
+    },
+  ])
   customer?: Customer;
   @Column({ name: 'signed_at', type: 'date' })
   signedAt!: Date;

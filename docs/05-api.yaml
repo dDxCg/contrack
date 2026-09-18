@@ -1577,6 +1577,9 @@ components:
         name: { type: string, example: "Tòa A — Phạm Hùng, Nam Từ Liêm" }
         work_requirements: { type: string }
         notes: { type: string }
+        latitude: { type: number, nullable: true, example: 21.0176 }
+        longitude: { type: number, nullable: true, example: 105.7833 }
+        radius_meters: { type: integer, example: 200, description: "Geofence radius used to verify field submissions against this site; defaults to 200m when omitted." }
         items:
           type: array
           items: { $ref: '#/components/schemas/ServiceItemCreate' }
@@ -1640,6 +1643,7 @@ components:
         status: { $ref: '#/components/schemas/ShiftStatus' }
         latitude: { type: number, nullable: true, example: 21.0176 }
         longitude: { type: number, nullable: true, example: 105.7833 }
+        geo_verified: { type: boolean, description: "True when the submitted coordinates fell within the site's geofence radius; false when missing or out of range (submission is accepted either way)." }
         captured_at: { type: string, format: date-time, nullable: true }
         receipt_photo_url: { type: string, format: uri, nullable: true }
         photos:

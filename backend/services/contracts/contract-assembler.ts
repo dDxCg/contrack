@@ -41,6 +41,7 @@ export class ContractAssembler {
     site.setName(siteCommand.name);
     site.setWorkRequirements(siteCommand.workRequirements);
     site.setNotes(siteCommand.notes);
+    site.setLocation(siteCommand.latitude, siteCommand.longitude, siteCommand.radiusMeters);
     return {
       entity: site,
       items: siteCommand.items.map((itemCommand) => this.assembleItem(access, contract, itemCommand)),

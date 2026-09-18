@@ -136,7 +136,8 @@ CREATE TABLE customers (
     segment_id      INTEGER NOT NULL DEFAULT 1,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_customers_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_customers_segment FOREIGN KEY (segment_id) REFERENCES customer_segments(id)
+    CONSTRAINT fk_customers_segment FOREIGN KEY (segment_id) REFERENCES customer_segments(id),
+    CONSTRAINT uq_customers_id_tenant UNIQUE (id, tenant_id)
 );
 
 CREATE INDEX idx_customers_tenant ON customers(tenant_id);
@@ -149,7 +150,8 @@ CREATE TABLE teams (
     code            VARCHAR(20) NOT NULL,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_teams_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT uq_teams_tenant_code UNIQUE (tenant_id, code)
+    CONSTRAINT uq_teams_tenant_code UNIQUE (tenant_id, code),
+    CONSTRAINT uq_teams_id_tenant UNIQUE (id, tenant_id)
 );
 
 CREATE INDEX idx_teams_tenant ON teams(tenant_id);
@@ -166,10 +168,11 @@ CREATE TABLE employees (
     team_id         INTEGER,
     status_id       INTEGER NOT NULL DEFAULT 1,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_employees_id_tenant UNIQUE (id, tenant_id),
     CONSTRAINT fk_employees_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     CONSTRAINT fk_employees_role FOREIGN KEY (role_id) REFERENCES roles(id),
-    CONSTRAINT fk_employees_manager FOREIGN KEY (manager_id) REFERENCES employees(id),
-    CONSTRAINT fk_employees_team FOREIGN KEY (team_id) REFERENCES teams(id),
+    CONSTRAINT fk_employees_manager FOREIGN KEY (manager_id, tenant_id) REFERENCES employees(id, tenant_id),
+    CONSTRAINT fk_employees_team FOREIGN KEY (team_id, tenant_id) REFERENCES teams(id, tenant_id),
     CONSTRAINT fk_employees_status FOREIGN KEY (status_id) REFERENCES employee_statuses(id),
     CONSTRAINT uq_employees_email UNIQUE (email)
 );
@@ -188,8 +191,9 @@ CREATE TABLE contracts (
     status_id   INTEGER NOT NULL DEFAULT 1,
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_contracts_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_contracts_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
-    CONSTRAINT fk_contracts_status FOREIGN KEY (status_id) REFERENCES contract_statuses(id)
+    CONSTRAINT fk_contracts_customer FOREIGN KEY (customer_id, tenant_id) REFERENCES customers(id, tenant_id),
+    CONSTRAINT fk_contracts_status FOREIGN KEY (status_id) REFERENCES contract_statuses(id),
+    CONSTRAINT uq_contracts_id_tenant UNIQUE (id, tenant_id)
 );
 
 CREATE INDEX idx_contracts_tenant ON contracts(tenant_id);
@@ -204,9 +208,13 @@ CREATE TABLE contract_sites (
     name                VARCHAR(255) NOT NULL,
     work_requirements   VARCHAR(2000),
     notes               VARCHAR(2000),
+    latitude            NUMERIC(9, 6),
+    longitude           NUMERIC(9, 6),
+    radius_meters       INTEGER NOT NULL DEFAULT 200,
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_contract_sites_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_contract_sites_contract FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+    CONSTRAINT fk_contract_sites_contract FOREIGN KEY (contract_id, tenant_id) REFERENCES contracts(id, tenant_id) ON DELETE CASCADE,
+    CONSTRAINT uq_contract_sites_id_tenant UNIQUE (id, tenant_id)
 );
 
 CREATE INDEX idx_contract_sites_tenant ON contract_sites(tenant_id);
@@ -223,8 +231,9 @@ CREATE TABLE contract_items (
     unit_price          NUMERIC(14, 2) NOT NULL,
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_contract_items_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_contract_items_site FOREIGN KEY (site_id) REFERENCES contract_sites(id) ON DELETE CASCADE,
-    CONSTRAINT fk_contract_items_frequency_unit FOREIGN KEY (frequency_unit_id) REFERENCES frequency_units(id)
+    CONSTRAINT fk_contract_items_site FOREIGN KEY (site_id, tenant_id) REFERENCES contract_sites(id, tenant_id) ON DELETE CASCADE,
+    CONSTRAINT fk_contract_items_frequency_unit FOREIGN KEY (frequency_unit_id) REFERENCES frequency_units(id),
+    CONSTRAINT uq_contract_items_id_tenant UNIQUE (id, tenant_id)
 );
 
 CREATE INDEX idx_contract_items_tenant ON contract_items(tenant_id);
@@ -242,11 +251,14 @@ CREATE TABLE shifts (
     longitude               NUMERIC(9, 6),
     captured_at             TIMESTAMP,
     receipt_photo_url       VARCHAR(500),
+    geo_verified            BOOLEAN NOT NULL DEFAULT FALSE,
+    field_token_used_at     TIMESTAMP,
     created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_shifts_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_shifts_contract_item FOREIGN KEY (contract_item_id) REFERENCES contract_items(id) ON DELETE CASCADE,
-    CONSTRAINT fk_shifts_assignee FOREIGN KEY (assignee_id) REFERENCES employees(id),
-    CONSTRAINT fk_shifts_status FOREIGN KEY (status_id) REFERENCES shift_statuses(id)
+    CONSTRAINT fk_shifts_contract_item FOREIGN KEY (contract_item_id, tenant_id) REFERENCES contract_items(id, tenant_id) ON DELETE CASCADE,
+    CONSTRAINT fk_shifts_assignee FOREIGN KEY (assignee_id, tenant_id) REFERENCES employees(id, tenant_id),
+    CONSTRAINT fk_shifts_status FOREIGN KEY (status_id) REFERENCES shift_statuses(id),
+    CONSTRAINT uq_shifts_id_tenant UNIQUE (id, tenant_id)
 );
 
 CREATE INDEX idx_shifts_tenant ON shifts(tenant_id);
@@ -263,7 +275,7 @@ CREATE TABLE shift_photos (
     url         VARCHAR(500) NOT NULL,
     captured_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_shift_photos_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_shift_photos_shift FOREIGN KEY (shift_id) REFERENCES shifts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_shift_photos_shift FOREIGN KEY (shift_id, tenant_id) REFERENCES shifts(id, tenant_id) ON DELETE CASCADE,
     CONSTRAINT fk_shift_photos_type FOREIGN KEY (type_id) REFERENCES photo_types(id)
 );
 
@@ -281,7 +293,7 @@ CREATE TABLE statements (
     pdf_url         VARCHAR(500),
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_statements_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_statements_contract FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_statements_contract FOREIGN KEY (contract_id, tenant_id) REFERENCES contracts(id, tenant_id) ON DELETE CASCADE,
     CONSTRAINT fk_statements_status FOREIGN KEY (status_id) REFERENCES statement_statuses(id),
     CONSTRAINT uq_statements_contract_period UNIQUE (contract_id, period),
     CONSTRAINT ck_statements_period_is_month_start CHECK (period = date_trunc('month', period)::date)
@@ -301,9 +313,9 @@ CREATE TABLE contract_costs (
     created_by      INTEGER NOT NULL,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_contract_costs_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_contract_costs_contract FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_contract_costs_contract FOREIGN KEY (contract_id, tenant_id) REFERENCES contracts(id, tenant_id) ON DELETE CASCADE,
     CONSTRAINT fk_contract_costs_category FOREIGN KEY (category_id) REFERENCES cost_categories(id),
-    CONSTRAINT fk_contract_costs_created_by FOREIGN KEY (created_by) REFERENCES employees(id),
+    CONSTRAINT fk_contract_costs_created_by FOREIGN KEY (created_by, tenant_id) REFERENCES employees(id, tenant_id),
     CONSTRAINT uq_contract_costs_period UNIQUE (contract_id, category_id, period),
     CONSTRAINT ck_contract_costs_period_is_month_start CHECK (period = date_trunc('month', period)::date)
 );

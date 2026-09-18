@@ -14,6 +14,9 @@ export interface ContractSiteView {
   name: string;
   work_requirements: string | null;
   notes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  radius_meters: number;
   items: ContractItemView[];
 }
 export interface ContractView {

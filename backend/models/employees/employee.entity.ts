@@ -17,6 +17,7 @@ export enum EmployeeStatus {
 }
 @Entity('employees')
 @Unique('uq_employees_email', ['email'])
+@Unique('uq_employees_id_tenant', ['id', 'tenantId'])
 export class Employee {
   @PrimaryGeneratedColumn('identity')
   id!: number;
@@ -38,13 +39,19 @@ export class Employee {
   @Column({ name: 'manager_id', type: 'integer', nullable: true })
   managerId!: number | null;
   @ManyToOne(() => Employee)
-  @JoinColumn({ name: 'manager_id', foreignKeyConstraintName: 'fk_employees_manager' })
+  @JoinColumn([
+    { name: 'manager_id', referencedColumnName: 'id', foreignKeyConstraintName: 'fk_employees_manager' },
+    { name: 'tenant_id', referencedColumnName: 'tenantId', foreignKeyConstraintName: 'fk_employees_manager' },
+  ])
   manager?: Employee;
   @Index('idx_employees_team')
   @Column({ name: 'team_id', type: 'integer', nullable: true })
   teamId!: number | null;
   @ManyToOne(() => Team)
-  @JoinColumn({ name: 'team_id', foreignKeyConstraintName: 'fk_employees_team' })
+  @JoinColumn([
+    { name: 'team_id', referencedColumnName: 'id', foreignKeyConstraintName: 'fk_employees_team' },
+    { name: 'tenant_id', referencedColumnName: 'tenantId', foreignKeyConstraintName: 'fk_employees_team' },
+  ])
   team?: Team;
   @Column({ name: 'role_id', type: 'integer' })
   roleId!: number;

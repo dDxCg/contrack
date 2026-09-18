@@ -25,7 +25,12 @@ describe('Shift.complete — FR16, FR24, D7', () => {
     const shift = aScheduledShift();
     const now = new Date('2024-10-21T08:30:00.000Z');
     shift.complete(
-      { receiptPhotoUrl: 'uploads/9f1c/receipt.jpg', latitude: 21.0176, longitude: 105.7833 },
+      {
+        receiptPhotoUrl: 'uploads/9f1c/receipt.jpg',
+        latitude: 21.0176,
+        longitude: 105.7833,
+        geoVerified: true,
+      },
       now,
     );
     expect(shift.status).toBe(ShiftStatus.Completed);
@@ -34,24 +39,29 @@ describe('Shift.complete — FR16, FR24, D7', () => {
     expect(shift.receiptPhotoUrl).toBe('uploads/9f1c/receipt.jpg');
     expect(shift.latitude).toBe(21.0176);
     expect(shift.longitude).toBe(105.7833);
+    expect(shift.geoVerified).toBe(true);
   });
   it('completes with null GPS rather than rejecting the submission', () => {
     const shift = aScheduledShift();
-    shift.complete({ receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null }, new Date());
+    shift.complete(
+      { receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null, geoVerified: false },
+      new Date(),
+    );
     expect(shift.status).toBe(ShiftStatus.Completed);
     expect(shift.latitude).toBeNull();
     expect(shift.longitude).toBeNull();
+    expect(shift.geoVerified).toBe(false);
   });
   it('rejects a second submission on an already-completed shift', () => {
     const shift = aScheduledShift();
     const firstSubmission = new Date('2024-10-21T08:30:00.000Z');
     shift.complete(
-      { receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null },
+      { receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null, geoVerified: false },
       firstSubmission,
     );
     const error = captureDomainError(() =>
       shift.complete(
-        { receiptPhotoUrl: 'uploads/y/receipt.jpg', latitude: null, longitude: null },
+        { receiptPhotoUrl: 'uploads/y/receipt.jpg', latitude: null, longitude: null, geoVerified: false },
         new Date(),
       ),
     );
@@ -60,11 +70,14 @@ describe('Shift.complete — FR16, FR24, D7', () => {
   });
   it('rejects completion of a disputed shift', () => {
     const shift = aScheduledShift();
-    shift.complete({ receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null }, new Date());
+    shift.complete(
+      { receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null, geoVerified: false },
+      new Date(),
+    );
     shift.dispute();
     expect(() =>
       shift.complete(
-        { receiptPhotoUrl: 'uploads/y/receipt.jpg', latitude: null, longitude: null },
+        { receiptPhotoUrl: 'uploads/y/receipt.jpg', latitude: null, longitude: null, geoVerified: false },
         new Date(),
       ),
     ).toThrow(ShiftAlreadyCompletedException);
@@ -113,7 +126,10 @@ describe('Shift.reassign — FR15', () => {
   });
   it('rejects reassigning a completed shift', () => {
     const shift = aScheduledShift();
-    shift.complete({ receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null }, new Date());
+    shift.complete(
+      { receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null, geoVerified: false },
+      new Date(),
+    );
     expect(() => shift.reassign(9)).toThrow(ShiftAlreadyCompletedException);
   });
 });

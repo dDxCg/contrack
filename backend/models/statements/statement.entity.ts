@@ -25,7 +25,18 @@ export class Statement {
   @Column({ name: 'contract_id', type: 'integer' })
   contractId!: number;
   @ManyToOne(() => Contract, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'contract_id', foreignKeyConstraintName: 'fk_statements_contract' })
+  @JoinColumn([
+    {
+      name: 'contract_id',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_statements_contract',
+    },
+    {
+      name: 'tenant_id',
+      referencedColumnName: 'tenantId',
+      foreignKeyConstraintName: 'fk_statements_contract',
+    },
+  ])
   contract?: Contract;
   @Column({ type: 'date' })
   period!: Date;

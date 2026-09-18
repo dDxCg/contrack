@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { CustomerHasActiveContractsException } from '../domain-errors';
 import { CustomerSegmentLookup } from '../lookups/customer-segment.entity';
 import { Tenant } from '../tenants/tenant.entity';
@@ -7,6 +7,7 @@ export enum CustomerSegment {
   Vip = 'vip',
 }
 @Entity('customers')
+@Unique('uq_customers_id_tenant', ['id', 'tenantId'])
 export class Customer {
   @PrimaryGeneratedColumn('identity')
   id!: number;

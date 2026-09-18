@@ -10,6 +10,7 @@ export function toShiftView(shift: Shift): ShiftView {
     status: shift.status,
     latitude: shift.latitude,
     longitude: shift.longitude,
+    geo_verified: shift.geoVerified,
     captured_at: shift.capturedAt === null ? null : shift.capturedAt.toString(),
     receipt_photo_url: shift.receiptPhotoUrl,
   };

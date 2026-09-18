@@ -15,6 +15,9 @@ function aCommand(overrides: Partial<ContractCreateCommand> = {}): ContractCreat
         name: 'Toà A',
         workRequirements: 'no pets',
         notes: null,
+        latitude: null,
+        longitude: null,
+        radiusMeters: 200,
         items: [
           {
             name: 'Vệ sinh sảnh',
@@ -73,11 +76,22 @@ describe('ContractAssembler — pure command-to-entity-graph, no DB', () => {
       access,
       aCommand({
         sites: [
-          { name: 'Site 1', workRequirements: null, notes: null, items: [] },
+          {
+            name: 'Site 1',
+            workRequirements: null,
+            notes: null,
+            latitude: null,
+            longitude: null,
+            radiusMeters: 200,
+            items: [],
+          },
           {
             name: 'Site 2',
             workRequirements: null,
             notes: null,
+            latitude: null,
+            longitude: null,
+            radiusMeters: 200,
             items: [
               {
                 name: 'Item A',

@@ -43,6 +43,9 @@ describe('ContractsController', () => {
           name: 'Site A',
           workRequirements: null,
           notes: null,
+          latitude: null,
+          longitude: null,
+          radiusMeters: 200,
           items: [
             {
               name: 'Cleaning',

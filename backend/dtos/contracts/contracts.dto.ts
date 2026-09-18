@@ -9,6 +9,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
   MinLength,
   ValidateNested,
@@ -40,6 +41,20 @@ export class ContractSiteBodyDto {
   @IsOptional()
   @IsString()
   notes?: string | null;
+  @IsOptional()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  latitude?: number | null;
+  @IsOptional()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  longitude?: number | null;
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  radius_meters?: number;
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

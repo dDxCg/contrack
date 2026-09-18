@@ -104,7 +104,10 @@ describe('DispatchService.reassign — FR15', () => {
   it('rejects reassigning a completed shift', async () => {
     const { service, access, memberOfTeamA, shiftId, shifts, tenant } = await world();
     const completing = await shifts.findById(tenant.id, shiftId);
-    completing!.complete({ receiptPhotoUrl: 'x', latitude: null, longitude: null }, new Date());
+    completing!.complete(
+      { receiptPhotoUrl: 'x', latitude: null, longitude: null, geoVerified: false },
+      new Date(),
+    );
     await shifts.update(completing!);
     const error = await captureDomainErrorAsync(() =>
       service.reassign(access, shiftId, { assigneeId: memberOfTeamA.id }),

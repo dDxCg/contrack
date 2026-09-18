@@ -52,6 +52,7 @@ export class ContractsController {
     return this.contractService.delete(access, id);
   }
 }
+const DEFAULT_GEOFENCE_RADIUS_METERS = 200;
 function toCommand(body: ContractBodyDto): ContractCreateCommand {
   return {
     customerId: body.customer_id,
@@ -61,6 +62,9 @@ function toCommand(body: ContractBodyDto): ContractCreateCommand {
       name: site.name,
       workRequirements: site.work_requirements ?? null,
       notes: site.notes ?? null,
+      latitude: site.latitude ?? null,
+      longitude: site.longitude ?? null,
+      radiusMeters: site.radius_meters ?? DEFAULT_GEOFENCE_RADIUS_METERS,
       items: site.items.map((item) => ({
         name: item.name,
         frequencyCount: item.frequency_count,
