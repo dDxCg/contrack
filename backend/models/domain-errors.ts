@@ -1,6 +1,13 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
 export const VALIDATION_FAILED_CODE = 'validation.failed';
 export const INTERNAL_ERROR_CODE = 'internal.error';
+const HttpStatus = {
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  BAD_GATEWAY: 502,
+} as const;
 export interface ErrorBody {
   error: {
     code: string;
@@ -12,12 +19,17 @@ export interface FieldViolation {
   field: string;
   message: string;
 }
-export abstract class DomainException extends HttpException {
+export abstract class DomainException extends Error {
   abstract readonly code: string;
   readonly details: Record<string, unknown>;
+  private readonly status: number;
   protected constructor(status: number, message: string, details: Record<string, unknown> = {}) {
-    super(message, status);
+    super(message);
+    this.status = status;
     this.details = details;
+  }
+  getStatus(): number {
+    return this.status;
   }
 }
 export class AuthInvalidCredentialsException extends DomainException {
@@ -49,7 +61,7 @@ export class AuthOutOfScopeException extends DomainException {
 export class TenantNotFoundException extends DomainException {
   readonly code = 'tenant.not_found';
   constructor(tenantId: number) {
-    super(HttpStatus.BAD_REQUEST, 'Không tìm thấy công ty', { tenant_id: tenantId });
+    super(HttpStatus.NOT_FOUND, 'Không tìm thấy công ty', { tenant_id: tenantId });
   }
 }
 export class TenantSuspendedException extends DomainException {
@@ -189,23 +201,4 @@ export class ValidationFailedException extends DomainException {
   constructor(fields: readonly FieldViolation[]) {
     super(HttpStatus.BAD_REQUEST, 'Dữ liệu không hợp lệ', { fields: [...fields] });
   }
-}
-export function toErrorEnvelope(exception: unknown): {
-  status: number;
-  body: ErrorBody;
-} {
-  if (exception instanceof DomainException) {
-    return {
-      status: exception.getStatus(),
-      body: { error: { code: exception.code, message: exception.message, details: exception.details } },
-    };
-  }
-  if (exception instanceof HttpException) {
-    const status = exception.getStatus();
-    return { status, body: { error: { code: `http.${status}`, message: exception.message, details: {} } } };
-  }
-  return {
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    body: { error: { code: INTERNAL_ERROR_CODE, message: 'Lỗi hệ thống', details: {} } },
-  };
 }

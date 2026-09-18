@@ -74,6 +74,7 @@ describe('TenantService', () => {
       const { service } = await world();
       const error = await captureDomainErrorAsync(() => service.updateStatus(999999, TenantStatus.Suspended));
       expect(error.code).toBe('tenant.not_found');
+      expect(error.getStatus()).toBe(404);
     });
   });
 });

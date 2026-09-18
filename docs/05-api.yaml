@@ -236,7 +236,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Tenant' }
-        '400':
+        '404':
           description: Unknown tenant id
           content:
             application/json:

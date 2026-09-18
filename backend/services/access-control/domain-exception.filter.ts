@@ -1,6 +1,14 @@
-import { ArgumentsHost, Catch, ExceptionFilter, Logger, ValidationError } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+  Logger,
+  ValidationError,
+} from '@nestjs/common';
 import type { Response } from 'express';
-import { FieldViolation, toErrorEnvelope } from '../../models/domain-errors';
+import { DomainException, ErrorBody, FieldViolation, INTERNAL_ERROR_CODE } from '../../models/domain-errors';
 import type { RequestWithId } from '../../middleware/request-id.middleware';
 
 interface FailedRequest extends RequestWithId {
@@ -8,6 +16,25 @@ interface FailedRequest extends RequestWithId {
   url: string;
 }
 
+export function toErrorEnvelope(exception: unknown): {
+  status: number;
+  body: ErrorBody;
+} {
+  if (exception instanceof DomainException) {
+    return {
+      status: exception.getStatus(),
+      body: { error: { code: exception.code, message: exception.message, details: exception.details } },
+    };
+  }
+  if (exception instanceof HttpException) {
+    const status = exception.getStatus();
+    return { status, body: { error: { code: `http.${status}`, message: exception.message, details: {} } } };
+  }
+  return {
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    body: { error: { code: INTERNAL_ERROR_CODE, message: 'Lỗi hệ thống', details: {} } },
+  };
+}
 @Catch()
 export class DomainExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(DomainExceptionFilter.name);
