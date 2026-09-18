@@ -3,20 +3,19 @@ import { DataSource, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Statement, StatementStatus } from '../../models/statements/statement.entity';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
-
 export interface StatementListFilter {
   period?: string;
   status?: StatementStatus;
 }
-
 @Injectable()
 export class StatementRepository extends TenantScopedRepository<Statement> {
   protected override readonly entity: EntityTarget<Statement> = Statement;
-
-  constructor(@Inject(DATA_SOURCE) dataSource: DataSource) {
+  constructor(
+    @Inject(DATA_SOURCE)
+    dataSource: DataSource,
+  ) {
     super(dataSource);
   }
-
   async list(tenantId: number, filter: StatementListFilter, page: Page): Promise<PageOf<Statement>> {
     const query = this.selected(this.scopedTo(tenantId, 'st'));
     if (filter.period !== undefined) {
@@ -25,25 +24,20 @@ export class StatementRepository extends TenantScopedRepository<Statement> {
     if (filter.status !== undefined) {
       query.andWhere('sts.code = :status', { status: filter.status });
     }
-
     const rows = await query
       .orderBy('st.id', 'ASC')
       .limit(page.limit)
       .offset(page.offset)
       .getRawMany<StatementRow>();
     const total = await this.scopedTo(tenantId, 'st').getCount();
-
     return { items: rows.map(hydrateStatement), total };
   }
-
   async findById(tenantId: number, id: number): Promise<Statement | null> {
     const row = await this.selected(this.scopedTo(tenantId, 'st'))
       .andWhere('st.id = :id', { id })
       .getRawOne<StatementRow>();
-
     return row === undefined || row === null ? null : hydrateStatement(row);
   }
-
   async findByContractPeriod(
     tenantId: number,
     contractId: number,
@@ -53,34 +47,26 @@ export class StatementRepository extends TenantScopedRepository<Statement> {
       .andWhere('st.contract_id = :contractId', { contractId })
       .andWhere('st.period = :period', { period })
       .getRawOne<StatementRow>();
-
     return row === undefined || row === null ? null : hydrateStatement(row);
   }
-
   async create(statement: Statement): Promise<Statement> {
     statement.statusId = await this.lookupId('statement_statuses', statement.status);
     const saved = await this.dataSource.getRepository(Statement).save(statement);
     const reloaded = await this.findById(saved.tenantId, saved.id);
-
     if (reloaded === null) {
       throw new Error(`statements row ${saved.id} disappeared right after it was written`);
     }
-
     return reloaded;
   }
-
   async update(statement: Statement): Promise<Statement> {
     statement.statusId = await this.lookupId('statement_statuses', statement.status);
     const saved = await this.dataSource.getRepository(Statement).save(statement);
     const reloaded = await this.findById(saved.tenantId, saved.id);
-
     if (reloaded === null) {
       throw new Error(`statements row ${saved.id} disappeared right after it was written`);
     }
-
     return reloaded;
   }
-
   private selected(query: SelectQueryBuilder<Statement>): SelectQueryBuilder<Statement> {
     return query
       .innerJoin('statement_statuses', 'sts', 'sts.id = st.status_id')
@@ -97,7 +83,6 @@ export class StatementRepository extends TenantScopedRepository<Statement> {
       ]);
   }
 }
-
 interface StatementRow {
   id: number;
   tenant_id: number;
@@ -109,7 +94,6 @@ interface StatementRow {
   created_at: Date;
   status: StatementStatus;
 }
-
 function hydrateStatement(row: StatementRow): Statement {
   const statement = new Statement();
   statement.id = row.id;
@@ -121,6 +105,5 @@ function hydrateStatement(row: StatementRow): Statement {
   statement.pdfUrl = row.pdf_url;
   statement.createdAt = row.created_at;
   statement.status = row.status;
-
   return statement;
 }

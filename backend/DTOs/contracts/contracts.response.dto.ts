@@ -1,6 +1,5 @@
 import { ContractStatus } from '../../models/contracts/contract.entity';
 import { FrequencyUnit } from '../../models/contracts/contract-item.entity';
-
 export interface ContractItemView {
   id: number;
   name: string;
@@ -9,7 +8,6 @@ export interface ContractItemView {
   frequency_rule: string | null;
   unit_price: number;
 }
-
 export interface ContractSiteView {
   id: number;
   name: string;
@@ -17,7 +15,6 @@ export interface ContractSiteView {
   notes: string | null;
   items: ContractItemView[];
 }
-
 export interface ContractView {
   id: number;
   customer_id: number;
@@ -26,7 +23,6 @@ export interface ContractView {
   status: ContractStatus;
   sites: ContractSiteView[];
 }
-
 export interface ContractPage {
   items: ContractView[];
   total: number;

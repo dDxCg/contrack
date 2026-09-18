@@ -10,12 +10,12 @@ import { ContractItem } from '../../models/contracts/contract-item.entity';
 import { ContractSite } from '../../models/contracts/contract-site.entity';
 import { Customer } from '../../models/customers/customer.entity';
 import { Employee } from '../../models/employees/employee.entity';
+import { PlatformAdmin } from '../../models/platform/platform-admin.entity';
 import { ShiftPhoto } from '../../models/shifts/shift-photo.entity';
 import { Shift } from '../../models/shifts/shift.entity';
 import { Statement } from '../../models/statements/statement.entity';
 import { Team } from '../../models/teams/team.entity';
 import { Tenant } from '../../models/tenants/tenant.entity';
-
 const ENTITIES = [
   Tenant,
   Customer,
@@ -29,17 +29,13 @@ const ENTITIES = [
   Statement,
   ContractCost,
   Alert,
+  PlatformAdmin,
 ];
 const SCHEMA_SQL = readFileSync(join(__dirname, '../../../docs/04-schema.sql'), 'utf8');
-
 const openDataSources: DataSource[] = [];
-
-// Registered once per test file that imports this module — closes every DataSource `world()`
-// opened during the test that just ran, so pg-mem's connections never leak past it.
 afterEach(async () => {
   await Promise.all(openDataSources.splice(0).map((dataSource) => dataSource.destroy()));
 });
-
 export async function createTestDataSource(): Promise<DataSource> {
   const mem = newDb();
   mem.public.registerFunction({
@@ -53,10 +49,8 @@ export async function createTestDataSource(): Promise<DataSource> {
     implementation: () => 'contrack_test',
   });
   mem.public.none(SCHEMA_SQL);
-
   const dataSource = mem.adapters.createTypeormDataSource({ type: 'postgres', entities: ENTITIES });
   await dataSource.initialize();
   openDataSources.push(dataSource);
-
   return dataSource;
 }

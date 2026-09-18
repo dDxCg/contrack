@@ -3,17 +3,16 @@ import { DataSource, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
-
 const MAX_MANAGER_CHAIN = 100;
-
 @Injectable()
 export class EmployeeRepository extends TenantScopedRepository<Employee> {
   protected override readonly entity: EntityTarget<Employee> = Employee;
-
-  constructor(@Inject(DATA_SOURCE) dataSource: DataSource) {
+  constructor(
+    @Inject(DATA_SOURCE)
+    dataSource: DataSource,
+  ) {
     super(dataSource);
   }
-
   async list(tenantId: number, page: Page): Promise<PageOf<Employee>> {
     const rows = await this.selected(tenantId)
       .orderBy('e.id', 'ASC')
@@ -21,47 +20,35 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
       .offset(page.offset)
       .getRawMany<EmployeeRow>();
     const total = await this.scopedTo(tenantId, 'e').getCount();
-
     return { items: rows.map(hydrateEmployee), total };
   }
-
   async findById(tenantId: number, id: number): Promise<Employee | null> {
     const row = await this.selected(tenantId).andWhere('e.id = :id', { id }).getRawOne<EmployeeRow>();
-
     return row === undefined || row === null ? null : hydrateEmployee(row);
   }
-
   async findByEmail(email: string): Promise<Employee | null> {
     const row = await this.withColumns(this.unscopedTo('e'))
       .andWhere('e.email = :email', { email })
       .getRawOne<EmployeeRow>();
-
     return row === undefined || row === null ? null : hydrateEmployee(row);
   }
-
   async existsEmail(email: string): Promise<boolean> {
     const count = await this.unscopedTo('e').andWhere('e.email = :email', { email }).getCount();
-
     return count > 0;
   }
-
   async findByTeamIds(tenantId: number, teamIds: readonly number[]): Promise<Employee[]> {
     if (teamIds.length === 0) {
       return [];
     }
-
     const rows = await this.selected(tenantId)
       .andWhere('e.team_id IN (:...teamIds)', { teamIds: [...teamIds] })
       .orderBy('e.id', 'ASC')
       .getRawMany<EmployeeRow>();
-
     return rows.map(hydrateEmployee);
   }
-
   async managerChainOf(tenantId: number, employeeId: number): Promise<number[]> {
     const chain: number[] = [];
     let current: number | null = employeeId;
-
     while (current !== null && chain.length < MAX_MANAGER_CHAIN) {
       chain.push(current);
       const manager = await this.dataSource
@@ -69,37 +56,30 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
         .findOne({ where: { id: current, tenantId }, select: { managerId: true } });
       current = manager?.managerId ?? null;
     }
-
     return chain;
   }
-
   async create(employee: Employee): Promise<Employee> {
     await this.resolveLookups(employee);
-
     return this.saveAndReload(employee);
   }
-
   async update(employee: Employee): Promise<Employee> {
     await this.resolveLookups(employee);
-
     return this.saveAndReload(employee);
   }
-
   async futureShiftIdsFor(tenantId: number, employeeId: number): Promise<number[]> {
     const rows = await this.scopedIds('shifts', tenantId, 's')
       .andWhere('s.assignee_id = :employeeId', { employeeId })
       .andWhere('s.scheduled_date >= CURRENT_DATE')
       .andWhere('s.completed_at IS NULL')
       .orderBy('s.id', 'ASC')
-      .getRawMany<{ id: number }>();
-
+      .getRawMany<{
+        id: number;
+      }>();
     return rows.map((row) => row.id);
   }
-
   private selected(tenantId: number): SelectQueryBuilder<Employee> {
     return this.withColumns(this.scopedTo(tenantId, 'e'));
   }
-
   private withColumns(query: SelectQueryBuilder<Employee>): SelectQueryBuilder<Employee> {
     return query
       .innerJoin('roles', 'r', 'r.id = e.role_id')
@@ -120,24 +100,19 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
         's.code AS status',
       ]);
   }
-
   private async resolveLookups(employee: Employee): Promise<void> {
     employee.roleId = await this.lookupId('roles', employee.role);
     employee.statusId = await this.lookupId('employee_statuses', employee.status);
   }
-
   private async saveAndReload(employee: Employee): Promise<Employee> {
     const saved = await this.dataSource.getRepository(Employee).save(employee);
     const reloaded = await this.findById(saved.tenantId, saved.id);
-
     if (reloaded === null) {
       throw new Error(`employees row ${saved.id} disappeared right after it was written`);
     }
-
     return reloaded;
   }
 }
-
 interface EmployeeRow {
   id: number;
   tenant_id: number;
@@ -153,7 +128,6 @@ interface EmployeeRow {
   role: Role;
   status: EmployeeStatus;
 }
-
 function hydrateEmployee(row: EmployeeRow): Employee {
   const employee = new Employee();
   employee.id = row.id;
@@ -169,6 +143,5 @@ function hydrateEmployee(row: EmployeeRow): Employee {
   employee.createdAt = row.created_at;
   employee.role = row.role;
   employee.status = row.status;
-
   return employee;
 }

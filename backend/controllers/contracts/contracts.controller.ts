@@ -6,38 +6,52 @@ import { AccessContext } from '../../services/access-control/access-context';
 import { Access, CurrentAccess } from '../../services/access-control/access.decorator';
 import { Operation, Resource } from '../../services/access-control/role-resolver';
 import { ContractCreateCommand, ContractService } from '../../services/contracts/contract.service';
-
 @Controller('contracts')
 export class ContractsController {
   constructor(private readonly contractService: ContractService) {}
-
   @Get()
   @Access(Resource.Contracts, Operation.Read)
-  list(@CurrentAccess() access: AccessContext, @Query() query: PageQueryDto): Promise<ContractPage> {
+  list(
+    @CurrentAccess()
+    access: AccessContext,
+    @Query()
+    query: PageQueryDto,
+  ): Promise<ContractPage> {
     return this.contractService.list(access, { limit: query.limit, offset: query.offset });
   }
-
   @Post()
   @HttpCode(201)
   @Access(Resource.Contracts, Operation.Create)
-  create(@CurrentAccess() access: AccessContext, @Body() body: ContractBodyDto): Promise<ContractView> {
+  create(
+    @CurrentAccess()
+    access: AccessContext,
+    @Body()
+    body: ContractBodyDto,
+  ): Promise<ContractView> {
     return this.contractService.create(access, toCommand(body));
   }
-
   @Get(':id')
   @Access(Resource.Contracts, Operation.Read)
-  get(@CurrentAccess() access: AccessContext, @Param('id', ParseIntPipe) id: number): Promise<ContractView> {
+  get(
+    @CurrentAccess()
+    access: AccessContext,
+    @Param('id', ParseIntPipe)
+    id: number,
+  ): Promise<ContractView> {
     return this.contractService.get(access, id);
   }
-
   @Delete(':id')
   @HttpCode(204)
   @Access(Resource.Contracts, Operation.Delete)
-  delete(@CurrentAccess() access: AccessContext, @Param('id', ParseIntPipe) id: number): Promise<void> {
+  delete(
+    @CurrentAccess()
+    access: AccessContext,
+    @Param('id', ParseIntPipe)
+    id: number,
+  ): Promise<void> {
     return this.contractService.delete(access, id);
   }
 }
-
 function toCommand(body: ContractBodyDto): ContractCreateCommand {
   return {
     customerId: body.customer_id,

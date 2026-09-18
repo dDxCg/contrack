@@ -1,66 +1,40 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthCredentialExpiredException } from '../../models/domain-errors';
-import { EmployeeRepository } from '../../repositories/employees/employee.repository';
 import { TokenService } from '../auth/token.service';
 import { AccessContext } from './access-context';
 import { ACCESS_METADATA, AccessRequirement, PUBLIC_METADATA } from './access.decorator';
-import { RoleResolver } from './role-resolver';
-import { RowScope } from './row-scope';
-import { ScopeResolver } from './scope-resolver';
-import { TenantResolver } from './tenant-resolver';
-
+import { CREDENTIAL_RESOLVERS, CredentialResolver } from './credential-resolver';
+import { PlatformAccessContext } from './platform-access-context';
 interface DeskRequest {
   headers: Record<string, string | string[] | undefined>;
-  access?: AccessContext;
+  access?: AccessContext | PlatformAccessContext;
 }
-
 @Injectable()
 export class AccessControlGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly tokenService: TokenService,
-    private readonly employeeRepository: EmployeeRepository,
-    private readonly tenantResolver: TenantResolver,
-    private readonly roleResolver: RoleResolver,
-    private readonly scopeResolver: ScopeResolver,
+    @Inject(CREDENTIAL_RESOLVERS)
+    private readonly resolvers: readonly CredentialResolver[],
   ) {}
-
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (this.isPublic(context)) {
       return true;
     }
-
     const request = context.switchToHttp().getRequest<DeskRequest>();
-    const credential = this.tokenService.verifyAccess(this.bearerToken(request));
-    const tenantId = this.tenantResolver.fromCredential(credential);
-    const employee = await this.employeeRepository.findById(tenantId, credential.sub);
-
-    if (employee === null || !employee.isActive()) {
+    const claims = this.tokenService.verifyAny(this.bearerToken(request));
+    const resolver = this.resolvers.find((candidate) => candidate.kind === claims.typ);
+    if (resolver === undefined) {
       throw new AuthCredentialExpiredException();
     }
-
     const requirement = this.reflector.getAllAndOverride<AccessRequirement | undefined>(ACCESS_METADATA, [
       context.getHandler(),
       context.getClass(),
     ]);
-    if (requirement !== undefined) {
-      this.roleResolver.requireRole(requirement.resource, requirement.operation, employee.role);
-    }
-
-    request.access = {
-      tenantId,
-      employee,
-      scope:
-        requirement === undefined
-          ? RowScope.None
-          : this.scopeResolver.resolve(employee.role, requirement.resource),
-      credential,
-    };
-
+    request.access = await resolver.resolve(claims, requirement);
     return true;
   }
-
   private isPublic(context: ExecutionContext): boolean {
     return (
       this.reflector.getAllAndOverride<boolean>(PUBLIC_METADATA, [
@@ -69,15 +43,12 @@ export class AccessControlGuard implements CanActivate {
       ]) === true
     );
   }
-
   private bearerToken(request: DeskRequest): string {
     const header = request.headers.authorization;
     const [scheme, token] = (Array.isArray(header) ? header[0] : header)?.split(' ') ?? [];
-
     if (scheme?.toLowerCase() !== 'bearer' || token === undefined || token === '') {
       throw new AuthCredentialExpiredException();
     }
-
     return token;
   }
 }

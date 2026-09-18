@@ -1462,7 +1462,7 @@ components:
           type: object
           properties:
             code: { type: string, example: shift.already_completed }
-            message: { type: string, example: "Ca đã hoàn thành" }
+            message: { type: string, example: "This shift is already completed" }
             details: { type: object }
 
     Session:
@@ -1930,74 +1930,74 @@ components:
 
   examples:
     AuthInvalidCredentials:
-      value: { error: { code: auth.invalid_credentials, message: "Sai tên đăng nhập hoặc mật khẩu", details: {} } }
+      value: { error: { code: auth.invalid_credentials, message: "Wrong username or password", details: {} } }
     TenantSuspended:
-      value: { error: { code: tenant.suspended, message: "Tài khoản công ty đã bị tạm khóa", details: {} } }
+      value: { error: { code: tenant.suspended, message: "This company's account has been suspended", details: {} } }
     CredentialExpired:
-      value: { error: { code: auth.credential_expired, message: "Phiên đăng nhập đã hết hạn", details: {} } }
+      value: { error: { code: auth.credential_expired, message: "Your session has expired", details: {} } }
     TenantNotFound:
-      value: { error: { code: tenant.not_found, message: "Không tìm thấy công ty", details: { tenant_id: 999 } } }
+      value: { error: { code: tenant.not_found, message: "Company not found", details: { tenant_id: 999 } } }
     TokenExpired:
-      value: { error: { code: token.expired, message: "Liên kết đã hết hạn", details: { expired_at: "2024-10-21T20:00:00Z" } } }
+      value: { error: { code: token.expired, message: "This link has expired", details: { expired_at: "2024-10-21T20:00:00Z" } } }
     TokenInvalid:
-      value: { error: { code: token.invalid, message: "Liên kết không hợp lệ", details: {} } }
+      value: { error: { code: token.invalid, message: "This link is invalid", details: {} } }
     TokenShiftMismatch:
-      value: { error: { code: token.shift_mismatch, message: "Liên kết không khớp ca này", details: {} } }
+      value: { error: { code: token.shift_mismatch, message: "This link doesn't match this shift", details: {} } }
     TokenRateLimited:
-      value: { error: { code: token.rate_limited, message: "Thử lại sau ít phút", details: { retry_after_seconds: 60 } } }
+      value: { error: { code: token.rate_limited, message: "Try again in a few minutes", details: { retry_after_seconds: 60 } } }
     ContractItemInvalid:
-      value: { error: { code: contract.item_invalid, message: "Hạng mục thiếu tần suất hoặc đơn giá không hợp lệ", details: { items: [{ index: 0, field: frequency_count }] } } }
+      value: { error: { code: contract.item_invalid, message: "An item is missing its frequency or has an invalid unit price", details: { items: [{ index: 0, field: frequency_count }] } } }
     ContractTermInvalid:
-      value: { error: { code: contract.term_invalid, message: "Ngày hết hạn phải sau ngày ký", details: { signed_at: "2024-01-15", expires_at: "2024-01-01" } } }
+      value: { error: { code: contract.term_invalid, message: "Expiry date must be after the signing date", details: { signed_at: "2024-01-15", expires_at: "2024-01-01" } } }
     ContractCustomerNotFound:
-      value: { error: { code: contract.customer_not_found, message: "Không tìm thấy khách hàng", details: { customer_id: 999 } } }
+      value: { error: { code: contract.customer_not_found, message: "Customer not found", details: { customer_id: 999 } } }
     ScheduleNoShiftsGenerated:
-      value: { error: { code: schedule.no_shifts_generated, message: "Không sinh được ca nào trong thời hạn hợp đồng", details: { item_id: 4 } } }
+      value: { error: { code: schedule.no_shifts_generated, message: "No shifts could be generated within the contract's term", details: { item_id: 4 } } }
     ScheduleRegenerateBlocked:
-      value: { error: { code: schedule.regenerate_blocked, message: "Có ca đã hoàn thành hoặc đang khiếu nại", details: { shift_ids: [22, 23] } } }
+      value: { error: { code: schedule.regenerate_blocked, message: "A shift is already completed or under dispute", details: { shift_ids: [22, 23] } } }
     ShiftAlreadyCompleted:
-      value: { error: { code: shift.already_completed, message: "Ca đã hoàn thành", details: { completed_at: "2024-10-14T10:41:00Z" } } }
+      value: { error: { code: shift.already_completed, message: "This shift is already completed", details: { completed_at: "2024-10-14T10:41:00Z" } } }
     ShiftEvidenceIncomplete:
-      value: { error: { code: shift.evidence_incomplete, message: "Thiếu ảnh hoặc biên lai", details: { missing: [after_photo] } } }
+      value: { error: { code: shift.evidence_incomplete, message: "Missing photos or receipt", details: { missing: [after_photo] } } }
     ShiftAssigneeOutOfTeam:
-      value: { error: { code: shift.assignee_out_of_team, message: "Nhân viên không thuộc tổ của bạn", details: { assignee_id: 31 } } }
+      value: { error: { code: shift.assignee_out_of_team, message: "This employee is not on your team", details: { assignee_id: 31 } } }
     ShiftNotDisputed:
-      value: { error: { code: shift.not_disputed, message: "Ca này không ở trạng thái khiếu nại", details: { status: completed } } }
+      value: { error: { code: shift.not_disputed, message: "This shift is not under dispute", details: { status: completed } } }
     ShiftAlreadyDisputed:
-      value: { error: { code: shift.already_disputed, message: "Ca đã bị khiếu nại", details: { disputed_at: "2024-10-15T09:20:00Z" } } }
+      value: { error: { code: shift.already_disputed, message: "This shift is already under dispute", details: { disputed_at: "2024-10-15T09:20:00Z" } } }
     UploadTooLarge:
-      value: { error: { code: upload.too_large, message: "Ảnh vượt quá dung lượng cho phép", details: { limit_bytes: 5242880, actual_bytes: 8123456 } } }
+      value: { error: { code: upload.too_large, message: "Photo exceeds the allowed size", details: { limit_bytes: 5242880, actual_bytes: 8123456 } } }
     UploadUnsupportedType:
-      value: { error: { code: upload.unsupported_type, message: "Định dạng ảnh không được hỗ trợ", details: { content_type: image/heic } } }
+      value: { error: { code: upload.unsupported_type, message: "Photo format is not supported", details: { content_type: image/heic } } }
     UploadKeyUnknown:
-      value: { error: { code: upload.key_unknown, message: "Ảnh chưa được tải lên cho ca này", details: { keys: ["uploads/x/y.jpg"] } } }
+      value: { error: { code: upload.key_unknown, message: "No photo was uploaded for this shift", details: { keys: ["uploads/x/y.jpg"] } } }
     StatementPeriodIncomplete:
-      value: { error: { code: statement.period_incomplete, message: "Còn ca chưa đủ bằng chứng hoặc đang khiếu nại", details: { shift_ids: [23] } } }
+      value: { error: { code: statement.period_incomplete, message: "A shift still lacks evidence or is under dispute", details: { shift_ids: [23] } } }
     StatementAlreadyExists:
-      value: { error: { code: statement.already_exists, message: "Bảng kê kỳ này đã tồn tại", details: { statement_id: 15 } } }
+      value: { error: { code: statement.already_exists, message: "A statement for this period already exists", details: { statement_id: 15 } } }
     StatementNotIssued:
-      value: { error: { code: statement.not_issued, message: "Chưa xuất PDF", details: { status: draft } } }
+      value: { error: { code: statement.not_issued, message: "PDF has not been exported yet", details: { status: draft } } }
     StatementImmutable:
-      value: { error: { code: statement.immutable, message: "Bảng kê đã chốt, không thể sửa", details: { status: issued } } }
+      value: { error: { code: statement.immutable, message: "This statement is closed and can no longer be edited", details: { status: issued } } }
     AlertChannelUnavailable:
-      value: { error: { code: alert.channel_unavailable, message: "Không gửi được qua Zalo/SMS, đã chuyển sang nhắc trong ứng dụng", details: { channel: zalo_zns, provider_code: "ERR_TEMPLATE" } } }
+      value: { error: { code: alert.channel_unavailable, message: "Couldn't send via Zalo/SMS — switched to an in-app reminder", details: { channel: zalo_zns, provider_code: "ERR_TEMPLATE" } } }
     CustomerHasActiveContracts:
-      value: { error: { code: customer.has_active_contracts, message: "Khách hàng còn hợp đồng đang chạy", details: { contract_ids: [89] } } }
+      value: { error: { code: customer.has_active_contracts, message: "This customer still has running contracts", details: { contract_ids: [89] } } }
     EmployeeHasAssignedShifts:
-      value: { error: { code: employee.has_assigned_shifts, message: "Nhân viên còn ca sắp tới", details: { shift_ids: [40, 41] } } }
+      value: { error: { code: employee.has_assigned_shifts, message: "This employee still has upcoming shifts", details: { shift_ids: [40, 41] } } }
     EmployeeEmailTaken:
-      value: { error: { code: employee.email_taken, message: "Email đã tồn tại", details: { email: toan.nv@example.com } } }
+      value: { error: { code: employee.email_taken, message: "Email is already in use", details: { email: toan.nv@example.com } } }
     EmployeeManagerCycle:
-      value: { error: { code: employee.manager_cycle, message: "Sẽ tạo vòng lặp quản lý", details: { path: [12, 31, 12] } } }
+      value: { error: { code: employee.manager_cycle, message: "This would create a management cycle", details: { path: [12, 31, 12] } } }
     TeamCodeTaken:
-      value: { error: { code: team.code_taken, message: "Mã tổ đã tồn tại", details: { code: T1 } } }
+      value: { error: { code: team.code_taken, message: "Team code is already in use", details: { code: T1 } } }
     TeamHasMembers:
-      value: { error: { code: team.has_members, message: "Tổ còn thành viên", details: { employee_ids: [31, 40] } } }
+      value: { error: { code: team.has_members, message: "This team still has members", details: { employee_ids: [31, 40] } } }
     TeamLeadConflict:
-      value: { error: { code: team.lead_conflict, message: "Tổ đã có tổ trưởng", details: { employee_id: 31 } } }
+      value: { error: { code: team.lead_conflict, message: "This team already has a lead", details: { employee_id: 31 } } }
     ForbiddenRole:
-      value: { error: { code: auth.forbidden_role, message: "Vai trò của bạn không có quyền thao tác này", details: { required_role: director } } }
+      value: { error: { code: auth.forbidden_role, message: "Your role isn't permitted to do this", details: { required_role: director } } }
     OutOfScope:
-      value: { error: { code: auth.out_of_scope, message: "Không tìm thấy dữ liệu", details: {} } }
+      value: { error: { code: auth.out_of_scope, message: "Data not found", details: {} } }
     ValidationFailed:
-      value: { error: { code: validation.failed, message: "Dữ liệu không hợp lệ", details: { fields: [{ field: name, message: "name must be a string" }] } } }
+      value: { error: { code: validation.failed, message: "Invalid data", details: { fields: [{ field: name, message: "name must be a string" }] } } }

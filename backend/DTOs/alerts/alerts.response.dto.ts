@@ -1,5 +1,4 @@
 import { AlertDeliveryStatus, AlertKind } from '../../models/alerts/alert.entity';
-
 export interface AlertView {
   id: number;
   kind: AlertKind;

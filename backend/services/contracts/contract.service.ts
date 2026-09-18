@@ -21,7 +21,6 @@ import { ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
 import { AccessContext } from '../access-control/access-context';
 import { ScheduleGeneratorService } from './schedule-generator.service';
-
 export interface ContractItemCommand {
   name: string;
   frequencyCount: number;
@@ -29,21 +28,18 @@ export interface ContractItemCommand {
   frequencyRule: string | null;
   unitPrice: number;
 }
-
 export interface ContractSiteCommand {
   name: string;
   workRequirements: string | null;
   notes: string | null;
   items: ContractItemCommand[];
 }
-
 export interface ContractCreateCommand {
   customerId: number;
   signedAt: Date;
   expiresAt: Date;
   sites: ContractSiteCommand[];
 }
-
 @Injectable()
 export class ContractService {
   constructor(
@@ -53,10 +49,8 @@ export class ContractService {
     private readonly shiftRepository: ShiftRepository,
     private readonly scheduleGenerator: ScheduleGeneratorService,
   ) {}
-
   async list(access: AccessContext, page: Page): Promise<ContractPage> {
     const { items, total } = await this.contractRepository.list(access.tenantId, page);
-
     return {
       items: items.map((contract) => toContractView(contract, [])),
       total,
@@ -64,27 +58,22 @@ export class ContractService {
       offset: page.offset,
     };
   }
-
   async get(access: AccessContext, id: number): Promise<ContractView> {
     return toContractView(await this.requireContract(access, id), []);
   }
-
   async create(access: AccessContext, command: ContractCreateCommand): Promise<ContractView> {
     const violations = validate(command);
     if (violations.length > 0) {
       throw new ValidationFailedException(violations);
     }
-
     const contract = new Contract();
     contract.tenantId = access.tenantId;
     contract.customerId = command.customerId;
     contract.setTerm(command.signedAt, command.expiresAt);
     contract.setStatus(ContractStatus.Active);
     const savedContract = await this.contractRepository.create(contract);
-
     const siteViews: ContractSiteView[] = [];
     const generatedShifts: Shift[] = [];
-
     for (const siteCommand of command.sites) {
       const site = new ContractSite();
       site.tenantId = access.tenantId;
@@ -93,7 +82,6 @@ export class ContractService {
       site.setWorkRequirements(siteCommand.workRequirements);
       site.setNotes(siteCommand.notes);
       const savedSite = await this.contractSiteRepository.create(site);
-
       const itemViews: ContractItemView[] = [];
       for (const itemCommand of siteCommand.items) {
         const item = new ContractItem();
@@ -104,7 +92,6 @@ export class ContractService {
         item.setUnitPrice(itemCommand.unitPrice);
         const savedItem = await this.contractItemRepository.create(item);
         itemViews.push(toContractItemView(savedItem));
-
         for (const scheduledDate of this.scheduleGenerator.generate(
           { from: savedContract.signedAt, to: savedContract.expiresAt },
           { frequencyCount: savedItem.frequencyCount, frequencyUnit: savedItem.frequencyUnit },
@@ -123,7 +110,6 @@ export class ContractService {
           generatedShifts.push(shift);
         }
       }
-
       siteViews.push({
         id: savedSite.id,
         name: savedSite.name,
@@ -132,36 +118,27 @@ export class ContractService {
         items: itemViews,
       });
     }
-
     await this.shiftRepository.createMany(generatedShifts);
-
     return toContractView(savedContract, siteViews);
   }
-
   async delete(access: AccessContext, id: number): Promise<void> {
     await this.requireContract(access, id);
-
     await this.contractRepository.delete(access.tenantId, id);
   }
-
   private async requireContract(access: AccessContext, id: number): Promise<Contract> {
     const contract = await this.contractRepository.findById(access.tenantId, id);
     if (contract === null) {
       throw new AuthOutOfScopeException();
     }
-
     return contract;
   }
 }
-
 function validate(command: ContractCreateCommand): FieldViolation[] {
   const violations: FieldViolation[] = [];
-
   if (command.sites.length === 0) {
     violations.push({ field: 'sites', message: 'At least one site is required' });
     return violations;
   }
-
   command.sites.forEach((site, siteIndex) => {
     if (site.items.length === 0) {
       violations.push({
@@ -170,12 +147,10 @@ function validate(command: ContractCreateCommand): FieldViolation[] {
       });
       return;
     }
-
     site.items.forEach((itemCommand, itemIndex) => {
       const item = new ContractItem();
       item.setFrequency(itemCommand.frequencyCount, itemCommand.frequencyUnit, itemCommand.frequencyRule);
       item.setUnitPrice(itemCommand.unitPrice);
-
       for (const violation of item.assertValid()) {
         violations.push({
           field: `sites[${siteIndex}].items[${itemIndex}].${violation.field}`,
@@ -184,10 +159,8 @@ function validate(command: ContractCreateCommand): FieldViolation[] {
       }
     });
   });
-
   return violations;
 }
-
 function toContractItemView(item: ContractItem): ContractItemView {
   return {
     id: item.id,
@@ -198,7 +171,6 @@ function toContractItemView(item: ContractItem): ContractItemView {
     unit_price: item.unitPrice,
   };
 }
-
 function toContractView(contract: Contract, sites: ContractSiteView[]): ContractView {
   return {
     id: contract.id,

@@ -9,18 +9,15 @@ import { ContractRepository } from '../../../repositories/contracts/contract.rep
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { StatementRepository } from '../../../repositories/statements/statement.repository';
 import { DashboardService } from '../../../services/dashboard/dashboard.service';
-
 async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
   const dataSource = await createTestDataSource();
   const contracts = new ContractRepository(dataSource);
   const shifts = new ShiftRepository(dataSource);
   const statements = new StatementRepository(dataSource);
   const clock = new FakeClock(now);
-
   const tenant = await seedTenant(dataSource);
-  const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1_000_000 });
+  const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1000000 });
   const director = anEmployee({ id: 12, tenantId: tenant.id, role: Role.Director });
-
   return {
     dataSource,
     contracts,
@@ -32,7 +29,6 @@ async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
     service: new DashboardService(contracts, shifts, statements, clock),
   };
 }
-
 describe('DashboardService.get — FR2', () => {
   it('counts active contracts, expiring-soon contracts and disputed shifts as of now', async () => {
     const { service, access, chain, dataSource } = await world(new Date('2024-10-15T00:00:00.000Z'));
@@ -40,14 +36,11 @@ describe('DashboardService.get — FR2', () => {
       '2024-11-01',
       chain.contractId,
     ]);
-
     const summary = await service.get(access, {});
-
     expect(summary.active_contracts).toBe(1);
     expect(summary.expiring_soon).toBe(1);
     expect(summary.disputed_shifts).toBe(0);
   });
-
   it('sums projected revenue for every shift scheduled in the period, regardless of status', async () => {
     const { service, access, chain, tenant, dataSource } = await world(new Date('2024-10-15T00:00:00.000Z'));
     await seedShift(dataSource, {
@@ -63,12 +56,9 @@ describe('DashboardService.get — FR2', () => {
       assigneeId: null,
       scheduledDate: '2024-10-20',
     });
-
     const summary = await service.get(access, {});
-
-    expect(summary.projected_revenue).toBe(2_000_000);
+    expect(summary.projected_revenue).toBe(2000000);
   });
-
   it('buckets shifts_summary into completed/overdue/disputed/not_due for the period', async () => {
     const { service, access, chain, tenant, dataSource } = await world(new Date('2024-10-15T00:00:00.000Z'));
     await seedShift(dataSource, {
@@ -83,7 +73,7 @@ describe('DashboardService.get — FR2', () => {
       contractItemId: chain.itemId,
       assigneeId: null,
       scheduledDate: '2024-10-05',
-    }); // overdue: past due, still scheduled
+    });
     await seedShift(dataSource, {
       tenantId: tenant.id,
       contractItemId: chain.itemId,
@@ -96,10 +86,8 @@ describe('DashboardService.get — FR2', () => {
       contractItemId: chain.itemId,
       assigneeId: null,
       scheduledDate: '2024-10-20',
-    }); // not due yet
-
+    });
     const summary = await service.get(access, {});
-
     expect(summary.shifts_summary).toEqual({
       scheduled: 4,
       due: 3,
@@ -113,7 +101,6 @@ describe('DashboardService.get — FR2', () => {
       missing_evidence: 0,
     });
   });
-
   it('reports null percentages rather than dividing by zero when nothing is due yet', async () => {
     const { service, access, chain, tenant, dataSource } = await world(new Date('2024-10-01T00:00:00.000Z'));
     await seedShift(dataSource, {
@@ -122,9 +109,7 @@ describe('DashboardService.get — FR2', () => {
       assigneeId: null,
       scheduledDate: '2024-10-20',
     });
-
     const summary = await service.get(access, {});
-
     expect(summary.shifts_summary).toMatchObject({
       due: 0,
       completed_pct: null,
@@ -132,7 +117,6 @@ describe('DashboardService.get — FR2', () => {
       disputed_pct: null,
     });
   });
-
   it('counts a period’s statements closed vs. the contracts that needed one', async () => {
     const { service, access, chain, tenant, dataSource, statements } = await world(
       new Date('2024-10-15T00:00:00.000Z'),
@@ -148,24 +132,18 @@ describe('DashboardService.get — FR2', () => {
     statement.tenantId = tenant.id;
     statement.contractId = chain.contractId;
     statement.period = new Date('2024-10-01');
-    statement.totalAmount = 1_000_000;
+    statement.totalAmount = 1000000;
     statement.pdfUrl = null;
     statement.status = StatementStatus.Sent;
     await statements.create(statement);
-
     const summary = await service.get(access, {});
-
     expect(summary.statements_closed).toEqual({ closed: 1, total: 1 });
   });
-
   it('defaults to the current calendar month, bucketed by month', async () => {
     const { service, access } = await world(new Date('2024-10-15T00:00:00.000Z'));
-
     const summary = await service.get(access, {});
-
     expect(summary.bucket_unit).toBe('month');
   });
-
   it('resolves an explicit month', async () => {
     const { service, access, chain, tenant, dataSource } = await world(new Date('2024-10-15T00:00:00.000Z'));
     await seedShift(dataSource, {
@@ -175,19 +153,14 @@ describe('DashboardService.get — FR2', () => {
       scheduledDate: '2024-07-10',
       status: 'completed',
     });
-
     const summary = await service.get(access, { month: '2024-07' });
-
-    expect(summary.projected_revenue).toBe(1_000_000);
+    expect(summary.projected_revenue).toBe(1000000);
   });
-
   it('rejects month together with from/to', async () => {
     const { service, access } = await world();
-
     const error = await captureDomainErrorAsync(() =>
       service.get(access, { month: '2024-10', from: '2024-10-01', to: '2024-10-31' }),
     );
-
     expect(error.code).toBe('dashboard.conflicting_period');
   });
 });

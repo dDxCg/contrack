@@ -8,7 +8,6 @@ import { Operation, Resource } from '../../services/access-control/role-resolver
 import { DispatchService, ReassignCommand } from '../../services/shifts/dispatch.service';
 import { DisputeCommand, DisputeService } from '../../services/shifts/dispute.service';
 import { FieldLinkService } from '../../services/field/field-link.service';
-
 @Controller('shifts')
 export class ShiftsController {
   constructor(
@@ -16,55 +15,59 @@ export class ShiftsController {
     private readonly disputeService: DisputeService,
     private readonly fieldLinkService: FieldLinkService,
   ) {}
-
   @Patch(':id')
   @Access(Resource.Shifts, Operation.Update)
   reassign(
-    @CurrentAccess() access: AccessContext,
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: ShiftReassignBodyDto,
+    @CurrentAccess()
+    access: AccessContext,
+    @Param('id', ParseIntPipe)
+    id: number,
+    @Body()
+    body: ShiftReassignBodyDto,
   ): Promise<ShiftView> {
     return this.dispatchService.reassign(access, id, toReassignCommand(body));
   }
-
   @Post(':id/dispute')
   @HttpCode(200)
   @Access(Resource.Shifts, Operation.Update)
   dispute(
-    @CurrentAccess() access: AccessContext,
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: ShiftDisputeBodyDto,
+    @CurrentAccess()
+    access: AccessContext,
+    @Param('id', ParseIntPipe)
+    id: number,
+    @Body()
+    body: ShiftDisputeBodyDto,
   ): Promise<ShiftView> {
     return this.disputeService.mark(access, id, toDisputeCommand(body));
   }
-
   @Post(':id/dispute:resolve')
   @HttpCode(200)
   @Access(Resource.Shifts, Operation.Update)
   resolveDispute(
-    @CurrentAccess() access: AccessContext,
-    @Param('id', ParseIntPipe) id: number,
+    @CurrentAccess()
+    access: AccessContext,
+    @Param('id', ParseIntPipe)
+    id: number,
   ): Promise<ShiftView> {
     return this.disputeService.resolve(access, id);
   }
-
   @Get(':id/link')
   @Access(Resource.Shifts, Operation.Read)
   link(
-    @CurrentAccess() access: AccessContext,
-    @Param('id', ParseIntPipe) id: number,
+    @CurrentAccess()
+    access: AccessContext,
+    @Param('id', ParseIntPipe)
+    id: number,
   ): Promise<FieldLinkView> {
     return this.fieldLinkService.issue(access, id);
   }
 }
-
 function toReassignCommand(body: ShiftReassignBodyDto): ReassignCommand {
   return {
     assigneeId: body.assignee_id ?? null,
     scheduledDate: body.scheduled_date === undefined ? undefined : new Date(body.scheduled_date),
   };
 }
-
 function toDisputeCommand(body: ShiftDisputeBodyDto): DisputeCommand {
   return {
     reason: body.reason,

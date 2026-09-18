@@ -1,5 +1,4 @@
 import { CustomerSegment } from '../../models/customers/customer.entity';
-
 export interface CustomerView {
   id: number;
   name: string;
@@ -9,7 +8,6 @@ export interface CustomerView {
   segment: CustomerSegment;
   created_at: string;
 }
-
 export interface CustomerPage {
   items: CustomerView[];
   total: number;

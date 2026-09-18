@@ -5,7 +5,6 @@ export interface TeamView {
   lead: string | null;
   member_count: number;
 }
-
 export interface TeamPage {
   items: TeamView[];
 }

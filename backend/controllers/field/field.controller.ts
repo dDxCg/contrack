@@ -6,18 +6,20 @@ import {
   FieldSubmissionCommand,
   FieldSubmissionService,
 } from '../../services/field/field-submission.service';
-
 @Controller('field')
 export class FieldController {
   constructor(private readonly fieldSubmissionService: FieldSubmissionService) {}
-
   @Post(':token/submit')
   @Public()
-  submit(@Param('token') token: string, @Body() body: FieldSubmissionBodyDto): Promise<ShiftView> {
+  submit(
+    @Param('token')
+    token: string,
+    @Body()
+    body: FieldSubmissionBodyDto,
+  ): Promise<ShiftView> {
     return this.fieldSubmissionService.submit(token, toCommand(body));
   }
 }
-
 function toCommand(body: FieldSubmissionBodyDto): FieldSubmissionCommand {
   return {
     photoKeys: { before: body.photo_keys.before, after: body.photo_keys.after },

@@ -2,21 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { Employee, Role } from '../../models/employees/employee.entity';
 import { Resource, RoleResolver } from './role-resolver';
 import { RowScope } from './row-scope';
-
 export interface ScopeRow {
   readonly teamId?: number | null;
   readonly assigneeId?: number | null;
   readonly managerId?: number | null;
 }
-
 @Injectable()
 export class ScopeResolver {
   constructor(private readonly roleResolver: RoleResolver) {}
-
   resolve(role: Role, resource: Resource): RowScope {
     return this.roleResolver.scopeFor(resource, role);
   }
-
   allows(scope: RowScope, caller: Employee, row: ScopeRow): boolean {
     switch (scope) {
       case RowScope.All:

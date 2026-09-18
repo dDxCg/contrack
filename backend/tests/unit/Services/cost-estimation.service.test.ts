@@ -7,7 +7,6 @@ import { ContractCostRepository } from '../../../repositories/contract-costs/con
 import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { CostEstimationService } from '../../../services/contract-costs/cost-estimation.service';
-
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Kế toán');
@@ -19,19 +18,16 @@ function draftEmployee(overrides: Partial<Employee>): Employee {
   employee.status = EmployeeStatus.Active;
   employee.setPasswordHash('x');
   Object.assign(employee, overrides);
-
   return employee;
 }
-
 async function world() {
   const dataSource = await createTestDataSource();
   const costs = new ContractCostRepository(dataSource);
   const shifts = new ShiftRepository(dataSource);
   const employees = new EmployeeRepository(dataSource);
   const tenant = await seedTenant(dataSource);
-  const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1_000_000 });
+  const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1000000 });
   const accountant = await employees.create(draftEmployee({ tenantId: tenant.id }));
-
   return {
     dataSource,
     costs,
@@ -43,7 +39,6 @@ async function world() {
     service: new CostEstimationService(costs, shifts),
   };
 }
-
 async function recordCost(
   costs: ContractCostRepository,
   tenantId: number,
@@ -61,35 +56,27 @@ async function recordCost(
   cost.createdBy = createdBy;
   await costs.upsert(cost);
 }
-
 describe('CostEstimationService.estimate — FR28', () => {
   it('averages the trailing 3 months of the contract’s own recorded costs', async () => {
     const { service, costs, tenant, chain, accountant } = await world();
-    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-07-01', 1_000_000);
-    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-08-01', 2_000_000);
-    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-09-01', 3_000_000);
-
+    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-07-01', 1000000);
+    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-08-01', 2000000);
+    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-09-01', 3000000);
     const estimate = await service.estimate(tenant.id, chain.contractId, new Date('2024-10-01'));
-
-    expect(estimate).toBe(2_000_000);
+    expect(estimate).toBe(2000000);
   });
-
   it('averages only the trailing 3 months even when more history exists', async () => {
     const { service, costs, tenant, chain, accountant } = await world();
-    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-01-01', 9_000_000);
-    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-07-01', 1_000_000);
-    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-08-01', 1_000_000);
-    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-09-01', 1_000_000);
-
+    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-01-01', 9000000);
+    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-07-01', 1000000);
+    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-08-01', 1000000);
+    await recordCost(costs, tenant.id, chain.contractId, accountant.id, '2024-09-01', 1000000);
     const estimate = await service.estimate(tenant.id, chain.contractId, new Date('2024-10-01'));
-
-    expect(estimate).toBe(1_000_000);
+    expect(estimate).toBe(1000000);
   });
-
   it('falls back to the tenant cost-to-revenue ratio when the contract has no cost history', async () => {
     const { service, costs, tenant, chain, dataSource, accountant } = await world();
-    // Another contract contributes 500,000 cost and 1,000,000 completed revenue.
-    const otherChain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1_000_000 });
+    const otherChain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1000000 });
     await seedShift(dataSource, {
       tenantId: tenant.id,
       contractItemId: otherChain.itemId,
@@ -97,10 +84,7 @@ describe('CostEstimationService.estimate — FR28', () => {
       scheduledDate: '2024-09-01',
       status: 'completed',
     });
-    await recordCost(costs, tenant.id, otherChain.contractId, accountant.id, '2024-09-01', 500_000);
-
-    // This contract has 2,000,000 of completed revenue in the estimated period but no cost history of its own —
-    // it also counts toward the tenant-wide revenue denominator, so the ratio is 500,000 / 3,000,000.
+    await recordCost(costs, tenant.id, otherChain.contractId, accountant.id, '2024-09-01', 500000);
     await seedShift(dataSource, {
       tenantId: tenant.id,
       contractItemId: chain.itemId,
@@ -115,17 +99,12 @@ describe('CostEstimationService.estimate — FR28', () => {
       scheduledDate: '2024-10-10',
       status: 'completed',
     });
-
     const estimate = await service.estimate(tenant.id, chain.contractId, new Date('2024-10-01'));
-
-    expect(estimate).toBe(333_333.33);
+    expect(estimate).toBe(333333.33);
   });
-
   it('estimates zero when the tenant has no cost or revenue history at all', async () => {
     const { service, tenant, chain } = await world();
-
     const estimate = await service.estimate(tenant.id, chain.contractId, new Date('2024-10-01'));
-
     expect(estimate).toBe(0);
   });
 });

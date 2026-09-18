@@ -10,6 +10,9 @@ import { CustomersController } from './controllers/customers/customers.controlle
 import { DashboardController } from './controllers/dashboard/dashboard.controller';
 import { EmployeesController } from './controllers/employees/employees.controller';
 import { FieldController } from './controllers/field/field.controller';
+import { PlatformAuthController } from './controllers/platform/platform-auth.controller';
+import { PlatformDashboardController } from './controllers/platform/platform-dashboard.controller';
+import { TenantsController } from './controllers/platform/tenants.controller';
 import { ReconciliationController } from './controllers/statements/reconciliation.controller';
 import { ShiftsController } from './controllers/shifts/shifts.controller';
 import { StatementsController } from './controllers/statements/statements.controller';
@@ -24,6 +27,7 @@ import { ContractRepository } from './repositories/contracts/contract.repository
 import { ContractSiteRepository } from './repositories/contracts/contract-site.repository';
 import { CustomerRepository } from './repositories/customers/customer.repository';
 import { EmployeeRepository } from './repositories/employees/employee.repository';
+import { PlatformAdminRepository } from './repositories/platform/platform-admin.repository';
 import { ShiftPhotoRepository } from './repositories/shifts/shift-photo.repository';
 import { ShiftRepository } from './repositories/shifts/shift.repository';
 import { StatementRepository } from './repositories/statements/statement.repository';
@@ -32,16 +36,22 @@ import { TenantRepository } from './repositories/tenants/tenant.repository';
 import { AccessControlGuard } from './services/access-control/access-control.guard';
 import { AUTH_CONFIG, AuthConfig, loadAuthConfig } from './services/access-control/auth.config';
 import { CLOCK, SystemClock } from './services/access-control/clock';
+import { CREDENTIAL_RESOLVERS, CredentialResolver } from './services/access-control/credential-resolver';
+import { DeskCredentialResolver } from './services/access-control/desk-credential-resolver';
 import {
   DomainExceptionFilter,
   toValidationViolations,
 } from './services/access-control/domain-exception.filter';
+import { PlatformCredentialResolver } from './services/access-control/platform-credential-resolver';
 import { RoleResolver } from './services/access-control/role-resolver';
 import { ScopeResolver } from './services/access-control/scope-resolver';
 import { TenantResolver } from './services/access-control/tenant-resolver';
 import { AlertJobService } from './services/alerts/alert-job.service';
 import { AlertService } from './services/alerts/alert.service';
 import { AuthService } from './services/auth/auth.service';
+import { PlatformAuthService } from './services/platform/platform-auth.service';
+import { PlatformDashboardService } from './services/platform/platform-dashboard.service';
+import { TenantService } from './services/platform/tenant.service';
 import { ContractCostService } from './services/contract-costs/contract-cost.service';
 import { ContractProfitabilityService } from './services/contract-costs/contract-profitability.service';
 import { ContractService } from './services/contracts/contract.service';
@@ -60,7 +70,6 @@ import { ScheduleGeneratorService } from './services/contracts/schedule-generato
 import { StatementService } from './services/statements/statement.service';
 import { TeamService } from './services/teams/team.service';
 import { TokenService } from './services/auth/token.service';
-
 @Module({
   controllers: [
     AlertsController,
@@ -71,6 +80,9 @@ import { TokenService } from './services/auth/token.service';
     DashboardController,
     EmployeesController,
     FieldController,
+    PlatformAuthController,
+    PlatformDashboardController,
+    TenantsController,
     ReconciliationController,
     ShiftsController,
     StatementsController,
@@ -93,7 +105,18 @@ import { TokenService } from './services/auth/token.service';
     { provide: APP_GUARD, useClass: AccessControlGuard },
     { provide: APP_FILTER, useClass: DomainExceptionFilter },
     { provide: CHANNEL_CLIENT, useClass: NullChannelClient },
+    DeskCredentialResolver,
+    PlatformCredentialResolver,
+    {
+      provide: CREDENTIAL_RESOLVERS,
+      useFactory: (
+        desk: DeskCredentialResolver,
+        platform: PlatformCredentialResolver,
+      ): CredentialResolver[] => [desk, platform],
+      inject: [DeskCredentialResolver, PlatformCredentialResolver],
+    },
     TenantRepository,
+    PlatformAdminRepository,
     CustomerRepository,
     EmployeeRepository,
     TeamRepository,
@@ -128,10 +151,12 @@ import { TokenService } from './services/auth/token.service';
     AlertJobService,
     AlertService,
     DashboardService,
+    PlatformAuthService,
+    TenantService,
+    PlatformDashboardService,
   ],
 })
 export class AppModule {}
-
 export function configureApp(app: INestApplication): void {
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(

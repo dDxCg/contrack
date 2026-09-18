@@ -1,13 +1,10 @@
 import { loadAuthConfig } from '../../../../services/access-control/auth.config';
-
 describe('loadAuthConfig', () => {
   it('refuses to start without a signing secret', () => {
     expect(() => loadAuthConfig({})).toThrow(/JWT_SECRET/);
   });
-
   it('defaults to the lifetimes stated in 05-api.md §2', () => {
     const config = loadAuthConfig({ JWT_SECRET: 'test-secret' });
-
     expect(config).toEqual({
       jwtSecret: 'test-secret',
       accessTtlSeconds: 1800,
@@ -16,7 +13,6 @@ describe('loadAuthConfig', () => {
       bcryptRounds: 10,
     });
   });
-
   it('reads every value from the environment when given', () => {
     const config = loadAuthConfig({
       JWT_SECRET: 'test-secret',
@@ -25,7 +21,6 @@ describe('loadAuthConfig', () => {
       JWT_FIELD_TTL_SECONDS: '7200',
       BCRYPT_ROUNDS: '4',
     });
-
     expect(config).toEqual({
       jwtSecret: 'test-secret',
       accessTtlSeconds: 60,
@@ -34,7 +29,6 @@ describe('loadAuthConfig', () => {
       bcryptRounds: 4,
     });
   });
-
   it('refuses a non-positive lifetime instead of silently issuing never-expiring tokens', () => {
     expect(() => loadAuthConfig({ JWT_SECRET: 'test-secret', JWT_ACCESS_TTL_SECONDS: '0' })).toThrow(
       /JWT_ACCESS_TTL_SECONDS/,

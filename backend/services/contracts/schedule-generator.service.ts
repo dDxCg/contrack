@@ -1,33 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { FrequencyUnit } from '../../models/contracts/contract-item.entity';
-
 export interface Term {
   from: Date;
   to: Date;
 }
-
 export interface FrequencyInput {
   frequencyCount: number;
   frequencyUnit: FrequencyUnit;
 }
-
 @Injectable()
 export class ScheduleGeneratorService {
   generate(term: Term, frequency: FrequencyInput): Date[] {
     const dates: Date[] = [];
     let current = term.from;
-
     while (current.getTime() <= term.to.getTime()) {
       dates.push(current);
       current = this.addUnit(current, frequency.frequencyUnit, frequency.frequencyCount);
     }
-
     return dates;
   }
-
   private addUnit(date: Date, unit: FrequencyUnit, count: number): Date {
     const next = new Date(date);
-
     switch (unit) {
       case FrequencyUnit.Day:
         next.setUTCDate(next.getUTCDate() + count);
@@ -45,7 +38,6 @@ export class ScheduleGeneratorService {
         next.setUTCFullYear(next.getUTCFullYear() + count);
         break;
     }
-
     return next;
   }
 }
