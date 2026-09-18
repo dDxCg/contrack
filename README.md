@@ -805,7 +805,7 @@ Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 
 | # | Document | Contents |
 |---|---|---|
-| 1 | [Requirements Analysis](docs/01-requirements-analysis.md) | Project overview, User stories (INVEST), Functional requirements, Non-fucntional requirements, Use-case diagrams (UC-01…UC-34, one diagram per role) with a US/FR traceability table |
+| 1 | [Requirements Analysis](docs/01-requirements-analysis.md) | Project overview, User stories (INVEST), Functional requirements, Non-fucntional requirements, Use-case diagrams |
 | 2 | [Screens Hierarchy](docs/02-screens-heriarchy.md) | Screens hierarchy, per role |
 | 3 | [Architecture](docs/03-architecture.md) | arc42 + c4 |
 | 4 | [ERD](docs/04-erd.md) | Entity-relationship diagram |

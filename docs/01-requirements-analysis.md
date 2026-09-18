@@ -86,39 +86,6 @@ Contrack replaces that with one system: a contract's schedules are generated, fi
 | NFR7 | Usability | No native app install; access via a shared web link on any phone |
 
 ### Use Cases
-
-The use-case view of the user stories and FRs above. Each use case carries a `UC-nn` id and is
-traced back to its user story and FR in [§ Use case traceability](#use-case-traceability) —
-FR1–FR29 and US-01–US-24 all appear there.
-
-How to read it — one diagram per role:
-
-- **One diagram per role**: Platform Admin, Director, Manager, Accountant, Team Lead, Employee and
-  System-triggered each get their own diagram, so a role reads its own view standalone. Inside each
-  diagram the actor outside the boundary links to every use case it performs; the use cases stack in
-  one vertical column, and each `«include»` target sits in a column to the right of its base use
-  case. A use case two roles share (`UC-01`, `UC-09`, `UC-10`, `UC-11`,
-  `UC-14`, `UC-15`, `UC-17`) carries the same id in every diagram that shows it; the requirement
-  tables above and the traceability table below name who may perform it, and under which rule.
-- **`«include»`** (dashed) means the base use case always performs the included one: a contract is
-  never saved without its sites, items and generated schedule (FR5–FR7, FR22); evidence is never
-  submitted without photos, receipt and GPS/timestamp (FR17, FR18, FR24); a statement is never
-  exported without its data (FR10, FR11); a dashboard never leaves an unclosed month blank — it
-  estimates it (FR28).
-- **Duplicated system use cases**: `UC-29 · Generate shift schedule` and `UC-34 · Estimate month
-  cost` have no actor of their own — the system computes them when a role use case includes them.
-  Each role diagram therefore carries its own dashed duplicate of the system use cases it reaches
-  (`UC-29` in Director and Manager, `UC-34` in Director and Accountant), so every `«include»` arrow
-  resolves inside one diagram instead of crossing role boundaries.
-- **`System-triggered`** is the one area no role owns — and the only one with two actors:
-  `Scheduler` for the clock-driven use cases (FR23, FR25, FR26) and `Zalo ZNS / SMS` as the delivery
-  gateway (FR27). `UC-29` and `UC-34` are not drawn here: they are triggered by the role use cases
-  that include them, so they live as duplicates in those role diagrams.
-- **Team Lead's `UC-18`** arrives pushed by the Scheduler (`UC-30`, FR23) — a runtime trigger, not an
-  `«include»`, so no arrow connects the two.
-- **Role rules** live in the traceability table: where a role owns only part of a use case, the
-  table names the boundary (Manager creates and edits a contract, only Director deletes it, FR5).
-
 #### Platform Admin
 
 ```mermaid
@@ -304,7 +271,7 @@ flowchart LR
     classDef inc fill:#f8fafc,stroke:#1d4ed8,color:#0f172a,stroke-dasharray: 5 5
     class Contrack,AccountantBox box
     class Accountant actor
-    class A_Login,A_Reconcile,A_Cost,A_Export,A_Send uc
+    class A_Login,A_ProfitLoss,A_Reconcile,A_Cost,A_Export,A_Send uc
     class A_StmtData,SYS_Estimate inc
 
     Accountant --- A_Login
@@ -414,8 +381,8 @@ flowchart LR
     subgraph Contrack["Contrack"]
         subgraph SystemBox["System-triggered"]
             S_Push(["UC-30 · Push this week's shifts"])
-            S_Expiry(["UC-31 · Alert: contract within 30 days of expiry"])
-            S_Missed(["UC-32 · Alert: shift past due and not completed"])
+            S_Expiry(["UC-31 · Alert expiring contracts"])
+            S_Missed(["UC-32 · Alert overdue shifts"])
             S_Alert(["UC-33 · Send alert via Zalo (ZNS) / SMS"])
         end
     end
@@ -432,58 +399,8 @@ flowchart LR
     Scheduler --- S_Push
     Scheduler --- S_Expiry
     Scheduler --- S_Missed
-    Zalo --- S_Alert
+    S_Alert --- Zalo
 
     S_Expiry -.->|"&laquo;include&raquo;"| S_Alert
     S_Missed -.->|"&laquo;include&raquo;"| S_Alert
 ```
-
-#### Use case traceability
-
-Ids match the diagrams above: a use case two roles perform keeps one id and appears in every role
-diagram that shows it, and a use case a role diagram reaches only through `«include»` appears there
-as the dashed duplicate noted above. A `—` in the FR column means the use case is the surface a screen
-`02-screens-heriarchy.md` gives a role rather than an FR of its own; every other row traces to
-both a US# and an FR#.
-
-| # | Use case | User story | FR | Actor(s) and rule |
-|---|---|---|---|---|
-| UC-01 | Sign in | US-01 | FR1 | Every role, Platform Admin included; the session carries the tenant, role and row scope of the account; an unknown email or a suspended tenant is refused before the password check (US-22) |
-| UC-02 | Onboard tenant | US-21 | FR19 | Platform Admin; saving creates exactly one active Director login for the new tenant (`«include»` UC-03) |
-| UC-03 | Create first Director account | US-21 | FR19 | Included by UC-02; scoped to the new tenant only |
-| UC-04 | Suspend / reactivate tenant | US-22 | FR20 | Platform Admin; a suspended tenant's accounts are refused before the password check, reactivation lets them sign in again |
-| UC-05 | View platform dashboard | US-23 | FR21 | Platform Admin; tenant counts by status, recent onboarding activity, tenant growth trend |
-| UC-06 | View dashboard | US-02, US-03, US-04, US-05 | FR2 | Director; contract counts, projected revenue, late/missed shifts by month, on-time renewal and cancellation rates, new contracts signed and the profit/loss trend — filterable by month, completion rates computed only against shifts actually due (`«include»` UC-34) |
-| UC-07 | Manage employee accounts | US-06 | FR3 | Director; create, read, update or deactivate with role and manager assignment; deactivation is a soft delete — the shift and cost history survive |
-| UC-08 | Manage teams | US-24 | FR29 | Director; code unique per tenant; delete blocked while the team still has members |
-| UC-09 | View profit / loss | US-08, US-09 | FR4 | Director, Accountant; per contract per month = `contract_items` revenue minus that month's recorded cost (`«include»` UC-34) |
-| UC-10 | Manage customers | US-14 | FR9 | Manager, Director create and update; delete is Director only and blocked while the customer holds an active contract |
-| UC-11 | Manage contract | US-10 | FR5 | Manager, Director create; update/delete Director only; a site or item missing frequency or unit price rejects the whole save, naming the field (`«include»` UC-12, UC-13, UC-29) |
-| UC-12 | Manage sites | US-10 | FR6 | Included by UC-11; update/delete Director only |
-| UC-13 | Manage service items | US-10 | FR7 | Included by UC-11; name, frequency and unit price per site |
-| UC-14 | View shifts and evidence | US-11 | — | Manager, Director; the *Shifts & Disputes* screens (`02-screens-heriarchy.md`) — no FR of its own |
-| UC-15 | Flag shift disputed | US-11 | FR8 | Manager, Director; the dispute keeps the shift's photos, receipt and GPS and shows the reason, separately from a normal completed shift (`«include»` UC-16) |
-| UC-16 | Review shift evidence | US-11 | — | Included by UC-15 (FR8); evidence is write-once (NFR2), so the review is read-only |
-| UC-17 | View reconciliation | US-07 | FR13 | Accountant, Director; shifts due by frequency next to shifts with complete evidence, for one contract and one period |
-| UC-18 | View this week's shifts | US-18 | FR23 | Team Lead, own team only; the list arrives pushed by the system (UC-30) |
-| UC-19 | Reassign / reschedule shift | US-19 | FR15 | Team Lead; rejected once the shift is completed |
-| UC-20 | Open shift from phone link | US-20 | FR16 | Employee; a shared web link, no app install (NFR7) |
-| UC-21 | Submit shift evidence | US-20 | FR17, FR18, FR24 | Employee; the shift reaches `completed` only when all three captures are present (`«include»` UC-22, UC-23, UC-24) |
-| UC-22 | Capture before / after photos | US-20 | FR17 | Included by UC-21 |
-| UC-23 | Capture signed-receipt photo | US-20 | FR18 | Included by UC-21; the photographed paper original stays the legal artifact (`03-architecture.md` D4) |
-| UC-24 | Capture GPS and timestamp | US-20 | FR24 | Included by UC-21; captured automatically on submission and non-editable afterwards (NFR2) |
-| UC-25 | Record monthly cost | US-17 | FR14 | Accountant; labor, materials or other, per contract per month — that contract's profit/loss for the month updates immediately |
-| UC-26 | Generate statement data | US-15 | FR10 | Included by UC-27; one monthly statement per contract from its completed shifts |
-| UC-27 | Export statement as PDF | US-15 | FR11 | Accountant; one action produces the full PDF with photos and signature; blocked while any shift in the period lacks evidence, with the missing shifts listed (`«include»` UC-26) |
-| UC-28 | Send statement to customer | US-16 | FR12 | Accountant; marks the statement sent with a timestamp and refuses a second send (`«include»` UC-27) |
-| UC-29 | Generate shift schedule | US-10 | FR22 | Included by UC-11; the whole schedule is generated at save, from each service item's frequency |
-| UC-30 | Push this week's shifts | US-18 | FR23 | Scheduler; each team lead's list arrives scoped to that lead's own team |
-| UC-31 | Alert: contract within 30 days of expiry | US-12 | FR25 | Scheduler; fires once per contract when the 30-day threshold on `expires_at` is crossed, never twice (`«include»` UC-33) |
-| UC-32 | Alert: shift past due and not completed | US-13 | FR26 | Scheduler; fires the moment a shift passes its due date for the contract's frequency (`«include»` UC-33) |
-| UC-33 | Send alert via Zalo (ZNS) / SMS | US-12, US-13 | FR27 | Included by UC-31 and UC-32; ZNS with SMS fallback |
-| UC-34 | Estimate month cost | US-09 | FR28 | Included by UC-06 and UC-09; trailing 3-month average of that contract's own recorded costs, else the tenant's average cost-to-revenue ratio — an unclosed month is never left blank |
-
-UC-14 and UC-16 are the only use cases without an FR of their own: they are the evidence-review
-surface the screens hierarchy names, which FR8 hangs a dispute on. Every other use case traces to
-at least one FR, and FR1–FR29 each appear above — the diagram restates the requirement tables, it
-adds nothing to them.
