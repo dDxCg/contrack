@@ -4,8 +4,24 @@ import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { ContractCost, CostCategory } from '../../models/contract-costs/contract-cost.entity';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
 import { Money } from '../../utils/money';
+export interface IContractCostRepository {
+  findById(tenantId: number, id: number): Promise<ContractCost | null>;
+  listByContract(tenantId: number, contractId: number, period?: string): Promise<ContractCost[]>;
+  upsert(cost: ContractCost): Promise<ContractCost>;
+  monthlyTotalsBefore(
+    tenantId: number,
+    contractId: number,
+    beforePeriod: string,
+    limit: number,
+  ): Promise<Money[]>;
+  totalForMonth(tenantId: number, contractId: number, period: string): Promise<Money | null>;
+  tenantTotalCost(tenantId: number): Promise<Money>;
+}
 @Injectable()
-export class ContractCostRepository extends TenantScopedRepository<ContractCost> {
+export class ContractCostRepository
+  extends TenantScopedRepository<ContractCost>
+  implements IContractCostRepository
+{
   protected override readonly entity: EntityTarget<ContractCost> = ContractCost;
   constructor(
     @Inject(DATA_SOURCE)

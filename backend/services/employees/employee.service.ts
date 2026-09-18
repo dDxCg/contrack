@@ -6,7 +6,7 @@ import { AuthOutOfScopeException, EmployeeEmailTakenException } from '../../mode
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
 import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
-import { TeamRepository } from '../../repositories/teams/team.repository';
+import { ITeamRepository, TeamRepository } from '../../repositories/teams/team.repository';
 import { withUniqueViolation } from '../../repositories/unique-violation';
 import { AccessContext } from '../access-control/access-context';
 import { PASSWORD_HASHER, PasswordHasher } from '../auth/password-hasher.service';
@@ -25,7 +25,8 @@ export class EmployeeService {
   constructor(
     @Inject(EmployeeRepository)
     private readonly employeeRepository: IEmployeeRepository,
-    private readonly teamRepository: TeamRepository,
+    @Inject(TeamRepository)
+    private readonly teamRepository: ITeamRepository,
     @Inject(PASSWORD_HASHER)
     private readonly passwordHasher: PasswordHasher,
   ) {}

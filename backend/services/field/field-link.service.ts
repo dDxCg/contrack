@@ -1,14 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { FieldLinkView } from '../../dtos/field/field.response.dto';
 import { AuthOutOfScopeException } from '../../models/domain-errors';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { AccessContext } from '../access-control/access-context';
 import { CLOCK, IClock } from '../access-control/clock';
 import { FieldTokenService } from './field-token.service';
 @Injectable()
 export class FieldLinkService {
   constructor(
-    private readonly shiftRepository: ShiftRepository,
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
     private readonly fieldTokenService: FieldTokenService,
     @Inject(CLOCK)
     private readonly clock: IClock,

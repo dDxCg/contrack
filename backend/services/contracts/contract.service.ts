@@ -17,10 +17,16 @@ import {
 import { Contract } from '../../models/contracts/contract.entity';
 import { ContractItem, FrequencyUnit } from '../../models/contracts/contract-item.entity';
 import { Shift, ShiftStatus } from '../../models/shifts/shift.entity';
-import { ContractItemRepository } from '../../repositories/contracts/contract-item.repository';
+import {
+  ContractItemRepository,
+  IContractItemRepository,
+} from '../../repositories/contracts/contract-item.repository';
 import { ContractRepository, IContractRepository } from '../../repositories/contracts/contract.repository';
-import { ContractSiteRepository } from '../../repositories/contracts/contract-site.repository';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
+import {
+  ContractSiteRepository,
+  IContractSiteRepository,
+} from '../../repositories/contracts/contract-site.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
 import { AccessContext } from '../access-control/access-context';
 import { AssembledContract, ContractAssembler } from './contract-assembler';
@@ -48,9 +54,12 @@ export class ContractService {
   constructor(
     @Inject(ContractRepository)
     private readonly contractRepository: IContractRepository,
-    private readonly contractSiteRepository: ContractSiteRepository,
-    private readonly contractItemRepository: ContractItemRepository,
-    private readonly shiftRepository: ShiftRepository,
+    @Inject(ContractSiteRepository)
+    private readonly contractSiteRepository: IContractSiteRepository,
+    @Inject(ContractItemRepository)
+    private readonly contractItemRepository: IContractItemRepository,
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
     private readonly contractAssembler: ContractAssembler,
     @Inject(DATA_SOURCE)
     private readonly dataSource: DataSource,

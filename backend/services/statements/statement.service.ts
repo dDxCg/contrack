@@ -9,16 +9,17 @@ import {
 } from '../../models/domain-errors';
 import { Statement, StatementStatus } from '../../models/statements/statement.entity';
 import { ContractRepository, IContractRepository } from '../../repositories/contracts/contract.repository';
-import { RevenueRow, ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { IShiftRepository, RevenueRow, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
 import {
   IStatementRepository,
   StatementListFilter,
   StatementRepository,
 } from '../../repositories/statements/statement.repository';
+import { ITenantRepository, TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { withUniqueViolation } from '../../repositories/unique-violation';
 import { AccessContext } from '../access-control/access-context';
-import { addMonthsUTC, startOfMonthUTC, toDateString } from '../../utils/period';
+import { addMonthsUTC, startOfMonthInZone, toDateString } from '../../utils/period';
 import { Money } from '../../utils/money';
 export interface ComputeStatementCommand {
   contractId: number;
@@ -29,9 +30,12 @@ export class StatementService {
   constructor(
     @Inject(StatementRepository)
     private readonly statementRepository: IStatementRepository,
-    private readonly shiftRepository: ShiftRepository,
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
     @Inject(ContractRepository)
     private readonly contractRepository: IContractRepository,
+    @Inject(TenantRepository)
+    private readonly tenantRepository: ITenantRepository,
   ) {}
   async list(access: AccessContext, filter: StatementListFilter, page: Page): Promise<StatementPage> {
     const { items, total } = await this.statementRepository.list(access.tenantId, filter, page);
@@ -51,7 +55,8 @@ export class StatementService {
     if (contract === null) {
       throw new AuthOutOfScopeException();
     }
-    const period = startOfMonthUTC(command.period);
+    const timezone = await this.tenantRepository.timezoneOf(access.tenantId);
+    const period = startOfMonthInZone(command.period, timezone);
     const periodStart = toDateString(period);
     const existing = await this.statementRepository.findByContractPeriod(
       access.tenantId,

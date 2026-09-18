@@ -3,8 +3,14 @@ import { DataSource, EntityManager, EntityTarget } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { ContractSite } from '../../models/contracts/contract-site.entity';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
+export interface IContractSiteRepository {
+  create(site: ContractSite, tx?: EntityManager): Promise<ContractSite>;
+}
 @Injectable()
-export class ContractSiteRepository extends TenantScopedRepository<ContractSite> {
+export class ContractSiteRepository
+  extends TenantScopedRepository<ContractSite>
+  implements IContractSiteRepository
+{
   protected override readonly entity: EntityTarget<ContractSite> = ContractSite;
   constructor(
     @Inject(DATA_SOURCE)

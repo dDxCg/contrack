@@ -5,7 +5,7 @@ import { EmployeeView } from '../../dtos/employees/employees.response.dto';
 import { AuthCredentialExpiredException, AuthInvalidCredentialsException } from '../../models/domain-errors';
 import { Employee } from '../../models/employees/employee.entity';
 import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
-import { TenantRepository } from '../../repositories/tenants/tenant.repository';
+import { ITenantRepository, TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { toEmployeeView } from '../../dtos/employees/employees.mapper';
 import { AccessContext } from '../access-control/access-context';
 import { PASSWORD_HASHER, PasswordHasher } from './password-hasher.service';
@@ -17,7 +17,8 @@ export interface LoginCommand {
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly tenantRepository: TenantRepository,
+    @Inject(TenantRepository)
+    private readonly tenantRepository: ITenantRepository,
     @Inject(EmployeeRepository)
     private readonly employeeRepository: IEmployeeRepository,
     private readonly tokenService: TokenService,

@@ -8,7 +8,11 @@ import { EmployeeEmailTakenException, TenantNotFoundException } from '../../mode
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
 import { TenantStatus } from '../../models/tenants/tenant.entity';
 import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
-import { TenantListQuery, TenantRepository } from '../../repositories/tenants/tenant.repository';
+import {
+  ITenantRepository,
+  TenantListQuery,
+  TenantRepository,
+} from '../../repositories/tenants/tenant.repository';
 import { withUniqueViolation } from '../../repositories/unique-violation';
 import { PASSWORD_HASHER, PasswordHasher } from '../auth/password-hasher.service';
 export interface TenantCreateCommand {
@@ -19,7 +23,8 @@ export interface TenantCreateCommand {
 @Injectable()
 export class TenantService {
   constructor(
-    private readonly tenantRepository: TenantRepository,
+    @Inject(TenantRepository)
+    private readonly tenantRepository: ITenantRepository,
     @Inject(EmployeeRepository)
     private readonly employeeRepository: IEmployeeRepository,
     @Inject(PASSWORD_HASHER)

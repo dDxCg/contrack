@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AuthCredentialExpiredException, AuthForbiddenRoleException } from '../../models/domain-errors';
-import { PlatformAdminRepository } from '../../repositories/platform/platform-admin.repository';
+import {
+  IPlatformAdminRepository,
+  PlatformAdminRepository,
+} from '../../repositories/platform/platform-admin.repository';
 import type { TokenClaims } from '../auth/token.service';
 import { AccessRequirement } from './access.decorator';
 import { CredentialResolver } from './credential-resolver';
@@ -16,7 +19,10 @@ function isPlatformTokenClaims(claims: TokenClaims): claims is PlatformTokenClai
 @Injectable()
 export class PlatformCredentialResolver implements CredentialResolver {
   readonly kind = 'platform';
-  constructor(private readonly platformAdminRepository: PlatformAdminRepository) {}
+  constructor(
+    @Inject(PlatformAdminRepository)
+    private readonly platformAdminRepository: IPlatformAdminRepository,
+  ) {}
   async resolve(claims: TokenClaims, requirement?: AccessRequirement): Promise<PlatformAccessContext> {
     if (!isPlatformTokenClaims(claims)) {
       throw new AuthCredentialExpiredException();

@@ -3,8 +3,16 @@ import { DataSource, EntityTarget } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Team } from '../../models/teams/team.entity';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
+export interface ITeamRepository {
+  list(tenantId: number, options?: { teamId?: number }): Promise<Team[]>;
+  findById(tenantId: number, id: number): Promise<Team | null>;
+  existsCode(tenantId: number, code: string): Promise<boolean>;
+  create(team: Team): Promise<Team>;
+  update(team: Team): Promise<Team>;
+  delete(tenantId: number, id: number): Promise<void>;
+}
 @Injectable()
-export class TeamRepository extends TenantScopedRepository<Team> {
+export class TeamRepository extends TenantScopedRepository<Team> implements ITeamRepository {
   protected override readonly entity: EntityTarget<Team> = Team;
   constructor(
     @Inject(DATA_SOURCE)

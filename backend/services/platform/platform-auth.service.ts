@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PlatformSessionView } from '../../dtos/platform/platform.response.dto';
 import { AuthInvalidCredentialsException } from '../../models/domain-errors';
-import { PlatformAdminRepository } from '../../repositories/platform/platform-admin.repository';
+import {
+  IPlatformAdminRepository,
+  PlatformAdminRepository,
+} from '../../repositories/platform/platform-admin.repository';
 import { PASSWORD_HASHER, PasswordHasher } from '../auth/password-hasher.service';
 import { TokenService } from '../auth/token.service';
 export interface PlatformLoginCommand {
@@ -11,7 +14,8 @@ export interface PlatformLoginCommand {
 @Injectable()
 export class PlatformAuthService {
   constructor(
-    private readonly platformAdminRepository: PlatformAdminRepository,
+    @Inject(PlatformAdminRepository)
+    private readonly platformAdminRepository: IPlatformAdminRepository,
     private readonly tokenService: TokenService,
     @Inject(PASSWORD_HASHER)
     private readonly passwordHasher: PasswordHasher,

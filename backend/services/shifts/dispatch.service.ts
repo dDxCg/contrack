@@ -4,7 +4,7 @@ import { toShiftView } from '../../dtos/shifts/shifts.mapper';
 import { AuthOutOfScopeException, ShiftAssigneeOutOfTeamException } from '../../models/domain-errors';
 import { Shift } from '../../models/shifts/shift.entity';
 import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { AccessContext } from '../access-control/access-context';
 import { RowScope } from '../access-control/row-scope';
 export interface ReassignCommand {
@@ -14,7 +14,8 @@ export interface ReassignCommand {
 @Injectable()
 export class DispatchService {
   constructor(
-    private readonly shiftRepository: ShiftRepository,
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
     @Inject(EmployeeRepository)
     private readonly employeeRepository: IEmployeeRepository,
   ) {}

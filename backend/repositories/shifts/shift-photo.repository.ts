@@ -3,8 +3,14 @@ import { DataSource, EntityManager, EntityTarget } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { PhotoType, ShiftPhoto } from '../../models/shifts/shift-photo.entity';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
+export interface IShiftPhotoRepository {
+  createMany(photos: readonly ShiftPhoto[], tx?: EntityManager): Promise<void>;
+}
 @Injectable()
-export class ShiftPhotoRepository extends TenantScopedRepository<ShiftPhoto> {
+export class ShiftPhotoRepository
+  extends TenantScopedRepository<ShiftPhoto>
+  implements IShiftPhotoRepository
+{
   protected override readonly entity: EntityTarget<ShiftPhoto> = ShiftPhoto;
   constructor(
     @Inject(DATA_SOURCE)

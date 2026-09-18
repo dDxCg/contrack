@@ -4,12 +4,13 @@ import { AlertView } from '../../dtos/alerts/alerts.response.dto';
 import { toAlertView } from '../../dtos/alerts/alerts.mapper';
 import { AuthOutOfScopeException, AlertChannelUnavailableException } from '../../models/domain-errors';
 import { Alert, AlertDeliveryStatus, AlertKind } from '../../models/alerts/alert.entity';
-import { AlertRepository } from '../../repositories/alerts/alert.repository';
+import { AlertRepository, IAlertRepository } from '../../repositories/alerts/alert.repository';
 import { AccessContext } from '../access-control/access-context';
 @Injectable()
 export class AlertService {
   constructor(
-    private readonly alertRepository: AlertRepository,
+    @Inject(AlertRepository)
+    private readonly alertRepository: IAlertRepository,
     @Inject(CHANNEL_CLIENT)
     private readonly channelClient: ChannelClient,
   ) {}

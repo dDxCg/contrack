@@ -1,11 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ReconciliationRowView } from '../../dtos/statements/statements.response.dto';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { AccessContext } from '../access-control/access-context';
 import { addMonthsUTC, toDateString } from '../../utils/period';
 @Injectable()
 export class ReconciliationService {
-  constructor(private readonly shiftRepository: ShiftRepository) {}
+  constructor(
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
+  ) {}
   async get(access: AccessContext, period: Date): Promise<ReconciliationRowView[]> {
     const from = toDateString(period);
     const to = toDateString(addMonthsUTC(period, 1));

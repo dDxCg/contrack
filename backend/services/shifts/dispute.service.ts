@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ShiftView } from '../../dtos/shifts/shifts.response.dto';
 import { AuthOutOfScopeException } from '../../models/domain-errors';
 import { Shift } from '../../models/shifts/shift.entity';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { AccessContext } from '../access-control/access-context';
 import { toShiftView } from '../../dtos/shifts/shifts.mapper';
 export interface DisputeCommand {
@@ -14,7 +14,10 @@ export interface DisputeCommand {
 }
 @Injectable()
 export class DisputeService {
-  constructor(private readonly shiftRepository: ShiftRepository) {}
+  constructor(
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
+  ) {}
   async mark(access: AccessContext, shiftId: number, command: DisputeCommand): Promise<ShiftView> {
     void command;
     const shift = await this.requireShift(access, shiftId);

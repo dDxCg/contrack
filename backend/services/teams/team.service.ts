@@ -3,7 +3,7 @@ import { TeamView, TeamPage } from '../../dtos/teams/teams.response.dto';
 import { AuthOutOfScopeException, TeamCodeTakenException } from '../../models/domain-errors';
 import { Team } from '../../models/teams/team.entity';
 import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
-import { TeamRepository } from '../../repositories/teams/team.repository';
+import { ITeamRepository, TeamRepository } from '../../repositories/teams/team.repository';
 import { withUniqueViolation } from '../../repositories/unique-violation';
 import { AccessContext } from '../access-control/access-context';
 import { RowScope } from '../access-control/row-scope';
@@ -18,7 +18,8 @@ export interface TeamUpdateCommand {
 @Injectable()
 export class TeamService {
   constructor(
-    private readonly teamRepository: TeamRepository,
+    @Inject(TeamRepository)
+    private readonly teamRepository: ITeamRepository,
     @Inject(EmployeeRepository)
     private readonly employeeRepository: IEmployeeRepository,
   ) {}

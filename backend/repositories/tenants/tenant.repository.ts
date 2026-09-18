@@ -8,8 +8,20 @@ export interface TenantListQuery {
   limit: number;
   offset: number;
 }
+export interface ITenantRepository {
+  findById(id: number, tx?: EntityManager): Promise<Tenant | null>;
+  create(name: string, tx?: EntityManager): Promise<Tenant>;
+  updateStatus(id: number, status: TenantStatus): Promise<Tenant>;
+  list(query: TenantListQuery): Promise<PageOf<Tenant>>;
+  listRecent(limit: number): Promise<Tenant[]>;
+  countAll(): Promise<number>;
+  countByStatus(status: TenantStatus): Promise<number>;
+  countCreatedBetween(from: Date, to: Date): Promise<number>;
+  activeIds(): Promise<number[]>;
+  timezoneOf(id: number): Promise<string>;
+}
 @Injectable()
-export class TenantRepository {
+export class TenantRepository implements ITenantRepository {
   constructor(
     @Inject(DATA_SOURCE)
     private readonly dataSource: DataSource,

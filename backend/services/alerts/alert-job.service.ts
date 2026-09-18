@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ChannelClient, CHANNEL_CLIENT } from '../../data/channel-client/channel-client';
 import { Alert, AlertKind } from '../../models/alerts/alert.entity';
-import { AlertRepository } from '../../repositories/alerts/alert.repository';
+import { AlertRepository, IAlertRepository } from '../../repositories/alerts/alert.repository';
 import { ContractRepository, IContractRepository } from '../../repositories/contracts/contract.repository';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
-import { TenantRepository } from '../../repositories/tenants/tenant.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { ITenantRepository, TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { CLOCK, IClock } from '../access-control/clock';
 import { messageFor } from './messages';
 import { addDaysUTC, toDateString, toDateStringInZone } from '../../utils/period';
@@ -19,9 +19,12 @@ export class AlertJobService {
   constructor(
     @Inject(ContractRepository)
     private readonly contractRepository: IContractRepository,
-    private readonly shiftRepository: ShiftRepository,
-    private readonly alertRepository: AlertRepository,
-    private readonly tenantRepository: TenantRepository,
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
+    @Inject(AlertRepository)
+    private readonly alertRepository: IAlertRepository,
+    @Inject(TenantRepository)
+    private readonly tenantRepository: ITenantRepository,
     @Inject(CHANNEL_CLIENT)
     private readonly channelClient: ChannelClient,
     @Inject(CLOCK)

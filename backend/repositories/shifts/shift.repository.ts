@@ -5,8 +5,25 @@ import { Shift, ShiftStatus } from '../../models/shifts/shift.entity';
 import { CrossTenantLookup } from '../cross-tenant-lookup';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
 import { Money } from '../../utils/money';
+export interface IShiftRepository {
+  createMany(shifts: readonly Shift[], tx?: EntityManager): Promise<void>;
+  findById(tenantId: number, id: number, tx?: EntityManager): Promise<Shift | null>;
+  findByIdUnscoped(id: number): Promise<Shift | null>;
+  update(shift: Shift, tx?: EntityManager): Promise<Shift>;
+  revenueRows(tenantId: number, contractId: number, from: string, to: string): Promise<RevenueRow[]>;
+  shiftsByContractForPeriod(tenantId: number, from: string, to: string): Promise<ContractShiftRow[]>;
+  tenantRevenueCompleted(tenantId: number): Promise<Money>;
+  overdue(tenantId: number, asOf: string): Promise<{ id: number }[]>;
+  statsRows(
+    tenantId: number,
+    from: string,
+    to: string,
+  ): Promise<{ status: ShiftStatus; scheduledDate: Date }[]>;
+  tenantRevenueForPeriod(tenantId: number, from: string, to: string): Promise<Money>;
+  countByStatus(tenantId: number, status: ShiftStatus): Promise<number>;
+}
 @Injectable()
-export class ShiftRepository extends TenantScopedRepository<Shift> {
+export class ShiftRepository extends TenantScopedRepository<Shift> implements IShiftRepository {
   protected override readonly entity: EntityTarget<Shift> = Shift;
   private readonly crossTenant: CrossTenantLookup;
   constructor(

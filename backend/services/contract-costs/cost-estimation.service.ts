@@ -1,14 +1,19 @@
-import { Injectable } from '@nestjs/common';
-import { ContractCostRepository } from '../../repositories/contract-costs/contract-cost.repository';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { Inject, Injectable } from '@nestjs/common';
+import {
+  ContractCostRepository,
+  IContractCostRepository,
+} from '../../repositories/contract-costs/contract-cost.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { addMonthsUTC, toDateString } from '../../utils/period';
 import { Money } from '../../utils/money';
 const TRAILING_MONTHS = 3;
 @Injectable()
 export class CostEstimationService {
   constructor(
-    private readonly contractCostRepository: ContractCostRepository,
-    private readonly shiftRepository: ShiftRepository,
+    @Inject(ContractCostRepository)
+    private readonly contractCostRepository: IContractCostRepository,
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
   ) {}
   async estimate(tenantId: number, contractId: number, period: Date): Promise<Money> {
     const trailing = await this.contractCostRepository.monthlyTotalsBefore(

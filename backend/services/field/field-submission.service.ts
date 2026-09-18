@@ -4,8 +4,11 @@ import { ShiftView } from '../../dtos/shifts/shifts.response.dto';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { FieldTokenInvalidException, ShiftEvidenceIncompleteException } from '../../models/domain-errors';
 import { PhotoType, ShiftPhoto } from '../../models/shifts/shift-photo.entity';
-import { ShiftPhotoRepository } from '../../repositories/shifts/shift-photo.repository';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
+import {
+  IShiftPhotoRepository,
+  ShiftPhotoRepository,
+} from '../../repositories/shifts/shift-photo.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { CLOCK, IClock } from '../access-control/clock';
 import { toShiftView } from '../../dtos/shifts/shifts.mapper';
 import { FieldTokenService } from './field-token.service';
@@ -22,8 +25,10 @@ export interface FieldSubmissionCommand {
 export class FieldSubmissionService {
   constructor(
     private readonly fieldTokenService: FieldTokenService,
-    private readonly shiftRepository: ShiftRepository,
-    private readonly shiftPhotoRepository: ShiftPhotoRepository,
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
+    @Inject(ShiftPhotoRepository)
+    private readonly shiftPhotoRepository: IShiftPhotoRepository,
     @Inject(CLOCK)
     private readonly clock: IClock,
     @Inject(DATA_SOURCE)

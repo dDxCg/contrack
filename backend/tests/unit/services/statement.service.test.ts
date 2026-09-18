@@ -6,12 +6,14 @@ import { Role } from '../../../models/employees/employee.entity';
 import { ContractRepository } from '../../../repositories/contracts/contract.repository';
 import { StatementRepository } from '../../../repositories/statements/statement.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
 import { StatementService } from '../../../services/statements/statement.service';
 async function world() {
   const dataSource = await createTestDataSource();
   const statements = new StatementRepository(dataSource);
   const shifts = new ShiftRepository(dataSource);
   const contracts = new ContractRepository(dataSource);
+  const tenants = new TenantRepository(dataSource);
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 500000 });
   const accountant = anEmployee({ id: 12, tenantId: tenant.id, role: Role.Accountant });
@@ -20,10 +22,11 @@ async function world() {
     statements,
     shifts,
     contracts,
+    tenants,
     tenant,
     chain,
     access: anAccessContext(accountant, { tenantId: tenant.id }),
-    service: new StatementService(statements, shifts, contracts),
+    service: new StatementService(statements, shifts, contracts, tenants),
   };
 }
 describe('StatementService.compute — FR10, D6', () => {
@@ -67,6 +70,23 @@ describe('StatementService.compute — FR10, D6', () => {
     });
     expect(view.total_amount).toBe(500000);
     const stored = await statements.findByContractPeriod(tenant.id, chain.contractId, '2024-10-01');
+    expect(stored?.id).toBe(view.id);
+  });
+  it('resolves the period through the tenant timezone, not UTC (M5) — a late-month UTC instant is already next month in Vietnam', async () => {
+    const { service, access, chain, tenant, dataSource, statements } = await world();
+    await seedShift(dataSource, {
+      tenantId: tenant.id,
+      contractItemId: chain.itemId,
+      assigneeId: null,
+      scheduledDate: '2026-03-01',
+      status: 'completed',
+    });
+    const view = await service.compute(access, {
+      contractId: chain.contractId,
+      period: new Date('2026-02-28T18:00:00.000Z'),
+    });
+    expect(view.total_amount).toBe(500000);
+    const stored = await statements.findByContractPeriod(tenant.id, chain.contractId, '2026-03-01');
     expect(stored?.id).toBe(view.id);
   });
   it('blocks on a shift missing evidence, naming it', async () => {

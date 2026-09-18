@@ -1,8 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ContractProfitMonthView } from '../../dtos/contract-costs/contract-costs.response.dto';
-import { ContractCostRepository } from '../../repositories/contract-costs/contract-cost.repository';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
-import { TenantRepository } from '../../repositories/tenants/tenant.repository';
+import {
+  ContractCostRepository,
+  IContractCostRepository,
+} from '../../repositories/contract-costs/contract-cost.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { ITenantRepository, TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { AccessContext } from '../access-control/access-context';
 import { CLOCK, IClock } from '../access-control/clock';
 import { CostEstimationService } from './cost-estimation.service';
@@ -11,10 +14,13 @@ import { Money } from '../../utils/money';
 @Injectable()
 export class ContractProfitabilityService {
   constructor(
-    private readonly shiftRepository: ShiftRepository,
-    private readonly contractCostRepository: ContractCostRepository,
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
+    @Inject(ContractCostRepository)
+    private readonly contractCostRepository: IContractCostRepository,
     private readonly costEstimationService: CostEstimationService,
-    private readonly tenantRepository: TenantRepository,
+    @Inject(TenantRepository)
+    private readonly tenantRepository: ITenantRepository,
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}

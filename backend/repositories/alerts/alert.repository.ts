@@ -3,8 +3,15 @@ import { DataSource, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Alert, AlertDeliveryStatus, AlertKind } from '../../models/alerts/alert.entity';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
+export interface IAlertRepository {
+  list(tenantId: number): Promise<Alert[]>;
+  findById(tenantId: number, id: number): Promise<Alert | null>;
+  existsFor(tenantId: number, kind: AlertKind, subjectId: number): Promise<boolean>;
+  create(alert: Alert): Promise<Alert>;
+  update(alert: Alert): Promise<Alert>;
+}
 @Injectable()
-export class AlertRepository extends TenantScopedRepository<Alert> {
+export class AlertRepository extends TenantScopedRepository<Alert> implements IAlertRepository {
   protected override readonly entity: EntityTarget<Alert> = Alert;
   constructor(
     @Inject(DATA_SOURCE)

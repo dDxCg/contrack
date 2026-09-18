@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PlatformDashboardSummaryView, TrendBucketView } from '../../dtos/platform/platform.response.dto';
 import { TenantStatus } from '../../models/tenants/tenant.entity';
-import { TenantRepository } from '../../repositories/tenants/tenant.repository';
+import { ITenantRepository, TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { CLOCK, IClock } from '../access-control/clock';
 import { addDaysUTC, addMonthsUTC, startOfMonthUTC, toDateString } from '../../utils/period';
 const TREND_MONTHS = 6;
@@ -9,7 +9,8 @@ const RECENT_TENANTS_LIMIT = 5;
 @Injectable()
 export class PlatformDashboardService {
   constructor(
-    private readonly tenantRepository: TenantRepository,
+    @Inject(TenantRepository)
+    private readonly tenantRepository: ITenantRepository,
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}

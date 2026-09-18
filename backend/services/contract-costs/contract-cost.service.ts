@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ContractCostView } from '../../dtos/contract-costs/contract-costs.response.dto';
 import { toContractCostView } from '../../dtos/contract-costs/contract-costs.mapper';
 import { ContractCost, CostCategory } from '../../models/contract-costs/contract-cost.entity';
-import { ContractCostRepository } from '../../repositories/contract-costs/contract-cost.repository';
+import {
+  ContractCostRepository,
+  IContractCostRepository,
+} from '../../repositories/contract-costs/contract-cost.repository';
 import { AccessContext } from '../access-control/access-context';
 import { toDateString } from '../../utils/period';
 import { Money } from '../../utils/money';
@@ -13,7 +16,10 @@ export interface UpsertCostCommand {
 }
 @Injectable()
 export class ContractCostService {
-  constructor(private readonly contractCostRepository: ContractCostRepository) {}
+  constructor(
+    @Inject(ContractCostRepository)
+    private readonly contractCostRepository: IContractCostRepository,
+  ) {}
   async list(access: AccessContext, contractId: number, period?: Date): Promise<ContractCostView[]> {
     const rows = await this.contractCostRepository.listByContract(
       access.tenantId,

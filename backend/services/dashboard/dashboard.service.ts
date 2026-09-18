@@ -5,12 +5,12 @@ import { ContractStatus } from '../../models/contracts/contract.entity';
 import { ShiftStatus } from '../../models/shifts/shift.entity';
 import { StatementStatus } from '../../models/statements/statement.entity';
 import { ContractRepository, IContractRepository } from '../../repositories/contracts/contract.repository';
-import { ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import {
   IStatementRepository,
   StatementRepository,
 } from '../../repositories/statements/statement.repository';
-import { TenantRepository } from '../../repositories/tenants/tenant.repository';
+import { ITenantRepository, TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { AccessContext } from '../access-control/access-context';
 import { CLOCK, IClock } from '../access-control/clock';
 import {
@@ -37,10 +37,12 @@ export class DashboardService {
   constructor(
     @Inject(ContractRepository)
     private readonly contractRepository: IContractRepository,
-    private readonly shiftRepository: ShiftRepository,
+    @Inject(ShiftRepository)
+    private readonly shiftRepository: IShiftRepository,
     @Inject(StatementRepository)
     private readonly statementRepository: IStatementRepository,
-    private readonly tenantRepository: TenantRepository,
+    @Inject(TenantRepository)
+    private readonly tenantRepository: ITenantRepository,
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}

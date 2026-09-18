@@ -3,8 +3,16 @@ import { DataSource, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Customer, CustomerSegment } from '../../models/customers/customer.entity';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
+export interface ICustomerRepository {
+  list(tenantId: number, page: Page): Promise<PageOf<Customer>>;
+  findById(tenantId: number, id: number): Promise<Customer | null>;
+  create(customer: Customer): Promise<Customer>;
+  update(customer: Customer): Promise<Customer>;
+  delete(tenantId: number, id: number): Promise<void>;
+  activeContractIds(tenantId: number, customerId: number): Promise<number[]>;
+}
 @Injectable()
-export class CustomerRepository extends TenantScopedRepository<Customer> {
+export class CustomerRepository extends TenantScopedRepository<Customer> implements ICustomerRepository {
   protected override readonly entity: EntityTarget<Customer> = Customer;
   constructor(
     @Inject(DATA_SOURCE)
