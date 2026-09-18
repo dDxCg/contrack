@@ -7,6 +7,7 @@ import {
   ContractView,
   ContractPage,
 } from '../../dtos/contracts/contracts.response.dto';
+import { pageOf } from '../../dtos/page.dto';
 import {
   AuthOutOfScopeException,
   FieldViolation,
@@ -55,12 +56,11 @@ export class ContractService {
   ) {}
   async list(access: AccessContext, page: Page): Promise<ContractPage> {
     const { items, total } = await this.contractRepository.list(access.tenantId, page);
-    return {
-      items: items.map((contract) => toContractView(contract, [])),
+    return pageOf(
+      items.map((contract) => toContractView(contract, [])),
       total,
-      limit: page.limit,
-      offset: page.offset,
-    };
+      page,
+    );
   }
   async get(access: AccessContext, id: number): Promise<ContractView> {
     return toContractView(await this.requireContract(access, id), []);

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { TenantPage, TenantView } from '../../dtos/platform/platform.response.dto';
+import { pageOf } from '../../dtos/page.dto';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { EmployeeEmailTakenException, TenantNotFoundException } from '../../models/domain-errors';
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
@@ -50,12 +51,11 @@ export class TenantService {
   }
   async list(query: TenantListQuery): Promise<TenantPage> {
     const { items, total } = await this.tenantRepository.list(query);
-    return {
-      items: items.map((tenant) => toTenantView(tenant)),
+    return pageOf(
+      items.map((tenant) => toTenantView(tenant)),
       total,
-      limit: query.limit,
-      offset: query.offset,
-    };
+      query,
+    );
   }
   async updateStatus(id: number, status: TenantStatus): Promise<TenantView> {
     const existing = await this.tenantRepository.findById(id);

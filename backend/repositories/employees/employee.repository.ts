@@ -2,16 +2,19 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
+import { CrossTenantLookup } from '../cross-tenant-lookup';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
 const MAX_MANAGER_CHAIN = 100;
 @Injectable()
 export class EmployeeRepository extends TenantScopedRepository<Employee> {
   protected override readonly entity: EntityTarget<Employee> = Employee;
+  private readonly crossTenant: CrossTenantLookup;
   constructor(
     @Inject(DATA_SOURCE)
     dataSource: DataSource,
   ) {
     super(dataSource);
+    this.crossTenant = new CrossTenantLookup(dataSource);
   }
   async list(tenantId: number, page: Page): Promise<PageOf<Employee>> {
     const rows = await this.selected(tenantId)
@@ -27,13 +30,16 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> {
     return row === undefined || row === null ? null : hydrateEmployee(row);
   }
   async findByEmail(email: string): Promise<Employee | null> {
-    const row = await this.withColumns(this.unscopedTo('e'))
+    const row = await this.withColumns(this.crossTenant.queryFor(Employee, 'e'))
       .andWhere('e.email = :email', { email })
       .getRawOne<EmployeeRow>();
     return row === undefined || row === null ? null : hydrateEmployee(row);
   }
   async existsEmail(email: string): Promise<boolean> {
-    const count = await this.unscopedTo('e').andWhere('e.email = :email', { email }).getCount();
+    const count = await this.crossTenant
+      .queryFor(Employee, 'e')
+      .andWhere('e.email = :email', { email })
+      .getCount();
     return count > 0;
   }
   async findByTeamIds(tenantId: number, teamIds: readonly number[]): Promise<Employee[]> {

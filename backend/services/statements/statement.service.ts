@@ -4,6 +4,7 @@ import {
   StatementView,
   StatementPage,
 } from '../../dtos/statements/statements.response.dto';
+import { pageOf } from '../../dtos/page.dto';
 import {
   AuthOutOfScopeException,
   StatementAlreadyExistsException,
@@ -30,12 +31,11 @@ export class StatementService {
   ) {}
   async list(access: AccessContext, filter: StatementListFilter, page: Page): Promise<StatementPage> {
     const { items, total } = await this.statementRepository.list(access.tenantId, filter, page);
-    return {
-      items: items.map((statement) => toStatementView(statement, [])),
+    return pageOf(
+      items.map((statement) => toStatementView(statement, [])),
       total,
-      limit: page.limit,
-      offset: page.offset,
-    };
+      page,
+    );
   }
   async get(access: AccessContext, id: number): Promise<StatementView> {
     const statement = await this.requireStatement(access, id);

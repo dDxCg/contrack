@@ -16,9 +16,6 @@ export abstract class TenantScopedRepository<T extends ObjectLiteral> {
   protected scopedTo(tenantId: number, alias = 'entity', tx?: EntityManager): SelectQueryBuilder<T> {
     return this.scopedQuery(this.entity, tenantId, alias, tx);
   }
-  protected unscopedTo(alias = 'entity', tx?: EntityManager): SelectQueryBuilder<T> {
-    return this.mgr(tx).createQueryBuilder(this.entity, alias);
-  }
   protected scopedQuery<E extends ObjectLiteral>(
     entity: EntityTarget<E>,
     tenantId: number,

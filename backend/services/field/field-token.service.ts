@@ -15,6 +15,17 @@ export interface FieldTokenClaims {
   readonly iat: number;
   readonly exp: number;
 }
+function isFieldTokenClaims(
+  payload: Record<string, unknown>,
+): payload is Record<string, unknown> & FieldTokenClaims {
+  return (
+    payload.typ === 'field' &&
+    typeof payload.shift_id === 'number' &&
+    typeof payload.jti === 'string' &&
+    typeof payload.exp === 'number' &&
+    typeof payload.iat === 'number'
+  );
+}
 @Injectable()
 export class FieldTokenService {
   constructor(
@@ -43,19 +54,13 @@ export class FieldTokenService {
       }
       throw new FieldTokenInvalidException();
     }
-    const usable =
-      payload.typ === 'field' &&
-      typeof payload.shift_id === 'number' &&
-      typeof payload.jti === 'string' &&
-      typeof payload.exp === 'number' &&
-      typeof payload.iat === 'number';
-    if (!usable) {
+    if (!isFieldTokenClaims(payload)) {
       throw new FieldTokenInvalidException();
     }
-    if (await this.revocations.isRevoked(payload.jti as string)) {
+    if (await this.revocations.isRevoked(payload.jti)) {
       throw new FieldTokenAlreadyUsedException();
     }
-    return payload as unknown as FieldTokenClaims;
+    return payload;
   }
   async markUsed(claims: FieldTokenClaims): Promise<void> {
     await this.revocations.revoke(claims.jti, claims.exp);

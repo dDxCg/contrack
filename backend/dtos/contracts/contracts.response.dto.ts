@@ -1,5 +1,6 @@
 import { ContractStatus } from '../../models/contracts/contract.entity';
 import { FrequencyUnit } from '../../models/contracts/contract-item.entity';
+import { PageView } from '../page.dto';
 export interface ContractItemView {
   id: number;
   name: string;
@@ -23,9 +24,4 @@ export interface ContractView {
   status: ContractStatus;
   sites: ContractSiteView[];
 }
-export interface ContractPage {
-  items: ContractView[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+export type ContractPage = PageView<ContractView>;

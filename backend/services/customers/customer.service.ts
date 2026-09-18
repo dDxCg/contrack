@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CustomerView, CustomerPage } from '../../dtos/customers/customers.response.dto';
+import { pageOf } from '../../dtos/page.dto';
 import { AuthOutOfScopeException } from '../../models/domain-errors';
 import { Customer, CustomerSegment } from '../../models/customers/customer.entity';
 import { CustomerRepository } from '../../repositories/customers/customer.repository';
@@ -17,7 +18,7 @@ export class CustomerService {
   constructor(private readonly customerRepository: CustomerRepository) {}
   async list(access: AccessContext, page: Page): Promise<CustomerPage> {
     const { items, total } = await this.customerRepository.list(access.tenantId, page);
-    return { items: items.map(toCustomerView), total, limit: page.limit, offset: page.offset };
+    return pageOf(items.map(toCustomerView), total, page);
   }
   async get(access: AccessContext, id: number): Promise<CustomerView> {
     return toCustomerView(await this.requireCustomer(access, id));

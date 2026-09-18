@@ -27,6 +27,24 @@ export interface PlatformTokenPayload extends TokenClaims {
   readonly typ: 'platform';
   readonly sub: number;
 }
+function isAccessTokenPayload(claims: TokenClaims): claims is AccessTokenPayload {
+  const candidate = claims as Partial<AccessTokenPayload>;
+  return (
+    candidate.typ === 'access' && typeof candidate.sub === 'number' && typeof candidate.tenant_id === 'number'
+  );
+}
+function isRefreshTokenPayload(claims: TokenClaims): claims is RefreshTokenPayload {
+  const candidate = claims as Partial<RefreshTokenPayload>;
+  return (
+    candidate.typ === 'refresh' &&
+    typeof candidate.sub === 'number' &&
+    typeof candidate.tenant_id === 'number'
+  );
+}
+function isPlatformTokenPayload(claims: TokenClaims): claims is PlatformTokenPayload {
+  const candidate = claims as Partial<PlatformTokenPayload>;
+  return candidate.typ === 'platform' && typeof candidate.sub === 'number';
+}
 @Injectable()
 export class TokenService {
   constructor(
@@ -62,24 +80,24 @@ export class TokenService {
   }
   async verifyAccess(raw: string): Promise<AccessTokenPayload> {
     const claims = await this.verifyGeneric(raw);
-    if (claims.typ !== 'access' || typeof claims.sub !== 'number' || typeof claims.tenant_id !== 'number') {
+    if (!isAccessTokenPayload(claims)) {
       throw new AuthCredentialExpiredException();
     }
-    return claims as unknown as AccessTokenPayload;
+    return claims;
   }
   async verifyRefresh(raw: string): Promise<RefreshTokenPayload> {
     const claims = await this.verifyGeneric(raw);
-    if (claims.typ !== 'refresh' || typeof claims.sub !== 'number' || typeof claims.tenant_id !== 'number') {
+    if (!isRefreshTokenPayload(claims)) {
       throw new AuthCredentialExpiredException();
     }
-    return claims as unknown as RefreshTokenPayload;
+    return claims;
   }
   async verifyPlatform(raw: string): Promise<PlatformTokenPayload> {
     const claims = await this.verifyGeneric(raw);
-    if (claims.typ !== 'platform' || typeof claims.sub !== 'number') {
+    if (!isPlatformTokenPayload(claims)) {
       throw new AuthCredentialExpiredException();
     }
-    return claims as unknown as PlatformTokenPayload;
+    return claims;
   }
   async revoke(claims: TokenClaims): Promise<void> {
     await this.revocations.revoke(claims.jti, claims.exp);

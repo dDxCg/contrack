@@ -1,4 +1,5 @@
 import { TenantStatus } from '../../models/tenants/tenant.entity';
+import { PageView } from '../page.dto';
 export interface PlatformAdminView {
   id: number;
   name: string;
@@ -14,12 +15,7 @@ export interface TenantView {
   created_at: Date;
   director_employee_id?: number;
 }
-export interface TenantPage {
-  items: TenantView[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+export type TenantPage = PageView<TenantView>;
 export interface TrendBucketView {
   period_start: string;
   period_end: string;

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { EmployeeView, EmployeePage } from '../../dtos/employees/employees.response.dto';
+import { pageOf } from '../../dtos/page.dto';
 import { AuthOutOfScopeException, EmployeeEmailTakenException } from '../../models/domain-errors';
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
 import { EmployeeRepository } from '../../repositories/employees/employee.repository';
@@ -28,7 +29,7 @@ export class EmployeeService {
   ) {}
   async list(access: AccessContext, page: Page): Promise<EmployeePage> {
     const { items, total } = await this.employeeRepository.list(access.tenantId, page);
-    return { items: items.map(toEmployeeView), total, limit: page.limit, offset: page.offset };
+    return pageOf(items.map(toEmployeeView), total, page);
   }
   async get(access: AccessContext, id: number): Promise<EmployeeView> {
     return toEmployeeView(await this.requireEmployee(access, id));

@@ -1,4 +1,5 @@
 import { StatementStatus } from '../../models/statements/statement.entity';
+import { PageView } from '../page.dto';
 export interface StatementLineView {
   shift_id: number;
   scheduled_date: string;
@@ -14,12 +15,7 @@ export interface StatementView {
   pdf_url: string | null;
   lines: StatementLineView[];
 }
-export interface StatementPage {
-  items: StatementView[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+export type StatementPage = PageView<StatementView>;
 export interface ReconciliationRowView {
   contract_id: number;
   shifts_due: number;

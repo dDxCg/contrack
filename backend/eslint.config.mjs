@@ -11,14 +11,18 @@ export default tseslint.config(
   },
   {
     files: ['repositories/**/*.ts'],
-    ignores: ['repositories/tenant-scoped.repository.ts', 'repositories/tenants/tenant.repository.ts'],
+    ignores: [
+      'repositories/tenant-scoped.repository.ts',
+      'repositories/tenants/tenant.repository.ts',
+      'repositories/cross-tenant-lookup.ts',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',
         {
           selector: "MemberExpression[property.name='createQueryBuilder']",
           message:
-            'Build queries through TenantScopedRepository.scopedTo()/scopedQuery() only (04-architecture.md R7).',
+            'Build queries through TenantScopedRepository.scopedTo()/scopedQuery(), or the explicit CrossTenantLookup collaborator, only (03-architecture.md R7).',
         },
       ],
     },

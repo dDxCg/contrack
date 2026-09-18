@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AuthCredentialExpiredException } from '../../models/domain-errors';
 import { EmployeeRepository } from '../../repositories/employees/employee.repository';
 import { TenantRepository } from '../../repositories/tenants/tenant.repository';
-import type { AccessTokenPayload, TokenClaims } from '../auth/token.service';
+import type { TokenClaims } from '../auth/token.service';
 import { AccessContext } from './access-context';
 import { AccessRequirement } from './access.decorator';
 import { CredentialResolver } from './credential-resolver';
@@ -10,6 +10,14 @@ import { RoleResolver } from './role-resolver';
 import { RowScope } from './row-scope';
 import { ScopeResolver } from './scope-resolver';
 import { TenantResolver } from './tenant-resolver';
+interface DeskTokenClaims extends TokenClaims {
+  readonly sub: number;
+  readonly tenant_id: number;
+}
+function isDeskTokenClaims(claims: TokenClaims): claims is DeskTokenClaims {
+  const candidate = claims as Partial<DeskTokenClaims>;
+  return typeof candidate.sub === 'number' && typeof candidate.tenant_id === 'number';
+}
 @Injectable()
 export class DeskCredentialResolver implements CredentialResolver {
   readonly kind = 'access';
@@ -21,11 +29,11 @@ export class DeskCredentialResolver implements CredentialResolver {
     private readonly scopeResolver: ScopeResolver,
   ) {}
   async resolve(claims: TokenClaims, requirement?: AccessRequirement): Promise<AccessContext> {
-    const payload = claims as TokenClaims & Partial<AccessTokenPayload>;
-    if (typeof payload.sub !== 'number' || typeof payload.tenant_id !== 'number') {
+    if (!isDeskTokenClaims(claims)) {
       throw new AuthCredentialExpiredException();
     }
-    const tenantId = this.tenantResolver.fromCredential(payload as AccessTokenPayload);
+    const payload = claims;
+    const tenantId = this.tenantResolver.fromCredential(payload);
     const employee = await this.employeeRepository.findById(tenantId, payload.sub);
     if (employee === null || !employee.isActive()) {
       throw new AuthCredentialExpiredException();
@@ -45,7 +53,7 @@ export class DeskCredentialResolver implements CredentialResolver {
         requirement === undefined
           ? RowScope.None
           : this.scopeResolver.resolve(employee.role, requirement.resource),
-      credential: payload as AccessTokenPayload,
+      credential: payload,
     };
   }
 }

@@ -1,4 +1,5 @@
 import { CustomerSegment } from '../../models/customers/customer.entity';
+import { PageView } from '../page.dto';
 export interface CustomerView {
   id: number;
   name: string;
@@ -8,9 +9,4 @@ export interface CustomerView {
   segment: CustomerSegment;
   created_at: string;
 }
-export interface CustomerPage {
-  items: CustomerView[];
-  total: number;
-  limit: number;
-  offset: number;
-}
+export type CustomerPage = PageView<CustomerView>;

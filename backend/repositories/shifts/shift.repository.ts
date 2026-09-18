@@ -2,15 +2,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager, EntityTarget, SelectQueryBuilder } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Shift, ShiftStatus } from '../../models/shifts/shift.entity';
+import { CrossTenantLookup } from '../cross-tenant-lookup';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
 @Injectable()
 export class ShiftRepository extends TenantScopedRepository<Shift> {
   protected override readonly entity: EntityTarget<Shift> = Shift;
+  private readonly crossTenant: CrossTenantLookup;
   constructor(
     @Inject(DATA_SOURCE)
     dataSource: DataSource,
   ) {
     super(dataSource);
+    this.crossTenant = new CrossTenantLookup(dataSource);
   }
   async createMany(shifts: readonly Shift[], tx?: EntityManager): Promise<void> {
     if (shifts.length === 0) {
@@ -31,7 +34,7 @@ export class ShiftRepository extends TenantScopedRepository<Shift> {
     return row === undefined || row === null ? null : hydrateShift(row);
   }
   async findByIdUnscoped(id: number): Promise<Shift | null> {
-    const row = await this.selected(this.unscopedTo('s'))
+    const row = await this.selected(this.crossTenant.queryFor(Shift, 's'))
       .andWhere('s.id = :id', { id })
       .getRawOne<ShiftRow>();
     return row === undefined || row === null ? null : hydrateShift(row);
