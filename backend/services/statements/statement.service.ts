@@ -18,7 +18,8 @@ import {
 } from '../../repositories/statements/statement.repository';
 import { withUniqueViolation } from '../../repositories/unique-violation';
 import { AccessContext } from '../access-control/access-context';
-import { addMonthsUTC, round2, startOfMonthUTC, toDateString } from '../../utils/period';
+import { addMonthsUTC, startOfMonthUTC, toDateString } from '../../utils/period';
+import { Money } from '../../utils/money';
 export interface ComputeStatementCommand {
   contractId: number;
   period: Date;
@@ -66,7 +67,7 @@ export class StatementService {
     statement.tenantId = access.tenantId;
     statement.contractId = command.contractId;
     statement.period = period;
-    statement.totalAmount = round2(rows.reduce((sum, row) => sum + row.unitPrice, 0));
+    statement.totalAmount = Money.sumOf(rows.map((row) => row.unitPrice)).toNumber();
     statement.pdfUrl = null;
     statement.status = StatementStatus.Draft;
     const saved = await withUniqueViolation(
