@@ -1,4 +1,4 @@
-import { INestApplication, Module, ValidationPipe } from '@nestjs/common';
+import { INestApplication, MiddlewareConsumer, Module, NestModule, ValidationPipe } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -11,6 +11,7 @@ import { CustomersController } from './controllers/customers/customers.controlle
 import { DashboardController } from './controllers/dashboard/dashboard.controller';
 import { EmployeesController } from './controllers/employees/employees.controller';
 import { FieldController } from './controllers/field/field.controller';
+import { HealthController } from './controllers/health.controller';
 import { PlatformAuthController } from './controllers/platform/platform-auth.controller';
 import { PlatformDashboardController } from './controllers/platform/platform-dashboard.controller';
 import { TenantsController } from './controllers/platform/tenants.controller';
@@ -21,6 +22,8 @@ import { TeamsController } from './controllers/teams/teams.controller';
 import { CHANNEL_CLIENT } from './data/channel-client/channel-client';
 import { NullChannelClient } from './data/channel-client/null-channel-client';
 import { DATA_SOURCE, createDataSource } from './data/db-context/data-source';
+import { RequestIdMiddleware } from './middleware/request-id.middleware';
+import { securityHeaders } from './middleware/security-headers';
 import { AlertRepository } from './repositories/alerts/alert.repository';
 import { ContractCostRepository } from './repositories/contract-costs/contract-cost.repository';
 import { ContractItemRepository } from './repositories/contracts/contract-item.repository';
@@ -90,6 +93,7 @@ import { TokenService } from './services/auth/token.service';
     DashboardController,
     EmployeesController,
     FieldController,
+    HealthController,
     PlatformAuthController,
     PlatformDashboardController,
     TenantsController,
@@ -178,9 +182,15 @@ import { TokenService } from './services/auth/token.service';
     PlatformDashboardService,
   ],
 })
-export class AppModule {}
-export function configureApp(app: INestApplication): void {
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}
+export function configureApp(app: INestApplication, env: NodeJS.ProcessEnv = process.env): void {
   app.setGlobalPrefix('api/v1');
+  app.use(securityHeaders());
+  app.enableCors({ origin: corsOrigins(env), credentials: true });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -189,4 +199,14 @@ export function configureApp(app: INestApplication): void {
       exceptionFactory: (errors) => new ValidationFailedException(toValidationViolations(errors)),
     }),
   );
+}
+export function corsOrigins(env: NodeJS.ProcessEnv): string[] | boolean {
+  const raw = env.CORS_ORIGINS;
+  if (raw === undefined || raw.trim() === '') {
+    return false;
+  }
+  return raw
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin !== '');
 }

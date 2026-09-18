@@ -71,6 +71,7 @@ backend/
 │   ├── object-storage-client/
 │   ├── channel-client/
 │   └── pdf-renderer/
+├── middleware/
 ├── utils/
 └── tests/
     ├── unit/

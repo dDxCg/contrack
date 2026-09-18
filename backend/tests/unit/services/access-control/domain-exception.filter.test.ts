@@ -27,10 +27,16 @@ describe('DomainExceptionFilter', () => {
     const logger = (filter as unknown as { logger: Logger }).logger;
     loggerError = jest.spyOn(logger, 'error').mockImplementation(() => undefined);
   });
-  function respondTo(exception: unknown): FakeResponse {
+  function respondTo(
+    exception: unknown,
+    request: { id?: string; url?: string; access?: { tenantId: number } } = {},
+  ): FakeResponse {
     const response = new FakeResponse();
     filter.catch(exception, {
-      switchToHttp: () => ({ getResponse: () => response }),
+      switchToHttp: () => ({
+        getResponse: () => response,
+        getRequest: () => ({ id: 'req-1', url: '/api/v1/whatever', ...request }),
+      }),
     } as unknown as ArgumentsHost);
     return response;
   }
@@ -48,12 +54,18 @@ describe('DomainExceptionFilter', () => {
   });
   it('collapses an unexpected Error to 500 internal.error and logs the stack server-side', () => {
     const failure = new Error('connection refused by postgres');
-    const response = respondTo(failure);
+    const response = respondTo(failure, { access: { tenantId: 7 } });
     expect(response.sentStatus).toBe(500);
     expect(response.sentBody).toEqual({
       error: { code: 'internal.error', message: 'Lỗi hệ thống', details: {} },
     });
-    expect(loggerError).toHaveBeenCalledWith('Lỗi hệ thống', failure.stack);
+    expect(loggerError).toHaveBeenCalledWith({
+      message: 'Lỗi hệ thống',
+      requestId: 'req-1',
+      tenantId: 7,
+      path: '/api/v1/whatever',
+      stack: failure.stack,
+    });
   });
   it('still answers a non-Error throwable with the same fixed envelope', () => {
     const response = respondTo('boom');
@@ -61,7 +73,13 @@ describe('DomainExceptionFilter', () => {
     expect(response.sentBody).toEqual({
       error: { code: 'internal.error', message: 'Lỗi hệ thống', details: {} },
     });
-    expect(loggerError).toHaveBeenCalledWith('Lỗi hệ thống', 'boom');
+    expect(loggerError).toHaveBeenCalledWith({
+      message: 'Lỗi hệ thống',
+      requestId: 'req-1',
+      tenantId: null,
+      path: '/api/v1/whatever',
+      stack: 'boom',
+    });
   });
 });
 

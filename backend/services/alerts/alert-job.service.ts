@@ -6,6 +6,7 @@ import { ContractRepository } from '../../repositories/contracts/contract.reposi
 import { ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { CLOCK, IClock } from '../access-control/clock';
+import { messageFor } from './messages';
 import { addDaysUTC, toDateString, toDateStringInZone } from '../../utils/period';
 const EXPIRY_THRESHOLD_DAYS = 30;
 export interface AlertJobSummary {
@@ -79,9 +80,4 @@ export class AlertJobService {
     await this.alertRepository.create(alert);
     summary.sent += 1;
   }
-}
-function messageFor(kind: AlertKind, subjectId: number): string {
-  return kind === AlertKind.ContractExpiring
-    ? `Hợp đồng #${subjectId} sắp hết hạn`
-    : `Ca #${subjectId} đã trễ hẹn`;
 }

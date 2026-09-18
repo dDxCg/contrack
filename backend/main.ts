@@ -7,6 +7,7 @@ import { AppModule, configureApp } from './app.module';
 import { DATA_SOURCE } from './data/db-context/data-source';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
   configureApp(app);
   await app.get<DataSource>(DATA_SOURCE).initialize();
   const port = Number(process.env.PORT ?? 3000);

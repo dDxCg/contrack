@@ -5,19 +5,25 @@ export function createDataSource(env: NodeJS.ProcessEnv = process.env): DataSour
   return new DataSource({
     type: 'postgres',
     host: env.DB_HOST ?? 'localhost',
-    port: readPort(env.DB_PORT),
+    port: readPositiveInt(env, 'DB_PORT', 5432),
     username: env.DB_USER ?? 'contrack',
     password: env.DB_PASSWORD ?? 'contrack',
     database: env.DB_NAME ?? 'contrack',
     entities: [...ENTITIES],
     synchronize: false,
     logging: false,
+    ssl: env.DB_SSL === 'true' ? { rejectUnauthorized: true } : false,
+    extra: { max: readPositiveInt(env, 'DB_POOL_MAX', 10) },
   });
 }
-function readPort(raw: string | undefined): number {
-  const port = Number(raw ?? 5432);
-  if (!Number.isInteger(port) || port <= 0) {
-    throw new Error(`DB_PORT must be a positive whole number (got "${raw ?? ''}")`);
+function readPositiveInt(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
+  const raw = env[name];
+  if (raw === undefined || raw === '') {
+    return fallback;
   }
-  return port;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${name} must be a positive whole number (got "${raw}")`);
+  }
+  return value;
 }

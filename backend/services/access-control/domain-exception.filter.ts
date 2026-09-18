@@ -1,14 +1,29 @@
 import { ArgumentsHost, Catch, ExceptionFilter, Logger, ValidationError } from '@nestjs/common';
 import type { Response } from 'express';
 import { FieldViolation, toErrorEnvelope } from '../../models/domain-errors';
+import type { RequestWithId } from '../../middleware/request-id.middleware';
+
+interface FailedRequest extends RequestWithId {
+  access?: { tenantId: number };
+  url: string;
+}
+
 @Catch()
 export class DomainExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(DomainExceptionFilter.name);
   catch(exception: unknown, host: ArgumentsHost): void {
-    const response = host.switchToHttp().getResponse<Response>();
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
     const { status, body } = toErrorEnvelope(exception);
     if (status >= 500) {
-      this.logger.error(body.error.message, exception instanceof Error ? exception.stack : String(exception));
+      const request = ctx.getRequest<FailedRequest>();
+      this.logger.error({
+        message: body.error.message,
+        requestId: request.id,
+        tenantId: request.access?.tenantId ?? null,
+        path: request.url,
+        stack: exception instanceof Error ? exception.stack : String(exception),
+      });
     }
     response.status(status).json(body);
   }
