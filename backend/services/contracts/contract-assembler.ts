@@ -55,11 +55,22 @@ export class ContractAssembler {
     const item = new ContractItem();
     item.tenantId = access.tenantId;
     item.setName(itemCommand.name);
-    item.setFrequency(itemCommand.frequencyCount, itemCommand.frequencyUnit, itemCommand.frequencyRule);
+    item.setFrequency(
+      itemCommand.frequencyCount,
+      itemCommand.frequencyUnit,
+      itemCommand.frequencyRule,
+      itemCommand.dayOfWeek,
+      itemCommand.dayOfMonth,
+    );
     item.setUnitPrice(itemCommand.unitPrice);
     const scheduledDates = this.scheduleGenerator.generate(
       { from: contract.signedAt, to: contract.expiresAt },
-      { frequencyCount: item.frequencyCount, frequencyUnit: item.frequencyUnit },
+      {
+        frequencyCount: item.frequencyCount,
+        frequencyUnit: item.frequencyUnit,
+        dayOfWeek: item.dayOfWeek,
+        dayOfMonth: item.dayOfMonth,
+      },
     );
     return { entity: item, scheduledDates };
   }

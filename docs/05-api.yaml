@@ -1554,13 +1554,33 @@ components:
           type: string
           nullable: true
           description: >
-            Free text, optional. The exact agreement when one exists (e.g. "thứ 7 hàng tuần",
-            "ngày 15 hàng tháng") — kept as a note for staff, deliberately not parsed by the
-            generator, since real contracts negotiate placements too varied to force into a
-            fixed grammar (`05-architecture.md` §11 R2). The generator schedules purely off
-            `frequency_count`/`frequency_unit`; a director can move individual shifts afterward
-            to match the rule.
+            Free text, optional. Staff-facing note of the exact agreement (`03-architecture.md`
+            §9 D18). The common cases — a fixed weekday within a weekly frequency, or a fixed
+            day-of-month within a monthly/quarterly/yearly frequency — are captured structurally
+            by `day_of_week`/`day_of_month` below and honored by the generator directly. This
+            field stays free text for whatever a contract negotiates outside that shape; a
+            director moves individual shifts by hand to match it when it isn't covered.
           example: "thứ 7 hàng tuần"
+        day_of_week:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 6
+          description: >
+            0=Sunday..6=Saturday. Only meaningful with `frequency_unit: week`; the generator
+            snaps every occurrence to this weekday instead of stepping `frequency_count` days
+            from `signed_at`. Mutually exclusive with `day_of_month`.
+          example: 6
+        day_of_month:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 31
+          description: >
+            Only meaningful with `frequency_unit: month`, `quarter` or `year`; the generator
+            snaps every occurrence to this day-of-month (clamped to the target month's last day
+            when it doesn't have that many days). Mutually exclusive with `day_of_week`.
+          example: 15
         unit_price: { type: number, example: 42000000 }
     ServiceItem:
       allOf:
@@ -1723,7 +1743,7 @@ components:
       type: object
       properties:
         id: { type: integer }
-        kind: { type: string, enum: [contract_expiring, shift_overdue] }
+        kind: { type: string, enum: [contract_expiring, shift_overdue, site_overload] }
         subject_id: { type: integer }
         due_in_days: { type: integer, nullable: true }
         overdue_by_days: { type: integer, nullable: true }

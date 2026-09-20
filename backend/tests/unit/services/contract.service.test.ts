@@ -2,9 +2,11 @@ import { anAccessContext, anEmployee } from '../../support/builders';
 import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedTenant } from '../../support/seed';
+import { NullChannelClient } from '../../../data/channel-client/null-channel-client';
 import { Customer, CustomerSegment } from '../../../models/customers/customer.entity';
 import { FrequencyUnit } from '../../../models/contracts/contract-item.entity';
 import { Role } from '../../../models/employees/employee.entity';
+import { AlertRepository } from '../../../repositories/alerts/alert.repository';
 import { ContractItemRepository } from '../../../repositories/contracts/contract-item.repository';
 import { ContractRepository } from '../../../repositories/contracts/contract.repository';
 import { ContractSiteRepository } from '../../../repositories/contracts/contract-site.repository';
@@ -36,12 +38,14 @@ async function world() {
   customerDraft.setAddress(null);
   customerDraft.setSegment(CustomerSegment.Regular);
   const customer = await customers.create(customerDraft);
+  const alerts = new AlertRepository(dataSource);
   return {
     dataSource,
     contracts,
     sites,
     items,
     shifts,
+    alerts,
     tenant,
     otherTenant,
     customer,
@@ -51,6 +55,8 @@ async function world() {
       sites,
       items,
       shifts,
+      alerts,
+      new NullChannelClient(),
       new ContractAssembler(new ScheduleGeneratorService()),
       dataSource,
     ),
@@ -78,6 +84,8 @@ function validCommand(
             frequencyCount: 1,
             frequencyUnit: FrequencyUnit.Week,
             frequencyRule: null,
+            dayOfWeek: null,
+            dayOfMonth: null,
             unitPrice: 500000,
           },
           {
@@ -85,6 +93,8 @@ function validCommand(
             frequencyCount: 1,
             frequencyUnit: FrequencyUnit.Month,
             frequencyRule: null,
+            dayOfWeek: null,
+            dayOfMonth: null,
             unitPrice: 1200000,
           },
         ],
@@ -133,6 +143,8 @@ describe('ContractService.create — FR5, FR6, FR7, FR22', () => {
                 frequencyCount: 1,
                 frequencyUnit: FrequencyUnit.Week,
                 frequencyRule: null,
+                dayOfWeek: null,
+                dayOfMonth: null,
                 unitPrice: 500000,
               },
             ],
@@ -221,6 +233,67 @@ describe('ContractService.create — FR5, FR6, FR7, FR22', () => {
         }[]
       ).map((violation) => violation.field),
     ).toEqual(['sites[0].items[0].frequency_count', 'sites[0].items[1].unit_price']);
+  });
+});
+describe('ContractService.create — site overload alert (MVP conflict detection)', () => {
+  function anItem(overrides: Partial<ContractCreateCommand['sites'][0]['items'][0]> = {}) {
+    return {
+      name: 'Item',
+      frequencyCount: 1,
+      frequencyUnit: FrequencyUnit.Day,
+      frequencyRule: null,
+      dayOfWeek: null,
+      dayOfMonth: null,
+      unitPrice: 100000,
+      ...overrides,
+    };
+  }
+  it('fires a site_overload alert once a site holds more than the threshold on one day', async () => {
+    const { service, access, customer, alerts, tenant } = await world();
+    const view = await service.create(
+      access,
+      validCommand(customer.id, {
+        signedAt: new Date('2024-01-01'),
+        expiresAt: new Date('2024-01-01'),
+        sites: [
+          {
+            name: 'Site A',
+            workRequirements: null,
+            notes: null,
+            latitude: null,
+            longitude: null,
+            radiusMeters: 200,
+            items: [anItem(), anItem(), anItem(), anItem()],
+          },
+        ],
+      }),
+    );
+    const siteId = view.sites[0].id;
+    const fired = await alerts.list(tenant.id);
+    expect(fired).toHaveLength(1);
+    expect(fired[0]).toMatchObject({ kind: 'site_overload', subjectId: siteId });
+  });
+  it('does not fire when the site stays at or under the threshold', async () => {
+    const { service, access, customer, alerts, tenant } = await world();
+    await service.create(
+      access,
+      validCommand(customer.id, {
+        signedAt: new Date('2024-01-01'),
+        expiresAt: new Date('2024-01-01'),
+        sites: [
+          {
+            name: 'Site A',
+            workRequirements: null,
+            notes: null,
+            latitude: null,
+            longitude: null,
+            radiusMeters: 200,
+            items: [anItem(), anItem(), anItem()],
+          },
+        ],
+      }),
+    );
+    expect(await alerts.list(tenant.id)).toEqual([]);
   });
 });
 describe('ContractService.get / list / delete', () => {

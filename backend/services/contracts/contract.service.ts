@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
+import { CHANNEL_CLIENT, ChannelClient } from '../../data/channel-client/channel-client';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import {
   ContractItemView,
@@ -14,9 +15,11 @@ import {
   FieldViolation,
   ValidationFailedException,
 } from '../../models/domain-errors';
+import { AlertKind } from '../../models/alerts/alert.entity';
 import { Contract } from '../../models/contracts/contract.entity';
 import { ContractItem, FrequencyUnit } from '../../models/contracts/contract-item.entity';
 import { Shift, ShiftStatus } from '../../models/shifts/shift.entity';
+import { AlertRepository, IAlertRepository } from '../../repositories/alerts/alert.repository';
 import {
   ContractItemRepository,
   IContractItemRepository,
@@ -29,12 +32,21 @@ import {
 import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
 import { AccessContext } from '../access-control/access-context';
+import { fireAlert } from '../alerts/alert-firer';
+import { toDateString } from '../../utils/period';
 import { AssembledContract, ContractAssembler } from './contract-assembler';
+// MVP conflict signal (unimplemented-audit.md "Schedule generation"): more than this many shifts
+// landing on the same site on the same calendar day, across every contract, fires a one-time
+// site_overload alert for a human to look at — no auto-rebalancing. See docs/03-architecture.md
+// §11 R3 for the full auto-rebalance plan this is deliberately not attempting yet.
+const SITE_OVERLOAD_THRESHOLD = 3;
 export interface ContractItemCommand {
   name: string;
   frequencyCount: number;
   frequencyUnit: FrequencyUnit;
   frequencyRule: string | null;
+  dayOfWeek: number | null;
+  dayOfMonth: number | null;
   unitPrice: number;
 }
 export interface ContractSiteCommand {
@@ -63,6 +75,10 @@ export class ContractService {
     private readonly contractItemRepository: IContractItemRepository,
     @Inject(ShiftRepository)
     private readonly shiftRepository: IShiftRepository,
+    @Inject(AlertRepository)
+    private readonly alertRepository: IAlertRepository,
+    @Inject(CHANNEL_CLIENT)
+    private readonly channelClient: ChannelClient,
     private readonly contractAssembler: ContractAssembler,
     @Inject(DATA_SOURCE)
     private readonly dataSource: DataSource,
@@ -84,16 +100,28 @@ export class ContractService {
       throw new ValidationFailedException(violations);
     }
     const assembled = this.contractAssembler.assemble(access, command);
-    return this.dataSource.transaction((tx) => this.persist(access, assembled, tx));
+    const { view, overloadedSiteIds } = await this.dataSource.transaction((tx) =>
+      this.persist(access, assembled, tx),
+    );
+    for (const siteId of overloadedSiteIds) {
+      await fireAlert(
+        { alertRepository: this.alertRepository, channelClient: this.channelClient },
+        access.tenantId,
+        AlertKind.SiteOverload,
+        siteId,
+      );
+    }
+    return view;
   }
   private async persist(
     access: AccessContext,
     assembled: AssembledContract,
     tx: EntityManager,
-  ): Promise<ContractView> {
+  ): Promise<{ view: ContractView; overloadedSiteIds: number[] }> {
     const savedContract = await this.contractRepository.create(assembled.entity, tx);
     const siteViews: ContractSiteView[] = [];
     const generatedShifts: Shift[] = [];
+    const siteDatesTouched = new Set<string>();
     for (const site of assembled.sites) {
       site.entity.contractId = savedContract.id;
       const savedSite = await this.contractSiteRepository.create(site.entity, tx);
@@ -102,7 +130,10 @@ export class ContractService {
         item.entity.siteId = savedSite.id;
         const savedItem = await this.contractItemRepository.create(item.entity, tx);
         itemViews.push(toContractItemView(savedItem));
-        generatedShifts.push(...item.scheduledDates.map((date) => aScheduledShift(access, savedItem, date)));
+        for (const date of item.scheduledDates) {
+          generatedShifts.push(aScheduledShift(access, savedItem, date));
+          siteDatesTouched.add(`${savedItem.siteId}|${toDateString(date)}`);
+        }
       }
       siteViews.push({
         id: savedSite.id,
@@ -116,7 +147,16 @@ export class ContractService {
       });
     }
     await this.shiftRepository.createMany(generatedShifts, tx);
-    return toContractView(savedContract, siteViews);
+    const overloadedSiteIds = new Set<number>();
+    for (const key of siteDatesTouched) {
+      const [siteIdText, date] = key.split('|');
+      const siteId = Number(siteIdText);
+      const count = await this.shiftRepository.countForSiteOnDate(access.tenantId, siteId, date, tx);
+      if (count > SITE_OVERLOAD_THRESHOLD) {
+        overloadedSiteIds.add(siteId);
+      }
+    }
+    return { view: toContractView(savedContract, siteViews), overloadedSiteIds: [...overloadedSiteIds] };
   }
   async delete(access: AccessContext, id: number): Promise<void> {
     await this.requireContract(access, id);
@@ -162,7 +202,13 @@ function validate(command: ContractCreateCommand): FieldViolation[] {
     }
     site.items.forEach((itemCommand, itemIndex) => {
       const item = new ContractItem();
-      item.setFrequency(itemCommand.frequencyCount, itemCommand.frequencyUnit, itemCommand.frequencyRule);
+      item.setFrequency(
+        itemCommand.frequencyCount,
+        itemCommand.frequencyUnit,
+        itemCommand.frequencyRule,
+        itemCommand.dayOfWeek,
+        itemCommand.dayOfMonth,
+      );
       item.setUnitPrice(itemCommand.unitPrice);
       for (const violation of item.assertValid()) {
         violations.push({

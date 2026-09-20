@@ -6,6 +6,8 @@ const TEMPLATES: Record<Locale, Record<AlertKind, (subjectId: number) => string>
   vi: {
     [AlertKind.ContractExpiring]: (subjectId) => `Hợp đồng #${subjectId} sắp hết hạn`,
     [AlertKind.ShiftOverdue]: (subjectId) => `Ca #${subjectId} đã trễ hẹn`,
+    [AlertKind.SiteOverload]: (subjectId) =>
+      `Địa điểm #${subjectId} có nhiều ca trùng ngày, cần kiểm tra nhân sự`,
   },
 };
 

@@ -107,6 +107,7 @@ CREATE TABLE alert_kinds (
 
 INSERT INTO alert_kinds (code) VALUES ('contract_expiring');
 INSERT INTO alert_kinds (code) VALUES ('shift_overdue');
+INSERT INTO alert_kinds (code) VALUES ('site_overload');
 
 CREATE TABLE alert_delivery_statuses (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -228,12 +229,17 @@ CREATE TABLE contract_items (
     frequency_count     INTEGER NOT NULL,
     frequency_unit_id   INTEGER NOT NULL,
     frequency_rule      VARCHAR(255),
+    day_of_week         SMALLINT,
+    day_of_month        SMALLINT,
     unit_price          NUMERIC(14, 2) NOT NULL,
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_contract_items_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     CONSTRAINT fk_contract_items_site FOREIGN KEY (site_id, tenant_id) REFERENCES contract_sites(id, tenant_id) ON DELETE CASCADE,
     CONSTRAINT fk_contract_items_frequency_unit FOREIGN KEY (frequency_unit_id) REFERENCES frequency_units(id),
-    CONSTRAINT uq_contract_items_id_tenant UNIQUE (id, tenant_id)
+    CONSTRAINT uq_contract_items_id_tenant UNIQUE (id, tenant_id),
+    CONSTRAINT ck_contract_items_day_of_week_range CHECK (day_of_week IS NULL OR day_of_week BETWEEN 0 AND 6),
+    CONSTRAINT ck_contract_items_day_of_month_range CHECK (day_of_month IS NULL OR day_of_month BETWEEN 1 AND 31),
+    CONSTRAINT ck_contract_items_day_constraint_exclusive CHECK (day_of_week IS NULL OR day_of_month IS NULL)
 );
 
 CREATE INDEX idx_contract_items_tenant ON contract_items(tenant_id);

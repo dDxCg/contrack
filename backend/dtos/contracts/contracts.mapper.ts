@@ -8,6 +8,8 @@ export function toContractItemView(item: ContractItem): ContractItemView {
     frequency_count: item.frequencyCount,
     frequency_unit: item.frequencyUnit,
     frequency_rule: item.frequencyRule,
+    day_of_week: item.dayOfWeek,
+    day_of_month: item.dayOfMonth,
     unit_price: item.unitPrice.toNumber(),
   };
 }

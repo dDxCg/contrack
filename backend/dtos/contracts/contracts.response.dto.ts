@@ -7,6 +7,8 @@ export interface ContractItemView {
   frequency_count: number;
   frequency_unit: FrequencyUnit;
   frequency_rule: string | null;
+  day_of_week: number | null;
+  day_of_month: number | null;
   unit_price: number;
 }
 export interface ContractSiteView {

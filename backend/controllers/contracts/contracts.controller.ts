@@ -70,6 +70,8 @@ function toCommand(body: ContractBodyDto): ContractCreateCommand {
         frequencyCount: item.frequency_count,
         frequencyUnit: item.frequency_unit,
         frequencyRule: item.frequency_rule ?? null,
+        dayOfWeek: item.day_of_week ?? null,
+        dayOfMonth: item.day_of_month ?? null,
         unitPrice: item.unit_price,
       })),
     })),

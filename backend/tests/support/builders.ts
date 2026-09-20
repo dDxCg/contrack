@@ -109,6 +109,8 @@ export function aContractItem(overrides: Partial<ContractItem> = {}): ContractIt
       frequencyCount: 1,
       frequencyUnitId: 1,
       frequencyRule: null,
+      dayOfWeek: null,
+      dayOfMonth: null,
       unitPrice: Money.fromNumber(500000),
       createdAt: new Date('2024-01-01T00:00:00.000Z'),
       frequencyUnit: FrequencyUnit.Week,

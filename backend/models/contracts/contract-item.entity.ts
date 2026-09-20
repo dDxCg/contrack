@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Check, Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { FieldViolation } from '../domain-errors';
 import { Money, moneyTransformer } from '../../utils/money';
 import { FrequencyUnitLookup } from '../lookups/frequency-unit.entity';
@@ -13,6 +13,9 @@ export enum FrequencyUnit {
 }
 @Entity('contract_items')
 @Unique('uq_contract_items_id_tenant', ['id', 'tenantId'])
+@Check('ck_contract_items_day_of_week_range', 'day_of_week IS NULL OR day_of_week BETWEEN 0 AND 6')
+@Check('ck_contract_items_day_of_month_range', 'day_of_month IS NULL OR day_of_month BETWEEN 1 AND 31')
+@Check('ck_contract_items_day_constraint_exclusive', 'day_of_week IS NULL OR day_of_month IS NULL')
 export class ContractItem {
   @PrimaryGeneratedColumn('identity')
   id!: number;
@@ -46,6 +49,10 @@ export class ContractItem {
   frequencyUnitLookup?: FrequencyUnitLookup;
   @Column({ name: 'frequency_rule', type: 'varchar', length: 255, nullable: true })
   frequencyRule!: string | null;
+  @Column({ name: 'day_of_week', type: 'smallint', nullable: true })
+  dayOfWeek!: number | null;
+  @Column({ name: 'day_of_month', type: 'smallint', nullable: true })
+  dayOfMonth!: number | null;
   @Column({ name: 'unit_price', type: 'numeric', precision: 14, scale: 2, transformer: moneyTransformer })
   unitPrice!: Money;
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
@@ -54,10 +61,18 @@ export class ContractItem {
   setName(name: string): void {
     this.name = name;
   }
-  setFrequency(count: number, unit: FrequencyUnit, rule: string | null): void {
+  setFrequency(
+    count: number,
+    unit: FrequencyUnit,
+    rule: string | null,
+    dayOfWeek: number | null = null,
+    dayOfMonth: number | null = null,
+  ): void {
     this.frequencyCount = count;
     this.frequencyUnit = unit;
     this.frequencyRule = rule;
+    this.dayOfWeek = dayOfWeek;
+    this.dayOfMonth = dayOfMonth;
   }
   setUnitPrice(unitPrice: number): void {
     this.unitPrice = Money.fromNumber(unitPrice);
@@ -69,6 +84,23 @@ export class ContractItem {
     }
     if (!(this.unitPrice instanceof Money) || this.unitPrice.isNegative()) {
       violations.push({ field: 'unit_price', message: 'Unit price must be zero or greater' });
+    }
+    if (this.dayOfWeek != null && this.dayOfMonth != null) {
+      violations.push({ field: 'day_of_week', message: 'Set day_of_week or day_of_month, not both' });
+    }
+    if (this.dayOfWeek != null && this.frequencyUnit !== FrequencyUnit.Week) {
+      violations.push({ field: 'day_of_week', message: 'day_of_week only applies to a weekly frequency' });
+    }
+    if (
+      this.dayOfMonth != null &&
+      this.frequencyUnit !== FrequencyUnit.Month &&
+      this.frequencyUnit !== FrequencyUnit.Quarter &&
+      this.frequencyUnit !== FrequencyUnit.Year
+    ) {
+      violations.push({
+        field: 'day_of_month',
+        message: 'day_of_month only applies to a monthly, quarterly or yearly frequency',
+      });
     }
     return violations;
   }

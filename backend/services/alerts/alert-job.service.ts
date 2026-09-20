@@ -1,12 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ChannelClient, CHANNEL_CLIENT } from '../../data/channel-client/channel-client';
-import { Alert, AlertKind } from '../../models/alerts/alert.entity';
+import { AlertKind } from '../../models/alerts/alert.entity';
 import { AlertRepository, IAlertRepository } from '../../repositories/alerts/alert.repository';
 import { ContractRepository, IContractRepository } from '../../repositories/contracts/contract.repository';
 import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { ITenantRepository, TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { CLOCK, IClock } from '../access-control/clock';
-import { messageFor } from './messages';
+import { fireAlert } from './alert-firer';
 import { addDaysUTC, toDateString, toDateStringInZone } from '../../utils/period';
 const EXPIRY_THRESHOLD_DAYS = 30;
 export interface AlertJobSummary {
@@ -71,17 +71,16 @@ export class AlertJobService {
     subjectId: number,
     summary: AlertJobSummary,
   ): Promise<void> {
-    if (await this.alertRepository.existsFor(tenantId, kind, subjectId)) {
+    const fired = await fireAlert(
+      { alertRepository: this.alertRepository, channelClient: this.channelClient },
+      tenantId,
+      kind,
+      subjectId,
+    );
+    if (fired) {
+      summary.sent += 1;
+    } else {
       summary.skipped += 1;
-      return;
     }
-    const deliveryStatus = await this.channelClient.send(messageFor(kind, subjectId));
-    const alert = new Alert();
-    alert.tenantId = tenantId;
-    alert.kind = kind;
-    alert.subjectId = subjectId;
-    alert.deliveryStatus = deliveryStatus;
-    await this.alertRepository.create(alert);
-    summary.sent += 1;
   }
 }

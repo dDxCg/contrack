@@ -38,4 +38,26 @@ describe('ContractItem', () => {
       ]);
     });
   });
+  describe('assertValid — day_of_week / day_of_month (D18)', () => {
+    it('passes with day_of_week set on a weekly frequency', () => {
+      const item = aContractItem({ frequencyUnit: FrequencyUnit.Week, dayOfWeek: 6 });
+      expect(item.assertValid()).toEqual([]);
+    });
+    it('passes with day_of_month set on a monthly frequency', () => {
+      const item = aContractItem({ frequencyUnit: FrequencyUnit.Month, dayOfMonth: 15 });
+      expect(item.assertValid()).toEqual([]);
+    });
+    it('rejects both day_of_week and day_of_month set at once', () => {
+      const item = aContractItem({ frequencyUnit: FrequencyUnit.Week, dayOfWeek: 6, dayOfMonth: 15 });
+      expect(item.assertValid().map((violation) => violation.field)).toEqual(['day_of_week', 'day_of_month']);
+    });
+    it('rejects day_of_week on a non-weekly frequency', () => {
+      const item = aContractItem({ frequencyUnit: FrequencyUnit.Month, dayOfWeek: 6 });
+      expect(item.assertValid()).toEqual([{ field: 'day_of_week', message: expect.any(String) }]);
+    });
+    it('rejects day_of_month on a daily frequency', () => {
+      const item = aContractItem({ frequencyUnit: FrequencyUnit.Day, dayOfMonth: 15 });
+      expect(item.assertValid()).toEqual([{ field: 'day_of_month', message: expect.any(String) }]);
+    });
+  });
 });

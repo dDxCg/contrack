@@ -27,6 +27,16 @@ export class ContractItemBodyDto {
   @IsOptional()
   @IsString()
   frequency_rule?: string | null;
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(6)
+  day_of_week?: number | null;
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  day_of_month?: number | null;
   @IsNumber()
   @Min(0)
   unit_price!: number;

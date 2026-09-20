@@ -52,6 +52,8 @@ describe('ContractsController', () => {
               frequencyCount: 1,
               frequencyUnit: FrequencyUnit.Week,
               frequencyRule: null,
+              dayOfWeek: null,
+              dayOfMonth: null,
               unitPrice: 100000,
             },
           ],
