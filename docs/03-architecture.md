@@ -85,7 +85,7 @@ flowchart TB
 |---|---|---|---|---|
 | Zalo ZNS / SMS | out | provider HTTP API | Alert job | delivery failure falls back to in-app (§8.3) |
 | VietQR | out | provider HTTP API | Billing (Could-have) | not built in MVP |
-| Object storage | both | S3 API | API server | upload retried; an unresolvable upload blocks shift completion |
+| Object storage | both | S3 API | API server | the API signs upload URLs and only reads keys back by shape — it never proxies bytes; with no bucket configured the upload route fails `storage.unavailable` (503) rather than issuing a key nothing will accept |
 
 ---
 
@@ -331,8 +331,10 @@ before upload. The remaining mechanics — resumable upload, offline queue — a
 | D17 | **Login reveals a suspended tenant only after the password is confirmed correct** | Checking tenant status before the password meant a wrong-password guess against a suspended tenant's account still confirmed the tenant was suspended — a caller learns something true about the account without ever proving they hold a valid credential. Checking status first is the simpler order, but it leaks status regardless of authentication outcome, which isn't an acceptable tradeoff on a login path already hardened against a similar leak. | A suspended tenant is now indistinguishable from a wrong password until the password is right. Breaking: a caller that relied on seeing suspended status pre-authentication no longer can. | Not expected — this closes an information leak with no functional tradeoff. |
 | D18 | **A structured day-of-week/day-of-month constraint is honored by the generator; free text is not** — supersedes R2's "never parsed" | R2 kept `frequency_rule` free text and unparsed because real contracts negotiate placements too varied for a fixed grammar. That reasoning held for the general case but not for the two shapes that account for most of it — a fixed weekday within a weekly cadence, a fixed day-of-month within a monthly/quarterly/yearly one. Parsing the free text with NLP was rejected (unreliable over open Vietnamese phrasing, per the original audit); adding two structured, optional columns for exactly those two shapes was not. | The generator snaps to the structured constraint when one is set, clamping day-of-month to the target period's last day; `frequency_rule` remains free text for whatever a contract needs outside that shape, still unparsed, still requiring a manual shift move. | A third common shape emerges (e.g. "the Nth weekday of the month") frequent enough to justify its own column — same reasoning, evaluated fresh each time rather than generalized in advance. |
 | D19 | **Composite tenant-scoped foreign keys and lookup-table seed rows are hand-maintained in migration files, not `migration:generate` output** | `migration:generate` diffs schema only, never data, and its FK diff can't be trusted to reproduce every composite-key shape reliably. Rejected alternative: trust `generate` blindly and let it silently skip these — a schema drift that only surfaces as a runtime constraint violation. | Every migration touching a composite FK or a lookup-table seed carries a manually verified block matching `04-schema.sql`; `generate` output is still the default for everything else. | `generate`'s FK diffing becomes reliable for every composite-key shape this schema uses — re-evaluate per TypeORM version bump rather than assumed fixed. |
-| D20 | **A schedule-generation conflict (same site, same day, over threshold) is auto-resolved by moving the unconstrained shift, applied immediately, no approval step** | An item with a `day_of_week`/`day_of_month` constraint (D18) is a customer commitment and is never moved; an unconstrained item is fair game. The alternative — compute the same move but hold it for manager approval before applying — was considered and rejected for the first cut: the move is scoped tightly enough (only the contract just created, only within its own term) that the extra approval step was judged not worth the friction yet. | Most same-site pile-ups self-resolve at contract creation with no human step; what's left after moving what it safely can still raises the existing overload alert for a human to finish by hand. | An auto-moved shift surprises a manager or customer often enough in practice — add the approval step then, or scope the mover further (§11 R9). |
+| D20 | **A schedule-generation conflict (too many shifts, same day, tenant-wide, over the team count) is auto-resolved by moving the unconstrained shift, applied immediately, no approval step** | An item with a `day_of_week`/`day_of_month` constraint (D18) is a customer commitment and is never moved; an unconstrained item is fair game. The alternative — compute the same move but hold it for manager approval before applying — was considered and rejected for the first cut: the move is scoped tightly enough (only the contract just created, only within its own term) that the extra approval step was judged not worth the friction yet. | Most pile-ups self-resolve at contract creation with no human step; what's left after moving what it safely can still raises the existing overload alert for a human to finish by hand. | An auto-moved shift surprises a manager or customer often enough in practice — add the approval step then, or scope the mover further (§11 R9). |
+| D23 | **Conflict capacity is "1 team, 1 job, 1 day" — no per-team capacity number, no skill/category matching, checked tenant-wide, not per site** | A team can only be reliably known once a human assigns work to it (D8), and requiring a work category on every contract item at entry would slow down the one workflow meant to stay fast (free text now, OCR later — D18's same reasoning). Assuming every team can do any job removes the need for that category entirely; assuming a team covers at most one job a day removes the need for a per-team capacity number — the ceiling is simply how many teams the tenant has. Site-level counting was replaced with tenant-wide counting because a team isn't tied to one site — the real ceiling is how many jobs can be staffed anywhere that day, not how many land at one address. | The schedule-generation conflict check (D20) compares same-day shift count against total team count, tenant-wide; `Team` carries no capacity field and no skill/category link to `ContractItem`. This is deliberately the simplest model that's still correct for the stated assumption, not a partial implementation of a richer one. | A team is shown to legitimately run more than one job a day, or teams turn out to specialize (not every team can do every job) — both break an assumption this decision depends on and would need a real capacity number and/or a category model, not a bigger constant. |
 | D21 | **Logout revokes an optional refresh token best-effort; failure there doesn't fail logout** | The caller's access token is already revoked by the time the refresh token is checked; a refresh token that's already expired or invalid has nothing left to revoke, and logout's job is done regardless. | A logout call always succeeds once the access token is revoked, even if the refresh token was already stale. | Not expected — this is a terminal, low-stakes best-effort step with no further state depending on its outcome. |
+| D22 | **Photo uploads go straight from the phone to the bucket on a server-signed URL; a submitted key is trusted on its shape alone, not verified against a record** | Proxying every image through the API was rejected — it burns API bandwidth on 3G for no benefit over a signed URL. Recording every issued key so a submission could be verified against it was rejected too, for now — it's a schema change and a write on every single photo, to guard against an abuse case not yet seen. | The API stays thin; nothing proves an uploaded key's object actually exists or how big it is until a key record exists (§11 R10). | Real abuse shows shape-checking isn't enough, or a per-image size cap has to be enforced by the API — record issued keys then. |
 
 ---
 
@@ -370,18 +372,21 @@ stated now so the target is fixed before the mechanism is chosen.
 | R6 | **Token lifetime and reissue policy for D3 undecided** | Low–Medium — too short breaks a delayed shift, too long keeps a forwarded link live | Low | Pick a conservative default; revisit after pilot feedback |
 | R7 | **A single missing `tenant_id` filter in one repository method leaks one tenant's rows to another** | High — a cross-tenant data leak is a trust failure with every tenant at once, not one customer | Medium until enforced structurally | Make the filter structural, not a per-query habit — a base repository class or ORM global scope that every query inherits automatically; QR6's sweep is the regression test |
 | R8 | **Noisy-neighbor load: one large-chain tenant's query volume degrades another tenant's response time** | Medium — grows with tenant count and size spread (C4) | Low at MVP tenant counts | Index every `tenant_id` column (done, `04-schema.sql`); revisit connection pooling / read replicas if a pilot tenant's chain scale shows contention |
-| R9 | **Cross-contract schedule conflict handling only auto-resolves the simple case.** A same-site, same-day pile-up moves an unconstrained shift to a nearby free date automatically (D20); a `day_of_week`/`day_of_month`-constrained item (D18) is never moved, and whatever stays overloaded still relies on a human via the existing alert. No capacity model, no cross-contract priority between competing tenants' shifts, no approval step before a move is applied. See §11.1 for the options considered. | Medium — affects operational trust in the schedule once tenants run many concurrent contracts per site/team | Medium, grows with tenant scale | Revisit once real usage shows whether the current auto-move behavior is causing problems — that decides whether a capacity model or a priority rule is worth building next |
+| R9 | **Cross-contract schedule conflict handling auto-resolves the case D20/D23 were scoped for, and no further.** A same-day, tenant-wide pile-up over the team count moves an unconstrained shift to a nearby free date automatically (D20); a `day_of_week`/`day_of_month`-constrained item (D18) is never moved, and whatever stays overloaded still relies on a human via the existing alert. No per-team capacity number, no skill/category matching, no cross-contract priority, no approval step before a move is applied — each is a deliberate scope cut (D23), not an oversight. See §11.1 for what's decided and what's still open. | Medium — affects operational trust in the schedule once tenants run many concurrent contracts | Medium, grows with tenant scale | Revisit once real usage breaks one of D23's assumptions (a team legitimately runs more than one job a day, or teams turn out to specialize) — that's what would justify a real capacity number or a category model |
 
-### 11.1 R9 — auto-reschedule options considered
+### 11.1 R9 — decided scope, and what was left out
 
-Four strategies were weighed for turning the overload signal into something that moves shifts:
+**Decided (D20 + D23):** a schedule-generation conflict is "more shifts land on one day,
+tenant-wide, than there are teams to cover them." An unconstrained shift is auto-moved to the
+nearest free date within a window; a date-constrained one never moves. Every team is assumed
+capable of any job (no category/skill matching) and capable of at most one job a day (no
+per-team capacity number) — the ceiling is simply the tenant's team count. This was chosen over
+three richer alternatives, kept here as options not taken:
 
-- **Greedy nearest-slot move (chosen, D20).** Move the unmovable-constraint-free shift to the
-  nearest free date. Simple and explainable, but order-dependent — earlier contracts keep
-  their date, later ones get bumped, and one move can ripple into another.
 - **Capacity-aware packing at generation time.** Assign every contract's dates around actual
-  team/site capacity so overload is never created. Solves the problem structurally but is a
-  much larger change, and needs a capacity model that doesn't exist yet.
+  team capacity so overload is never created. Solves the problem structurally but is a much
+  larger change, and still needs a real per-team capacity number (not just a count) to mean
+  anything.
 - **Priority-based rebalance.** Same as the chosen option, but a priority rule (contract value,
   customer tier, etc.) decides who yields instead of creation order. Needs a product decision
   on what "priority" means before it's buildable.
@@ -389,10 +394,29 @@ Four strategies were weighed for turning the overload signal into something that
   effect. Lowest risk, but keeps a human in the loop for every conflict — the exact toil this
   risk is meant to reduce.
 
-All four assume a capacity model, a way to detect team- not just site-level load after shifts
-are assigned (not just at generation time), and an alert that can re-fire per occurrence
-rather than once per site — none of which exist yet; only the first option's simplest form is
-built today.
+**Explicitly out of scope, not partially built:**
+
+- A per-team capacity number, and the skill/category matching that would make routing to a
+  *specific* team meaningful — rejected for now because either one requires tagging work at
+  contract entry (or inferring it), which competes with keeping that entry fast (D18's same
+  reasoning). An LLM-based suggestion layer was discussed as a lower-risk way to get routing
+  without manual tagging, but only worth building once manual team selection is shown to be a
+  real bottleneck.
+- A two-step ownership model (a manager assigns work down to a team, a team lead then assigns
+  a person within it) was discussed as the natural place to enforce a real per-team capacity
+  once one exists — `DispatchService` already scopes a `TeamLead`'s reassignment to their own
+  team, so only the team-level step and a `Shift.teamId` are missing. Not built; revisit
+  together with a real capacity number.
+- A single job spanning more than one calendar day is out of scope — a multi-day job is
+  represented as several single-day shifts on the same item today, with no shared identity
+  tying them together.
+- Team capacity, however it's eventually measured, is a nominal ceiling — nothing models
+  day-specific availability (leave, part-time, already committed elsewhere), so a nominally
+  fine day can still be short a team the system doesn't know about. This can only under-count
+  real conflicts, never invent one, so it's a reason to keep a human in the loop, not a reason
+  to hold off on D23's simpler model.
+
+| R10 | **A submitted photo key is checked for shape only — nothing proves the object exists, and nothing caps its size.** A shift can read as fully evidenced while its photo is absent or unusable, and the gap only surfaces when someone opens the evidence later, at dispute time. | Medium — trust in evidence completeness | Medium — a flaky 3G upload needs no malice to produce it | Record issued keys so existence and size can be verified against them; until then the bucket's own policy is the only ceiling |
 
 **Accepted for this design phase:** no customer-facing portal (D5), no on-screen
 signature (D4), no ERP integration (C2) — each is a named non-goal, not an

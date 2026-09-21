@@ -1,5 +1,4 @@
 export interface RebalanceCandidate {
-  siteId: number;
   date: Date;
   constrained: boolean;
 }
@@ -11,11 +10,11 @@ export interface Term {
   from: Date;
   to: Date;
 }
-export type SiteDateCountLookup = (siteId: number, date: Date) => Promise<number>;
+export type DateCountLookup = (date: Date) => Promise<number>;
 export class ScheduleRebalancer {
   constructor(
-    private readonly countLookup: SiteDateCountLookup,
-    private readonly threshold: number,
+    private readonly countLookup: DateCountLookup,
+    private readonly capacity: number,
     private readonly windowDays: number,
   ) {}
   async resolve(candidates: RebalanceCandidate[], term: Term): Promise<RebalanceResult[]> {
@@ -33,11 +32,11 @@ export class ScheduleRebalancer {
     batchCounts: Map<string, number>,
   ): Promise<Date> {
     const countAt = async (date: Date): Promise<number> => {
-      const existing = await this.countLookup(candidate.siteId, date);
-      return existing + (batchCounts.get(key(candidate.siteId, date)) ?? 0);
+      const existing = await this.countLookup(date);
+      return existing + (batchCounts.get(key(date)) ?? 0);
     };
-    if (candidate.constrained || (await countAt(candidate.date)) < this.threshold) {
-      record(batchCounts, candidate.siteId, candidate.date);
+    if (candidate.constrained || (await countAt(candidate.date)) < this.capacity) {
+      record(batchCounts, candidate.date);
       return candidate.date;
     }
     for (const offset of nearestOffsets(this.windowDays)) {
@@ -45,20 +44,20 @@ export class ScheduleRebalancer {
       if (altDate.getTime() < term.from.getTime() || altDate.getTime() > term.to.getTime()) {
         continue;
       }
-      if ((await countAt(altDate)) < this.threshold) {
-        record(batchCounts, candidate.siteId, altDate);
+      if ((await countAt(altDate)) < this.capacity) {
+        record(batchCounts, altDate);
         return altDate;
       }
     }
-    record(batchCounts, candidate.siteId, candidate.date);
+    record(batchCounts, candidate.date);
     return candidate.date;
   }
 }
-function key(siteId: number, date: Date): string {
-  return `${siteId}|${date.toISOString().slice(0, 10)}`;
+function key(date: Date): string {
+  return date.toISOString().slice(0, 10);
 }
-function record(batchCounts: Map<string, number>, siteId: number, date: Date): void {
-  const k = key(siteId, date);
+function record(batchCounts: Map<string, number>, date: Date): void {
+  const k = key(date);
   batchCounts.set(k, (batchCounts.get(k) ?? 0) + 1);
 }
 function nearestOffsets(windowDays: number): number[] {

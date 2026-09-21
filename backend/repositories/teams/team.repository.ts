@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource, EntityTarget } from 'typeorm';
+import { DataSource, EntityManager, EntityTarget } from 'typeorm';
 import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Team } from '../../models/teams/team.entity';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
@@ -7,6 +7,7 @@ export interface ITeamRepository {
   list(tenantId: number, options?: { teamId?: number }): Promise<Team[]>;
   findById(tenantId: number, id: number): Promise<Team | null>;
   existsCode(tenantId: number, code: string): Promise<boolean>;
+  count(tenantId: number, tx?: EntityManager): Promise<number>;
   create(team: Team): Promise<Team>;
   update(team: Team): Promise<Team>;
   delete(tenantId: number, id: number): Promise<void>;
@@ -39,6 +40,9 @@ export class TeamRepository extends TenantScopedRepository<Team> implements ITea
   async existsCode(tenantId: number, code: string): Promise<boolean> {
     const count = await this.scopedTo(tenantId, 't').andWhere('t.code = :code', { code }).getCount();
     return count > 0;
+  }
+  async count(tenantId: number, tx?: EntityManager): Promise<number> {
+    return this.scopedTo(tenantId, 't', tx).getCount();
   }
   async create(team: Team): Promise<Team> {
     const saved = await this.dataSource.getRepository(Team).save(team);

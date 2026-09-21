@@ -5,7 +5,7 @@ import { Tenant } from '../tenants/tenant.entity';
 export enum AlertKind {
   ContractExpiring = 'contract_expiring',
   ShiftOverdue = 'shift_overdue',
-  SiteOverload = 'site_overload',
+  ScheduleOverload = 'schedule_overload',
 }
 export enum AlertDeliveryStatus {
   Sent = 'sent',

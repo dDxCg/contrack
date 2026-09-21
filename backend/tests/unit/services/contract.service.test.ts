@@ -12,18 +12,33 @@ import { ContractRepository } from '../../../repositories/contracts/contract.rep
 import { ContractSiteRepository } from '../../../repositories/contracts/contract-site.repository';
 import { CustomerRepository } from '../../../repositories/customers/customer.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+import { Team } from '../../../models/teams/team.entity';
+import { TeamRepository } from '../../../repositories/teams/team.repository';
 import { ContractCreateCommand, ContractService } from '../../../services/contracts/contract.service';
 import { ContractAssembler } from '../../../services/contracts/contract-assembler';
 import { ScheduleGeneratorService } from '../../../services/contracts/schedule-generator.service';
-async function world() {
+import { daysSinceEpoch } from '../../../utils/period';
+function draftTeam(overrides: Partial<Team>): Team {
+  const team = new Team();
+  team.setName('Team');
+  team.setCode('T0');
+  Object.assign(team, overrides);
+  return team;
+}
+async function world(options: { teamCount?: number } = {}) {
   const dataSource = await createTestDataSource();
   const contracts = new ContractRepository(dataSource);
   const sites = new ContractSiteRepository(dataSource);
   const items = new ContractItemRepository(dataSource);
   const shifts = new ShiftRepository(dataSource);
+  const teams = new TeamRepository(dataSource);
   const customers = new CustomerRepository(dataSource);
   const tenant = await seedTenant(dataSource);
   const otherTenant = await seedTenant(dataSource, { name: 'Other Tenant' });
+  const teamCount = options.teamCount ?? 5;
+  for (let i = 0; i < teamCount; i++) {
+    await teams.create(draftTeam({ tenantId: tenant.id, name: `Team ${i}`, code: `T${i}` }));
+  }
   const director = anEmployee({
     id: 12,
     tenantId: tenant.id,
@@ -45,6 +60,7 @@ async function world() {
     sites,
     items,
     shifts,
+    teams,
     alerts,
     tenant,
     otherTenant,
@@ -55,6 +71,7 @@ async function world() {
       sites,
       items,
       shifts,
+      teams,
       alerts,
       new NullChannelClient(),
       new ContractAssembler(new ScheduleGeneratorService()),
@@ -235,7 +252,7 @@ describe('ContractService.create — FR5, FR6, FR7, FR22', () => {
     ).toEqual(['sites[0].items[0].frequency_count', 'sites[0].items[1].unit_price']);
   });
 });
-describe('ContractService.create — site overload alert (MVP conflict detection)', () => {
+describe('ContractService.create — schedule overload alert (team-capacity conflict, D20/R9)', () => {
   function anItem(overrides: Partial<ContractCreateCommand['sites'][0]['items'][0]> = {}) {
     return {
       name: 'Item',
@@ -248,9 +265,9 @@ describe('ContractService.create — site overload alert (MVP conflict detection
       ...overrides,
     };
   }
-  it('fires a site_overload alert once a site holds more than the threshold on one day', async () => {
-    const { service, access, customer, alerts, tenant } = await world();
-    const view = await service.create(
+  it('fires a schedule_overload alert once a day holds more shifts than there are teams', async () => {
+    const { service, access, customer, alerts, tenant } = await world({ teamCount: 3 });
+    await service.create(
       access,
       validCommand(customer.id, {
         signedAt: new Date('2024-01-01'),
@@ -268,13 +285,15 @@ describe('ContractService.create — site overload alert (MVP conflict detection
         ],
       }),
     );
-    const siteId = view.sites[0].id;
     const fired = await alerts.list(tenant.id);
     expect(fired).toHaveLength(1);
-    expect(fired[0]).toMatchObject({ kind: 'site_overload', subjectId: siteId });
+    expect(fired[0]).toMatchObject({
+      kind: 'schedule_overload',
+      subjectId: daysSinceEpoch(new Date('2024-01-01')),
+    });
   });
-  it('does not fire when the site stays at or under the threshold', async () => {
-    const { service, access, customer, alerts, tenant } = await world();
+  it('does not fire when the day stays at or under the team count', async () => {
+    const { service, access, customer, alerts, tenant } = await world({ teamCount: 3 });
     await service.create(
       access,
       validCommand(customer.id, {
@@ -296,8 +315,8 @@ describe('ContractService.create — site overload alert (MVP conflict detection
     expect(await alerts.list(tenant.id)).toEqual([]);
   });
   it('auto-moves an unconstrained item off an overloaded date instead of alerting (Option A)', async () => {
-    const { service, access, customer, alerts, shifts, tenant } = await world();
-    const view = await service.create(
+    const { service, access, customer, alerts, shifts, tenant } = await world({ teamCount: 3 });
+    await service.create(
       access,
       validCommand(customer.id, {
         signedAt: new Date('2024-01-01'),
@@ -320,14 +339,13 @@ describe('ContractService.create — site overload alert (MVP conflict detection
         ],
       }),
     );
-    const siteId = view.sites[0].id;
     expect(await alerts.list(tenant.id)).toEqual([]);
-    expect(await shifts.countForSiteOnDate(tenant.id, siteId, '2024-01-01')).toBe(3);
-    expect(await shifts.countForSiteOnDate(tenant.id, siteId, '2024-01-02')).toBe(1);
+    expect(await shifts.countForTenantOnDate(tenant.id, '2024-01-01')).toBe(3);
+    expect(await shifts.countForTenantOnDate(tenant.id, '2024-01-02')).toBe(1);
   });
   it('keeps a date-constrained item put and still alerts, even with room in the window (Option A)', async () => {
-    const { service, access, customer, alerts, shifts, tenant } = await world();
-    const view = await service.create(
+    const { service, access, customer, alerts, shifts, tenant } = await world({ teamCount: 3 });
+    await service.create(
       access,
       validCommand(customer.id, {
         signedAt: new Date('2024-01-01'),
@@ -350,12 +368,45 @@ describe('ContractService.create — site overload alert (MVP conflict detection
         ],
       }),
     );
-    const siteId = view.sites[0].id;
     const fired = await alerts.list(tenant.id);
     expect(fired).toHaveLength(1);
-    expect(fired[0]).toMatchObject({ kind: 'site_overload', subjectId: siteId });
-    expect(await shifts.countForSiteOnDate(tenant.id, siteId, '2024-01-01')).toBe(4);
-    expect(await shifts.countForSiteOnDate(tenant.id, siteId, '2024-01-02')).toBe(0);
+    expect(fired[0]).toMatchObject({
+      kind: 'schedule_overload',
+      subjectId: daysSinceEpoch(new Date('2024-01-01')),
+    });
+    expect(await shifts.countForTenantOnDate(tenant.id, '2024-01-01')).toBe(4);
+    expect(await shifts.countForTenantOnDate(tenant.id, '2024-01-02')).toBe(0);
+  });
+  it('scopes the conflict to the tenant, not one site — two half-loaded sites on the same day still trip it', async () => {
+    const { service, access, customer, alerts, tenant } = await world({ teamCount: 3 });
+    await service.create(
+      access,
+      validCommand(customer.id, {
+        signedAt: new Date('2024-01-01'),
+        expiresAt: new Date('2024-01-01'),
+        sites: [
+          {
+            name: 'Site A',
+            workRequirements: null,
+            notes: null,
+            latitude: null,
+            longitude: null,
+            radiusMeters: 200,
+            items: [anItem(), anItem()],
+          },
+          {
+            name: 'Site B',
+            workRequirements: null,
+            notes: null,
+            latitude: null,
+            longitude: null,
+            radiusMeters: 200,
+            items: [anItem(), anItem()],
+          },
+        ],
+      }),
+    );
+    expect(await alerts.list(tenant.id)).toHaveLength(1);
   });
 });
 describe('ContractService.get / list / delete', () => {

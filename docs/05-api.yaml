@@ -674,9 +674,13 @@ paths:
                   expires_at: { type: string, format: date-time }
 
   # -------------------------------------------------------------- Field
-  /field/{token}:
+  /field/context:
+    description: >-
+      Agreed shape, not implemented yet — the field page's context call is still
+      a gap (`temp/draft/unimplemented-audit.md`). The token travels in the
+      `X-Field-Token` header like every other field endpoint, never in the URL.
     parameters:
-      - { $ref: '#/components/parameters/FieldToken' }
+      - { $ref: '#/components/parameters/FieldTokenHeader' }
     get:
       tags: [Field]
       operationId: getFieldContext
@@ -702,13 +706,18 @@ paths:
                 invalid: { $ref: '#/components/examples/TokenInvalid' }
               schema: { $ref: '#/components/schemas/Error' }
 
-  /field/{token}/uploads:
+  /field/uploads:
     parameters:
-      - { $ref: '#/components/parameters/FieldToken' }
+      - { $ref: '#/components/parameters/FieldTokenHeader' }
     post:
       tags: [Field]
       operationId: requestUploadTarget
       summary: Request a direct object-storage upload target for one image
+      description: >-
+        The server signs one PUT under `uploads/{tenant_id}/{shift_id}/` and
+        returns it; image bytes never pass through the API. The returned key is
+        the only shape `POST /field/submit` accepts for this shift —
+        anything else is `upload.key_unknown`.
       security: []
       requestBody:
         content:
@@ -731,8 +740,20 @@ paths:
               examples:
                 unsupported_type: { $ref: '#/components/examples/UploadUnsupportedType' }
               schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Missing, expired, invalid or already-used field token
+          content:
+            application/json:
+              examples:
+                expired: { $ref: '#/components/examples/TokenExpired' }
+                invalid: { $ref: '#/components/examples/TokenInvalid' }
+              schema: { $ref: '#/components/schemas/Error' }
         '413':
-          description: Image exceeds the per-image limit after client-side downscaling
+          description: >-
+            Reserved — not returned by the API today. No image body reaches the
+            server, so the per-image cap belongs to the bucket's own policy;
+            rejecting an oversized upload from the API needs the key recorded
+            at issue time (deferred).
           content:
             application/json:
               examples:
@@ -746,9 +767,9 @@ paths:
                 rate_limited: { $ref: '#/components/examples/TokenRateLimited' }
               schema: { $ref: '#/components/schemas/Error' }
 
-  /field/{token}/submit:
+  /field/submit:
     parameters:
-      - { $ref: '#/components/parameters/FieldToken' }
+      - { $ref: '#/components/parameters/FieldTokenHeader' }
     post:
       tags: [Field]
       operationId: submitShift
@@ -767,17 +788,17 @@ paths:
               with_gps:
                 value:
                   photo_keys:
-                    before: ["uploads/9f1c/before-1.jpg", "uploads/9f1c/before-2.jpg"]
-                    after: ["uploads/9f1c/after-1.jpg"]
-                  receipt_photo_key: "uploads/9f1c/receipt.jpg"
+                    before: ["uploads/7/23/before-1.jpg", "uploads/7/23/before-2.jpg"]
+                    after: ["uploads/7/23/after-1.jpg"]
+                  receipt_photo_key: "uploads/7/23/receipt.jpg"
                   latitude: 21.0176
                   longitude: 105.7833
               no_gps:
                 value:
                   photo_keys:
-                    before: ["uploads/9f1c/before-1.jpg"]
-                    after: ["uploads/9f1c/after-1.jpg"]
-                  receipt_photo_key: "uploads/9f1c/receipt.jpg"
+                    before: ["uploads/7/23/before-1.jpg"]
+                    after: ["uploads/7/23/after-1.jpg"]
+                  receipt_photo_key: "uploads/7/23/receipt.jpg"
                   latitude: null
                   longitude: null
       responses:
@@ -792,6 +813,14 @@ paths:
               examples:
                 evidence_incomplete: { $ref: '#/components/examples/ShiftEvidenceIncomplete' }
                 key_unknown: { $ref: '#/components/examples/UploadKeyUnknown' }
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Missing, expired, invalid or already-used field token
+          content:
+            application/json:
+              examples:
+                expired: { $ref: '#/components/examples/TokenExpired' }
+                invalid: { $ref: '#/components/examples/TokenInvalid' }
               schema: { $ref: '#/components/schemas/Error' }
         '403':
           description: The token's shift is not the shift being submitted
@@ -1430,11 +1459,14 @@ components:
       in: path
       required: true
       schema: { type: integer }
-    FieldToken:
-      name: token
-      in: path
+    FieldTokenHeader:
+      name: X-Field-Token
+      in: header
       required: true
-      description: Per-shift signed token — names exactly one shift, expires
+      description: >-
+        Per-shift signed token — names exactly one shift, expires, and is revoked
+        on first use. Carried in a header, never in the URL path, so no server or
+        log between the phone and the API ever sees it in a request line.
       schema: { type: string }
 
   responses:
@@ -1688,9 +1720,13 @@ components:
 
     UploadTarget:
       type: object
+      description: >-
+        Where to PUT one image. The key is scoped to the shift that requested it
+        — `uploads/{tenant_id}/{shift_id}/{uuid}.{jpg|png|webp}` — and is the
+        only key `POST /field/submit` accepts for that shift.
       properties:
         upload_url: { type: string, format: uri }
-        key: { type: string, example: "uploads/9f1c/after-1.jpg" }
+        key: { type: string, example: "uploads/7/23/after-1.jpg" }
 
     FieldSubmission:
       type: object
@@ -1743,7 +1779,7 @@ components:
       type: object
       properties:
         id: { type: integer }
-        kind: { type: string, enum: [contract_expiring, shift_overdue, site_overload] }
+        kind: { type: string, enum: [contract_expiring, shift_overdue, schedule_overload] }
         subject_id: { type: integer }
         due_in_days: { type: integer, nullable: true }
         overdue_by_days: { type: integer, nullable: true }

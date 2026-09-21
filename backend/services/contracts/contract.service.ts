@@ -30,13 +30,13 @@ import {
   IContractSiteRepository,
 } from '../../repositories/contracts/contract-site.repository';
 import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
+import { ITeamRepository, TeamRepository } from '../../repositories/teams/team.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
 import { AccessContext } from '../access-control/access-context';
 import { fireAlert } from '../alerts/alert-firer';
-import { toDateString } from '../../utils/period';
+import { daysSinceEpoch, toDateString } from '../../utils/period';
 import { AssembledContract, ContractAssembler } from './contract-assembler';
 import { RebalanceCandidate, ScheduleRebalancer } from './schedule-rebalancer';
-const SITE_OVERLOAD_THRESHOLD = 3;
 const REBALANCE_WINDOW_DAYS = 7;
 export interface ContractItemCommand {
   name: string;
@@ -73,6 +73,8 @@ export class ContractService {
     private readonly contractItemRepository: IContractItemRepository,
     @Inject(ShiftRepository)
     private readonly shiftRepository: IShiftRepository,
+    @Inject(TeamRepository)
+    private readonly teamRepository: ITeamRepository,
     @Inject(AlertRepository)
     private readonly alertRepository: IAlertRepository,
     @Inject(CHANNEL_CLIENT)
@@ -98,15 +100,15 @@ export class ContractService {
       throw new ValidationFailedException(violations);
     }
     const assembled = this.contractAssembler.assemble(access, command);
-    const { view, overloadedSiteIds } = await this.dataSource.transaction((tx) =>
+    const { view, overloadedDates } = await this.dataSource.transaction((tx) =>
       this.persist(access, assembled, tx),
     );
-    for (const siteId of overloadedSiteIds) {
+    for (const date of overloadedDates) {
       await fireAlert(
         { alertRepository: this.alertRepository, channelClient: this.channelClient },
         access.tenantId,
-        AlertKind.SiteOverload,
-        siteId,
+        AlertKind.ScheduleOverload,
+        daysSinceEpoch(date),
       );
     }
     return view;
@@ -115,7 +117,7 @@ export class ContractService {
     access: AccessContext,
     assembled: AssembledContract,
     tx: EntityManager,
-  ): Promise<{ view: ContractView; overloadedSiteIds: number[] }> {
+  ): Promise<{ view: ContractView; overloadedDates: Date[] }> {
     const savedContract = await this.contractRepository.create(assembled.entity, tx);
     const siteViews: ContractSiteView[] = [];
     const placements: { savedItem: ContractItem; date: Date }[] = [];
@@ -131,7 +133,7 @@ export class ContractService {
         const constrained = savedItem.dayOfWeek != null || savedItem.dayOfMonth != null;
         for (const date of item.scheduledDates) {
           placements.push({ savedItem, date });
-          candidates.push({ siteId: savedItem.siteId, date, constrained });
+          candidates.push({ date, constrained });
         }
       }
       siteViews.push({
@@ -145,10 +147,10 @@ export class ContractService {
         items: itemViews,
       });
     }
+    const teamCapacity = await this.teamRepository.count(access.tenantId, tx);
     const rebalancer = new ScheduleRebalancer(
-      (siteId, date) =>
-        this.shiftRepository.countForSiteOnDate(access.tenantId, siteId, toDateString(date), tx),
-      SITE_OVERLOAD_THRESHOLD,
+      (date) => this.shiftRepository.countForTenantOnDate(access.tenantId, toDateString(date), tx),
+      teamCapacity,
       REBALANCE_WINDOW_DAYS,
     );
     const resolved = await rebalancer.resolve(candidates, {
@@ -156,23 +158,21 @@ export class ContractService {
       to: savedContract.expiresAt,
     });
     const generatedShifts: Shift[] = [];
-    const siteDatesTouched = new Set<string>();
+    const datesTouched = new Map<string, Date>();
     resolved.forEach((result, index) => {
       const { savedItem } = placements[index];
       generatedShifts.push(aScheduledShift(access, savedItem, result.date));
-      siteDatesTouched.add(`${savedItem.siteId}|${toDateString(result.date)}`);
+      datesTouched.set(toDateString(result.date), result.date);
     });
     await this.shiftRepository.createMany(generatedShifts, tx);
-    const overloadedSiteIds = new Set<number>();
-    for (const key of siteDatesTouched) {
-      const [siteIdText, date] = key.split('|');
-      const siteId = Number(siteIdText);
-      const count = await this.shiftRepository.countForSiteOnDate(access.tenantId, siteId, date, tx);
-      if (count > SITE_OVERLOAD_THRESHOLD) {
-        overloadedSiteIds.add(siteId);
+    const overloadedDates: Date[] = [];
+    for (const [dateString, date] of datesTouched) {
+      const count = await this.shiftRepository.countForTenantOnDate(access.tenantId, dateString, tx);
+      if (count > teamCapacity) {
+        overloadedDates.push(date);
       }
     }
-    return { view: toContractView(savedContract, siteViews), overloadedSiteIds: [...overloadedSiteIds] };
+    return { view: toContractView(savedContract, siteViews), overloadedDates };
   }
   async delete(access: AccessContext, id: number): Promise<void> {
     await this.requireContract(access, id);

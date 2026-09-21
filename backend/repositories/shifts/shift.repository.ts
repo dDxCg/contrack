@@ -29,7 +29,7 @@ export interface IShiftRepository {
   ): Promise<{ status: ShiftStatus; scheduledDate: Date }[]>;
   tenantRevenueForPeriod(tenantId: number, from: string, to: string): Promise<Money>;
   countByStatus(tenantId: number, status: ShiftStatus): Promise<number>;
-  countForSiteOnDate(tenantId: number, siteId: number, date: string, tx?: EntityManager): Promise<number>;
+  countForTenantOnDate(tenantId: number, date: string, tx?: EntityManager): Promise<number>;
 }
 @Injectable()
 export class ShiftRepository extends TenantScopedRepository<Shift> implements IShiftRepository {
@@ -178,17 +178,8 @@ export class ShiftRepository extends TenantScopedRepository<Shift> implements IS
       .andWhere('st.code = :status', { status })
       .getCount();
   }
-  async countForSiteOnDate(
-    tenantId: number,
-    siteId: number,
-    date: string,
-    tx?: EntityManager,
-  ): Promise<number> {
-    return this.scopedTo(tenantId, 's', tx)
-      .innerJoin('contract_items', 'ci', 'ci.id = s.contract_item_id')
-      .andWhere('ci.site_id = :siteId', { siteId })
-      .andWhere('s.scheduled_date = :date', { date })
-      .getCount();
+  async countForTenantOnDate(tenantId: number, date: string, tx?: EntityManager): Promise<number> {
+    return this.scopedTo(tenantId, 's', tx).andWhere('s.scheduled_date = :date', { date }).getCount();
   }
   async siteGeofenceFor(contractItemId: number): Promise<SiteGeofence | null> {
     const row = await this.crossTenant

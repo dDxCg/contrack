@@ -87,11 +87,11 @@ export class ScheduleDayConstraintAndSiteOverloadAlert1789920221850 implements M
     await queryRunner.query(
       `ALTER TABLE "statements" ADD CONSTRAINT "fk_statements_contract" FOREIGN KEY ("contract_id", "tenant_id") REFERENCES "contracts"("id", "tenant_id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
-    await queryRunner.query(`INSERT INTO alert_kinds (code) VALUES ('site_overload')`);
+    await queryRunner.query(`INSERT INTO alert_kinds (code) VALUES ('schedule_overload')`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DELETE FROM alert_kinds WHERE code = 'site_overload'`);
+    await queryRunner.query(`DELETE FROM alert_kinds WHERE code = 'schedule_overload'`);
     await queryRunner.query(`ALTER TABLE "statements" DROP CONSTRAINT "fk_statements_contract"`);
     await queryRunner.query(
       `ALTER TABLE "statements" ADD CONSTRAINT "fk_statements_contract" FOREIGN KEY ("contract_id") REFERENCES "contracts"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,

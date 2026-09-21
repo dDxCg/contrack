@@ -1,6 +1,12 @@
 export function toDateString(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
+export function daysSinceEpoch(date: Date): number {
+  return Math.floor(date.getTime() / 86400000);
+}
+export function dateFromDaysSinceEpoch(days: number): Date {
+  return new Date(days * 86400000);
+}
 export function startOfMonthUTC(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 }

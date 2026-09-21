@@ -107,7 +107,7 @@ CREATE TABLE alert_kinds (
 
 INSERT INTO alert_kinds (code) VALUES ('contract_expiring');
 INSERT INTO alert_kinds (code) VALUES ('shift_overdue');
-INSERT INTO alert_kinds (code) VALUES ('site_overload');
+INSERT INTO alert_kinds (code) VALUES ('schedule_overload');
 
 CREATE TABLE alert_delivery_statuses (
     id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
