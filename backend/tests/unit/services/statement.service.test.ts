@@ -164,7 +164,13 @@ describe('StatementService.get', () => {
       period: new Date('2024-10-01'),
     });
     const shift = await shifts.findById(tenant.id, shiftId);
-    shift!.dispute();
+    shift!.dispute({
+      reason: 'Không thấy nhân viên đến',
+      reportedVia: null,
+      reportedBy: null,
+      reportedAt: null,
+      description: null,
+    });
     await shifts.update(shift!);
     const view = await service.get(access, created.id);
     expect(view.lines).toHaveLength(1);

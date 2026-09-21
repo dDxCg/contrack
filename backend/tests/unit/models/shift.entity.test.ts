@@ -3,8 +3,18 @@ import {
   ShiftAlreadyDisputedException,
   ShiftNotDisputedException,
 } from '../../../models/domain-errors';
-import { Shift, ShiftStatus } from '../../../models/shifts/shift.entity';
+import { DisputeDetails, Shift, ShiftStatus } from '../../../models/shifts/shift.entity';
 import { captureDomainError } from '../../support/domain-errors';
+function aDisputeDetails(overrides: Partial<DisputeDetails> = {}): DisputeDetails {
+  return {
+    reason: 'Không thấy nhân viên đến',
+    reportedVia: 'phone',
+    reportedBy: 'Chị Lan, quản lý toà nhà',
+    reportedAt: new Date('2024-10-22T09:00:00.000Z'),
+    description: null,
+    ...overrides,
+  };
+}
 function aScheduledShift(): Shift {
   const shift = new Shift();
   shift.id = 1;
@@ -74,7 +84,7 @@ describe('Shift.complete — FR16, FR24, D7', () => {
       { receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null, geoVerified: false },
       new Date(),
     );
-    shift.dispute();
+    shift.dispute(aDisputeDetails());
     expect(() =>
       shift.complete(
         { receiptPhotoUrl: 'uploads/y/receipt.jpg', latitude: null, longitude: null, geoVerified: false },
@@ -84,21 +94,27 @@ describe('Shift.complete — FR16, FR24, D7', () => {
   });
 });
 describe('Shift.dispute / resolveDispute — FR8', () => {
-  it('marks a shift disputed', () => {
+  it('marks a shift disputed and stores the reason and reporter details', () => {
     const shift = aScheduledShift();
-    shift.dispute();
+    shift.dispute(aDisputeDetails());
     expect(shift.status).toBe(ShiftStatus.Disputed);
+    expect(shift.disputeReason).toBe('Không thấy nhân viên đến');
+    expect(shift.disputeReportedVia).toBe('phone');
+    expect(shift.disputeReportedBy).toBe('Chị Lan, quản lý toà nhà');
+    expect(shift.disputeReportedAt).toEqual(new Date('2024-10-22T09:00:00.000Z'));
+    expect(shift.disputeDescription).toBeNull();
   });
   it('rejects disputing an already-disputed shift', () => {
     const shift = aScheduledShift();
-    shift.dispute();
-    expect(() => shift.dispute()).toThrow(ShiftAlreadyDisputedException);
+    shift.dispute(aDisputeDetails());
+    expect(() => shift.dispute(aDisputeDetails())).toThrow(ShiftAlreadyDisputedException);
   });
-  it('returns a disputed shift to completed on resolution', () => {
+  it('returns a disputed shift to completed on resolution, keeping the dispute record', () => {
     const shift = aScheduledShift();
-    shift.dispute();
+    shift.dispute(aDisputeDetails());
     shift.resolveDispute();
     expect(shift.status).toBe(ShiftStatus.Completed);
+    expect(shift.disputeReason).toBe('Không thấy nhân viên đến');
   });
   it('rejects resolving a shift that is not disputed', () => {
     const shift = aScheduledShift();

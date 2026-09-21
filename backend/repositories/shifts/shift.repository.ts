@@ -227,6 +227,11 @@ export class ShiftRepository extends TenantScopedRepository<Shift> implements IS
         's.receipt_photo_url AS receipt_photo_url',
         's.geo_verified AS geo_verified',
         's.field_token_used_at AS field_token_used_at',
+        's.dispute_reason AS dispute_reason',
+        's.dispute_reported_via AS dispute_reported_via',
+        's.dispute_reported_by AS dispute_reported_by',
+        's.dispute_reported_at AS dispute_reported_at',
+        's.dispute_description AS dispute_description',
         's.created_at AS created_at',
         'st.code AS status',
       ]);
@@ -256,6 +261,11 @@ interface ShiftRow {
   receipt_photo_url: string | null;
   geo_verified: boolean;
   field_token_used_at: Date | null;
+  dispute_reason: string | null;
+  dispute_reported_via: 'phone' | 'in_person' | null;
+  dispute_reported_by: string | null;
+  dispute_reported_at: Date | null;
+  dispute_description: string | null;
   created_at: Date;
   status: ShiftStatus;
 }
@@ -274,6 +284,11 @@ function hydrateShift(row: ShiftRow): Shift {
   shift.receiptPhotoUrl = row.receipt_photo_url;
   shift.geoVerified = row.geo_verified;
   shift.fieldTokenUsedAt = row.field_token_used_at;
+  shift.disputeReason = row.dispute_reason;
+  shift.disputeReportedVia = row.dispute_reported_via;
+  shift.disputeReportedBy = row.dispute_reported_by;
+  shift.disputeReportedAt = row.dispute_reported_at;
+  shift.disputeDescription = row.dispute_description;
   shift.createdAt = row.created_at;
   shift.status = row.status;
   return shift;

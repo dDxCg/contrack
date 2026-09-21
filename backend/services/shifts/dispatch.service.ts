@@ -1,7 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ShiftView } from '../../dtos/shifts/shifts.response.dto';
 import { toShiftView } from '../../dtos/shifts/shifts.mapper';
-import { AuthOutOfScopeException, ShiftAssigneeOutOfTeamException } from '../../models/domain-errors';
+import {
+  AuthForbiddenRoleException,
+  AuthOutOfScopeException,
+  ShiftAssigneeOutOfTeamException,
+} from '../../models/domain-errors';
+import { Role } from '../../models/employees/employee.entity';
 import { Shift } from '../../models/shifts/shift.entity';
 import { EmployeeRepository, IEmployeeRepository } from '../../repositories/employees/employee.repository';
 import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
@@ -20,6 +25,9 @@ export class DispatchService {
     private readonly employeeRepository: IEmployeeRepository,
   ) {}
   async reassign(access: AccessContext, shiftId: number, command: ReassignCommand): Promise<ShiftView> {
+    if (access.employee.role !== Role.TeamLead) {
+      throw new AuthForbiddenRoleException([Role.TeamLead]);
+    }
     const shift = await this.requireShift(access, shiftId);
     if (command.assigneeId !== null) {
       await this.assertAssigneeAllowed(access, command.assigneeId);

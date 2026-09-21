@@ -10,4 +10,9 @@ export interface ShiftView {
   geo_verified: boolean;
   captured_at: string | null;
   receipt_photo_url: string | null;
+  dispute_reason: string | null;
+  dispute_reported_via: string | null;
+  dispute_reported_by: string | null;
+  dispute_reported_at: string | null;
+  dispute_description: string | null;
 }

@@ -14,6 +14,13 @@ export interface ShiftEvidence {
   longitude: number | null;
   geoVerified: boolean;
 }
+export interface DisputeDetails {
+  reason: string;
+  reportedVia: 'phone' | 'in_person' | null;
+  reportedBy: string | null;
+  reportedAt: Date | null;
+  description: string | null;
+}
 export enum ShiftStatus {
   Scheduled = 'scheduled',
   Late = 'late',
@@ -84,6 +91,16 @@ export class Shift {
   geoVerified!: boolean;
   @Column({ name: 'field_token_used_at', type: 'timestamp', nullable: true })
   fieldTokenUsedAt!: Date | null;
+  @Column({ name: 'dispute_reason', type: 'varchar', length: 500, nullable: true })
+  disputeReason!: string | null;
+  @Column({ name: 'dispute_reported_via', type: 'varchar', length: 20, nullable: true })
+  disputeReportedVia!: 'phone' | 'in_person' | null;
+  @Column({ name: 'dispute_reported_by', type: 'varchar', length: 255, nullable: true })
+  disputeReportedBy!: string | null;
+  @Column({ name: 'dispute_reported_at', type: 'timestamp', nullable: true })
+  disputeReportedAt!: Date | null;
+  @Column({ name: 'dispute_description', type: 'text', nullable: true })
+  disputeDescription!: string | null;
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date;
   status!: ShiftStatus;
@@ -99,10 +116,15 @@ export class Shift {
     this.geoVerified = evidence.geoVerified;
     this.status = ShiftStatus.Completed;
   }
-  dispute(): void {
+  dispute(details: DisputeDetails): void {
     if (this.status === ShiftStatus.Disputed) {
       throw new ShiftAlreadyDisputedException();
     }
+    this.disputeReason = details.reason;
+    this.disputeReportedVia = details.reportedVia;
+    this.disputeReportedBy = details.reportedBy;
+    this.disputeReportedAt = details.reportedAt;
+    this.disputeDescription = details.description;
     this.status = ShiftStatus.Disputed;
   }
   resolveDispute(): void {

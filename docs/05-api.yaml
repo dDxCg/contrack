@@ -1698,6 +1698,11 @@ components:
         geo_verified: { type: boolean, description: "True when the submitted coordinates fell within the site's geofence radius; false when missing or out of range (submission is accepted either way)." }
         captured_at: { type: string, format: date-time, nullable: true }
         receipt_photo_url: { type: string, format: uri, nullable: true }
+        dispute_reason: { type: string, nullable: true, description: "Set by POST /shifts/{id}/dispute; kept on the shift after resolution rather than cleared" }
+        dispute_reported_via: { type: string, enum: [phone, in_person], nullable: true }
+        dispute_reported_by: { type: string, nullable: true }
+        dispute_reported_at: { type: string, format: date-time, nullable: true, description: "Defaults to server time when the dispute request omits it" }
+        dispute_description: { type: string, nullable: true }
         photos:
           type: array
           items: { $ref: '#/components/schemas/ShiftPhoto' }

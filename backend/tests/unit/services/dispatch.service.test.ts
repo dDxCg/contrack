@@ -114,4 +114,26 @@ describe('DispatchService.reassign — FR15', () => {
     );
     expect(error.code).toBe('shift.already_completed');
   });
+  it('rejects a Manager — reassign is team_lead-only per 05-api.yaml', async () => {
+    const { service, memberOfTeamA, shiftId, tenant } = await world();
+    const manager = draftEmployee({ tenantId: tenant.id, email: 'manager@example.com', role: Role.Manager });
+    const access = anAccessContext(manager, { tenantId: tenant.id, scope: RowScope.All });
+    const error = await captureDomainErrorAsync(() =>
+      service.reassign(access, shiftId, { assigneeId: memberOfTeamA.id }),
+    );
+    expect(error.code).toBe('auth.forbidden_role');
+  });
+  it('rejects a Director — reassign is team_lead-only per 05-api.yaml', async () => {
+    const { service, memberOfTeamA, shiftId, tenant } = await world();
+    const director = draftEmployee({
+      tenantId: tenant.id,
+      email: 'director@example.com',
+      role: Role.Director,
+    });
+    const access = anAccessContext(director, { tenantId: tenant.id, scope: RowScope.All });
+    const error = await captureDomainErrorAsync(() =>
+      service.reassign(access, shiftId, { assigneeId: memberOfTeamA.id }),
+    );
+    expect(error.code).toBe('auth.forbidden_role');
+  });
 });

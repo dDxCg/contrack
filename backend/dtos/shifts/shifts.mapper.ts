@@ -13,5 +13,10 @@ export function toShiftView(shift: Shift): ShiftView {
     geo_verified: shift.geoVerified,
     captured_at: shift.capturedAt === null ? null : shift.capturedAt.toString(),
     receipt_photo_url: shift.receiptPhotoUrl,
+    dispute_reason: shift.disputeReason,
+    dispute_reported_via: shift.disputeReportedVia,
+    dispute_reported_by: shift.disputeReportedBy,
+    dispute_reported_at: shift.disputeReportedAt === null ? null : shift.disputeReportedAt.toString(),
+    dispute_description: shift.disputeDescription,
   };
 }
