@@ -43,11 +43,6 @@ export class ScheduleDayConstraintAndSiteOverloadAlert1789920221850 implements M
     await queryRunner.query(
       `ALTER TABLE "shifts" ADD CONSTRAINT "uq_shifts_id_tenant" UNIQUE ("id", "tenant_id")`,
     );
-    // Composite tenant-scoped FKs (M4) — TypeORM's relation metadata can't express a column that is
-    // both the sole join column of one relation (tenant_id -> tenants) and part of a second,
-    // composite relation on the same entity, so `migration:generate` will never reproduce this
-    // block. Keep it hand-maintained here, matching docs/04-schema.sql exactly, whenever a table in
-    // this list gains or loses a tenant-scoped FK. Same constraint names, only the column set changes.
     await queryRunner.query(`ALTER TABLE "contracts" DROP CONSTRAINT "fk_contracts_customer"`);
     await queryRunner.query(
       `ALTER TABLE "contracts" ADD CONSTRAINT "fk_contracts_customer" FOREIGN KEY ("customer_id", "tenant_id") REFERENCES "customers"("id", "tenant_id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
@@ -92,8 +87,6 @@ export class ScheduleDayConstraintAndSiteOverloadAlert1789920221850 implements M
     await queryRunner.query(
       `ALTER TABLE "statements" ADD CONSTRAINT "fk_statements_contract" FOREIGN KEY ("contract_id", "tenant_id") REFERENCES "contracts"("id", "tenant_id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
-    // Alert kind seed — `generate` only diffs schema, never data (same convention as InitialSchema's
-    // lookup-table seeds).
     await queryRunner.query(`INSERT INTO alert_kinds (code) VALUES ('site_overload')`);
   }
 

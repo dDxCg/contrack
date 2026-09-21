@@ -295,6 +295,68 @@ describe('ContractService.create — site overload alert (MVP conflict detection
     );
     expect(await alerts.list(tenant.id)).toEqual([]);
   });
+  it('auto-moves an unconstrained item off an overloaded date instead of alerting (Option A)', async () => {
+    const { service, access, customer, alerts, shifts, tenant } = await world();
+    const view = await service.create(
+      access,
+      validCommand(customer.id, {
+        signedAt: new Date('2024-01-01'),
+        expiresAt: new Date('2024-01-31'),
+        sites: [
+          {
+            name: 'Site A',
+            workRequirements: null,
+            notes: null,
+            latitude: null,
+            longitude: null,
+            radiusMeters: 200,
+            items: [
+              anItem({ frequencyUnit: FrequencyUnit.Month }),
+              anItem({ frequencyUnit: FrequencyUnit.Month }),
+              anItem({ frequencyUnit: FrequencyUnit.Month }),
+              anItem({ frequencyUnit: FrequencyUnit.Month }),
+            ],
+          },
+        ],
+      }),
+    );
+    const siteId = view.sites[0].id;
+    expect(await alerts.list(tenant.id)).toEqual([]);
+    expect(await shifts.countForSiteOnDate(tenant.id, siteId, '2024-01-01')).toBe(3);
+    expect(await shifts.countForSiteOnDate(tenant.id, siteId, '2024-01-02')).toBe(1);
+  });
+  it('keeps a date-constrained item put and still alerts, even with room in the window (Option A)', async () => {
+    const { service, access, customer, alerts, shifts, tenant } = await world();
+    const view = await service.create(
+      access,
+      validCommand(customer.id, {
+        signedAt: new Date('2024-01-01'),
+        expiresAt: new Date('2024-01-31'),
+        sites: [
+          {
+            name: 'Site A',
+            workRequirements: null,
+            notes: null,
+            latitude: null,
+            longitude: null,
+            radiusMeters: 200,
+            items: [
+              anItem({ frequencyUnit: FrequencyUnit.Month }),
+              anItem({ frequencyUnit: FrequencyUnit.Month }),
+              anItem({ frequencyUnit: FrequencyUnit.Month }),
+              anItem({ frequencyUnit: FrequencyUnit.Month, dayOfMonth: 1 }),
+            ],
+          },
+        ],
+      }),
+    );
+    const siteId = view.sites[0].id;
+    const fired = await alerts.list(tenant.id);
+    expect(fired).toHaveLength(1);
+    expect(fired[0]).toMatchObject({ kind: 'site_overload', subjectId: siteId });
+    expect(await shifts.countForSiteOnDate(tenant.id, siteId, '2024-01-01')).toBe(4);
+    expect(await shifts.countForSiteOnDate(tenant.id, siteId, '2024-01-02')).toBe(0);
+  });
 });
 describe('ContractService.get / list / delete', () => {
   it('returns a contract of the caller’s tenant', async () => {

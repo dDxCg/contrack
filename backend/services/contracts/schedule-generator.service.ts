@@ -91,8 +91,6 @@ export class ScheduleGeneratorService {
   private addMonthsClamped(date: Date, months: number): Date {
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth() + months;
-    // Clamp to the target month's last day instead of letting it roll over
-    // (e.g. Jan 31 + 1 month must land on Feb 28/29, not Mar 2/3).
     const day = Math.min(date.getUTCDate(), daysInMonth(year, month));
     return new Date(Date.UTC(year, month, day));
   }

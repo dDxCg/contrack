@@ -35,11 +35,9 @@ import { AccessContext } from '../access-control/access-context';
 import { fireAlert } from '../alerts/alert-firer';
 import { toDateString } from '../../utils/period';
 import { AssembledContract, ContractAssembler } from './contract-assembler';
-// MVP conflict signal (unimplemented-audit.md "Schedule generation"): more than this many shifts
-// landing on the same site on the same calendar day, across every contract, fires a one-time
-// site_overload alert for a human to look at — no auto-rebalancing. See docs/03-architecture.md
-// §11 R3 for the full auto-rebalance plan this is deliberately not attempting yet.
+import { RebalanceCandidate, ScheduleRebalancer } from './schedule-rebalancer';
 const SITE_OVERLOAD_THRESHOLD = 3;
+const REBALANCE_WINDOW_DAYS = 7;
 export interface ContractItemCommand {
   name: string;
   frequencyCount: number;
@@ -120,8 +118,8 @@ export class ContractService {
   ): Promise<{ view: ContractView; overloadedSiteIds: number[] }> {
     const savedContract = await this.contractRepository.create(assembled.entity, tx);
     const siteViews: ContractSiteView[] = [];
-    const generatedShifts: Shift[] = [];
-    const siteDatesTouched = new Set<string>();
+    const placements: { savedItem: ContractItem; date: Date }[] = [];
+    const candidates: RebalanceCandidate[] = [];
     for (const site of assembled.sites) {
       site.entity.contractId = savedContract.id;
       const savedSite = await this.contractSiteRepository.create(site.entity, tx);
@@ -130,9 +128,10 @@ export class ContractService {
         item.entity.siteId = savedSite.id;
         const savedItem = await this.contractItemRepository.create(item.entity, tx);
         itemViews.push(toContractItemView(savedItem));
+        const constrained = savedItem.dayOfWeek != null || savedItem.dayOfMonth != null;
         for (const date of item.scheduledDates) {
-          generatedShifts.push(aScheduledShift(access, savedItem, date));
-          siteDatesTouched.add(`${savedItem.siteId}|${toDateString(date)}`);
+          placements.push({ savedItem, date });
+          candidates.push({ siteId: savedItem.siteId, date, constrained });
         }
       }
       siteViews.push({
@@ -146,6 +145,23 @@ export class ContractService {
         items: itemViews,
       });
     }
+    const rebalancer = new ScheduleRebalancer(
+      (siteId, date) =>
+        this.shiftRepository.countForSiteOnDate(access.tenantId, siteId, toDateString(date), tx),
+      SITE_OVERLOAD_THRESHOLD,
+      REBALANCE_WINDOW_DAYS,
+    );
+    const resolved = await rebalancer.resolve(candidates, {
+      from: savedContract.signedAt,
+      to: savedContract.expiresAt,
+    });
+    const generatedShifts: Shift[] = [];
+    const siteDatesTouched = new Set<string>();
+    resolved.forEach((result, index) => {
+      const { savedItem } = placements[index];
+      generatedShifts.push(aScheduledShift(access, savedItem, result.date));
+      siteDatesTouched.add(`${savedItem.siteId}|${toDateString(result.date)}`);
+    });
     await this.shiftRepository.createMany(generatedShifts, tx);
     const overloadedSiteIds = new Set<number>();
     for (const key of siteDatesTouched) {
