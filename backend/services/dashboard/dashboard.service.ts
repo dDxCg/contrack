@@ -1,9 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ShiftStatsView, DashboardSummaryView } from '../../dtos/dashboard/dashboard.response.dto';
+import {
+  ShiftStatsView,
+  SiteShiftStatsView,
+  ProfitTrendBucketView,
+  DashboardComparisonView,
+  DashboardSummaryView,
+} from '../../dtos/dashboard/dashboard.response.dto';
+import { TrendBucketView } from '../../dtos/platform/platform.response.dto';
 import { DashboardConflictingPeriodException } from '../../models/domain-errors';
 import { ContractStatus } from '../../models/contracts/contract.entity';
 import { ShiftStatus } from '../../models/shifts/shift.entity';
 import { StatementStatus } from '../../models/statements/statement.entity';
+import {
+  ContractCostRepository,
+  IContractCostRepository,
+} from '../../repositories/contract-costs/contract-cost.repository';
 import { ContractRepository, IContractRepository } from '../../repositories/contracts/contract.repository';
 import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import {
@@ -13,15 +24,20 @@ import {
 import { ITenantRepository, TenantRepository } from '../../repositories/tenants/tenant.repository';
 import { AccessContext } from '../access-control/access-context';
 import { CLOCK, IClock } from '../access-control/clock';
+import { CostEstimationService } from '../contract-costs/cost-estimation.service';
 import {
   addDaysUTC,
   addMonthsUTC,
   round2,
   startOfMonthInZone,
+  startOfMonthUTC,
   toDateString,
   toDateStringInZone,
 } from '../../utils/period';
+import { Money } from '../../utils/money';
 const EXPIRY_THRESHOLD_DAYS = 30;
+const TREND_BUCKET_COUNT = 6;
+const RENEWAL_COHORT_MONTHS = 12;
 export interface DashboardQuery {
   month?: string;
   from?: string;
@@ -43,6 +59,9 @@ export class DashboardService {
     private readonly statementRepository: IStatementRepository,
     @Inject(TenantRepository)
     private readonly tenantRepository: ITenantRepository,
+    @Inject(ContractCostRepository)
+    private readonly contractCostRepository: IContractCostRepository,
+    private readonly costEstimationService: CostEstimationService,
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}
@@ -53,19 +72,27 @@ export class DashboardService {
     const from = toDateString(period.start);
     const to = toDateString(period.end);
     const today = toDateStringInZone(now, timezone);
-    const [activeContracts, expiring, disputedShifts, projectedRevenue, statsRows, contractShiftRows] =
-      await Promise.all([
-        this.contractRepository.countByStatus(access.tenantId, ContractStatus.Active),
-        this.contractRepository.expiringWithin(
-          access.tenantId,
-          today,
-          toDateString(addDaysUTC(now, EXPIRY_THRESHOLD_DAYS)),
-        ),
-        this.shiftRepository.countByStatus(access.tenantId, ShiftStatus.Disputed),
-        this.shiftRepository.tenantRevenueForPeriod(access.tenantId, from, to),
-        this.shiftRepository.statsRows(access.tenantId, from, to),
-        this.shiftRepository.shiftsByContractForPeriod(access.tenantId, from, to),
-      ]);
+    const [
+      activeContracts,
+      expiring,
+      disputedShifts,
+      projectedRevenue,
+      statsRows,
+      statsRowsBySite,
+      contractShiftRows,
+    ] = await Promise.all([
+      this.contractRepository.countByStatus(access.tenantId, ContractStatus.Active),
+      this.contractRepository.expiringWithin(
+        access.tenantId,
+        today,
+        toDateString(addDaysUTC(now, EXPIRY_THRESHOLD_DAYS)),
+      ),
+      this.shiftRepository.countByStatus(access.tenantId, ShiftStatus.Disputed),
+      this.shiftRepository.tenantRevenueForPeriod(access.tenantId, from, to),
+      this.shiftRepository.statsRows(access.tenantId, from, to),
+      this.shiftRepository.statsRowsBySite(access.tenantId, from, to),
+      this.shiftRepository.shiftsByContractForPeriod(access.tenantId, from, to),
+    ]);
     return {
       active_contracts: activeContracts,
       expiring_soon: expiring.length,
@@ -73,8 +100,118 @@ export class DashboardService {
       projected_revenue: projectedRevenue.toNumber(),
       statements_closed: await this.statementsClosed(access.tenantId, contractShiftRows, from),
       shifts_summary: computeShiftStats(statsRows, today),
+      shifts_by_site: computeShiftStatsBySite(statsRowsBySite, today),
+      new_contracts_trend: await this.newContractsTrend(access.tenantId, period),
+      ...(await this.renewalRates(access.tenantId, period)),
+      profit_trend: await this.profitTrend(access.tenantId, period),
+      comparison: await this.comparison(access.tenantId, period),
       bucket_unit: period.bucketUnit,
     };
+  }
+  private async profitTrend(tenantId: number, period: ResolvedPeriod): Promise<ProfitTrendBucketView[]> {
+    const lastDay = addDaysUTC(period.end, -1);
+    const monthEnd = addMonthsUTC(startOfMonthUTC(lastDay), 1);
+    const windows: { start: Date; end: Date }[] = [];
+    for (let i = TREND_BUCKET_COUNT - 1; i >= 0; i--) {
+      const start = addMonthsUTC(monthEnd, -1 - i);
+      windows.push({ start, end: addMonthsUTC(start, 1) });
+    }
+    return Promise.all(windows.map((window) => this.profitBucket(tenantId, window)));
+  }
+  private async profitBucket(
+    tenantId: number,
+    window: { start: Date; end: Date },
+  ): Promise<ProfitTrendBucketView> {
+    const { revenue, cost, isEstimated } = await this.revenueAndCost(tenantId, window);
+    const profit = revenue.subtract(cost);
+    const marginPct = revenue.isZero() ? 0 : round2((profit.toNumber() / revenue.toNumber()) * 100);
+    return {
+      period_start: toDateString(window.start),
+      period_end: toDateString(addDaysUTC(window.end, -1)),
+      label: `T${window.start.getUTCMonth() + 1}`,
+      revenue: revenue.toNumber(),
+      cost: cost.toNumber(),
+      profit: profit.toNumber(),
+      margin_pct: marginPct,
+      is_estimated: isEstimated,
+    };
+  }
+  private async revenueAndCost(
+    tenantId: number,
+    window: { start: Date; end: Date },
+  ): Promise<{ revenue: Money; cost: Money; isEstimated: boolean }> {
+    const from = toDateString(window.start);
+    const to = toDateString(window.end);
+    const [revenue, contractShiftRows] = await Promise.all([
+      this.shiftRepository.tenantRevenueForPeriod(tenantId, from, to),
+      this.shiftRepository.shiftsByContractForPeriod(tenantId, from, to),
+    ]);
+    const contractIds = [...new Set(contractShiftRows.map((row) => row.contractId))];
+    let cost = Money.zero();
+    let isEstimated = false;
+    for (const contractId of contractIds) {
+      const recorded = await this.contractCostRepository.totalForMonth(tenantId, contractId, from);
+      if (recorded !== null) {
+        cost = cost.add(recorded);
+      } else {
+        isEstimated = true;
+        cost = cost.add(await this.costEstimationService.estimate(tenantId, contractId, window.start));
+      }
+    }
+    return { revenue, cost, isEstimated };
+  }
+  private async comparison(tenantId: number, period: ResolvedPeriod): Promise<DashboardComparisonView> {
+    const window = trendWindows(period, 2)[0];
+    const from = toDateString(window.start);
+    const to = toDateString(window.end);
+    const [{ revenue, cost }, statsRows, newContracts] = await Promise.all([
+      this.revenueAndCost(tenantId, window),
+      this.shiftRepository.statsRows(tenantId, from, to),
+      this.contractRepository.countSignedBetween(tenantId, from, to),
+    ]);
+    const profit = revenue.subtract(cost);
+    const marginPct = revenue.isZero() ? 0 : round2((profit.toNumber() / revenue.toNumber()) * 100);
+    return {
+      period_start: from,
+      period_end: toDateString(addDaysUTC(window.end, -1)),
+      projected_revenue: revenue.toNumber(),
+      margin_pct: marginPct,
+      late_shifts: computeShiftStats(statsRows, toDateString(window.end)).overdue,
+      new_contracts: newContracts,
+    };
+  }
+  private async renewalRates(
+    tenantId: number,
+    period: ResolvedPeriod,
+  ): Promise<{ renewal_rate_pct: number; cancellation_rate_pct: number }> {
+    const cohortFrom = toDateString(addMonthsUTC(period.end, -RENEWAL_COHORT_MONTHS));
+    const cohortTo = toDateString(period.end);
+    const counts = await this.contractRepository.expiryCohortStatusCounts(tenantId, cohortFrom, cohortTo);
+    const countOf = (status: ContractStatus): number =>
+      counts.find((row) => row.status === status)?.count ?? 0;
+    const renewed = countOf(ContractStatus.Renewed);
+    const expired = countOf(ContractStatus.Expired);
+    const cancelled = countOf(ContractStatus.Cancelled);
+    const cohortTotal = renewed + expired + cancelled;
+    return {
+      renewal_rate_pct: cohortTotal === 0 ? 0 : round2((renewed / cohortTotal) * 100),
+      cancellation_rate_pct: cohortTotal === 0 ? 0 : round2((cancelled / cohortTotal) * 100),
+    };
+  }
+  private async newContractsTrend(tenantId: number, period: ResolvedPeriod): Promise<TrendBucketView[]> {
+    const windows = trendWindows(period, TREND_BUCKET_COUNT);
+    return Promise.all(
+      windows.map(async (window) => ({
+        period_start: toDateString(window.start),
+        period_end: toDateString(addDaysUTC(window.end, -1)),
+        label: bucketLabel(window.start, period.bucketUnit),
+        count: await this.contractRepository.countSignedBetween(
+          tenantId,
+          toDateString(window.start),
+          toDateString(window.end),
+        ),
+      })),
+    );
   }
   private async statementsClosed(
     tenantId: number,
@@ -121,6 +258,26 @@ function resolvePeriod(query: DashboardQuery, now: Date, timezone: string): Reso
   const start = startOfMonthInZone(now, timezone);
   return { start, end: addMonthsUTC(start, 1), bucketUnit: 'month' };
 }
+function trendWindows(period: ResolvedPeriod, count: number): { start: Date; end: Date }[] {
+  if (period.bucketUnit === 'month') {
+    const windows: { start: Date; end: Date }[] = [];
+    for (let i = count - 1; i >= 0; i--) {
+      const start = addMonthsUTC(period.start, -i);
+      windows.push({ start, end: addMonthsUTC(start, 1) });
+    }
+    return windows;
+  }
+  const lengthMs = period.end.getTime() - period.start.getTime();
+  const windows: { start: Date; end: Date }[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const end = new Date(period.end.getTime() - i * lengthMs);
+    windows.push({ start: new Date(end.getTime() - lengthMs), end });
+  }
+  return windows;
+}
+function bucketLabel(start: Date, bucketUnit: ResolvedPeriod['bucketUnit']): string {
+  return bucketUnit === 'month' ? `T${start.getUTCMonth() + 1}` : toDateString(start);
+}
 function computeShiftStats(
   rows: readonly {
     status: ShiftStatus;
@@ -159,4 +316,33 @@ function computeShiftStats(
     disputed_pct: pct(disputed),
     missing_evidence: 0,
   };
+}
+function computeShiftStatsBySite(
+  rows: readonly {
+    siteId: number;
+    siteName: string;
+    status: ShiftStatus;
+    scheduledDate: Date;
+  }[],
+  today: string,
+): SiteShiftStatsView[] {
+  const bySite = new Map<
+    number,
+    { siteName: string; rows: { status: ShiftStatus; scheduledDate: Date }[] }
+  >();
+  for (const row of rows) {
+    const group = bySite.get(row.siteId);
+    if (group === undefined) {
+      bySite.set(row.siteId, { siteName: row.siteName, rows: [row] });
+    } else {
+      group.rows.push(row);
+    }
+  }
+  const stats = [...bySite.entries()].map(([siteId, group]) => ({
+    site_id: siteId,
+    site_name: group.siteName,
+    ...computeShiftStats(group.rows, today),
+  }));
+  stats.sort((a, b) => (a.completed_pct ?? Infinity) - (b.completed_pct ?? Infinity));
+  return stats;
 }

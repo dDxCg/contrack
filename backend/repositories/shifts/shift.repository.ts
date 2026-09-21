@@ -62,6 +62,11 @@ export interface IShiftRepository {
     from: string,
     to: string,
   ): Promise<{ status: ShiftStatus; scheduledDate: Date }[]>;
+  statsRowsBySite(
+    tenantId: number,
+    from: string,
+    to: string,
+  ): Promise<{ siteId: number; siteName: string; status: ShiftStatus; scheduledDate: Date }[]>;
   tenantRevenueForPeriod(tenantId: number, from: string, to: string): Promise<Money>;
   countByStatus(tenantId: number, status: ShiftStatus): Promise<number>;
   countForTenantOnDate(tenantId: number, date: string, tx?: EntityManager): Promise<number>;
@@ -287,6 +292,42 @@ export class ShiftRepository extends TenantScopedRepository<Shift> implements IS
         scheduled_date: Date;
       }>();
     return rows.map((row) => ({ status: row.status, scheduledDate: row.scheduled_date }));
+  }
+  async statsRowsBySite(
+    tenantId: number,
+    from: string,
+    to: string,
+  ): Promise<
+    {
+      siteId: number;
+      siteName: string;
+      status: ShiftStatus;
+      scheduledDate: Date;
+    }[]
+  > {
+    const rows = await this.scopedTo(tenantId, 's')
+      .innerJoin('shift_statuses', 'st', 'st.id = s.status_id')
+      .innerJoin('contract_items', 'ci', 'ci.id = s.contract_item_id')
+      .innerJoin('contract_sites', 'cs', 'cs.id = ci.site_id')
+      .andWhere('s.scheduled_date >= :from AND s.scheduled_date < :to', { from, to })
+      .select([
+        'cs.id AS site_id',
+        'cs.name AS site_name',
+        'st.code AS status',
+        's.scheduled_date AS scheduled_date',
+      ])
+      .getRawMany<{
+        site_id: number;
+        site_name: string;
+        status: ShiftStatus;
+        scheduled_date: Date;
+      }>();
+    return rows.map((row) => ({
+      siteId: row.site_id,
+      siteName: row.site_name,
+      status: row.status,
+      scheduledDate: row.scheduled_date,
+    }));
   }
   async tenantRevenueForPeriod(tenantId: number, from: string, to: string): Promise<Money> {
     const row = await this.scopedTo(tenantId, 's')

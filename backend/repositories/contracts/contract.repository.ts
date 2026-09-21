@@ -11,6 +11,12 @@ export interface IContractRepository {
   delete(tenantId: number, id: number): Promise<void>;
   expiringWithin(tenantId: number, from: string, to: string): Promise<Contract[]>;
   countByStatus(tenantId: number, status: ContractStatus): Promise<number>;
+  countSignedBetween(tenantId: number, from: string, to: string): Promise<number>;
+  expiryCohortStatusCounts(
+    tenantId: number,
+    from: string,
+    to: string,
+  ): Promise<{ status: ContractStatus; count: number }[]>;
 }
 @Injectable()
 export class ContractRepository extends TenantScopedRepository<Contract> implements IContractRepository {
@@ -57,6 +63,28 @@ export class ContractRepository extends TenantScopedRepository<Contract> impleme
       .innerJoin('contract_statuses', 's', 's.id = c.status_id')
       .andWhere('s.code = :status', { status })
       .getCount();
+  }
+  async countSignedBetween(tenantId: number, from: string, to: string): Promise<number> {
+    return this.scopedTo(tenantId, 'c')
+      .andWhere('c.signed_at >= :from AND c.signed_at < :to', { from, to })
+      .getCount();
+  }
+  async expiryCohortStatusCounts(
+    tenantId: number,
+    from: string,
+    to: string,
+  ): Promise<{ status: ContractStatus; count: number }[]> {
+    const rows = await this.scopedTo(tenantId, 'c')
+      .innerJoin('contract_statuses', 's', 's.id = c.status_id')
+      .andWhere('c.expires_at >= :from AND c.expires_at < :to', { from, to })
+      .andWhere("s.code IN ('renewed', 'expired', 'cancelled')")
+      .groupBy('s.code')
+      .select(['s.code AS status', 'COUNT(*) AS count'])
+      .getRawMany<{
+        status: ContractStatus;
+        count: string;
+      }>();
+    return rows.map((row) => ({ status: row.status, count: Number(row.count) }));
   }
   private selected(tenantId: number, tx?: EntityManager): SelectQueryBuilder<Contract> {
     return this.scopedTo(tenantId, 'c', tx)

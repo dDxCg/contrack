@@ -1853,7 +1853,7 @@ components:
           description: The filtered period's shift statistics across every site.
         shifts_by_site:
           type: array
-          description: The same statistics per site, so a Director sees where failures cluster. Ordered by full_fill_pct ascending — worst first.
+          description: The same statistics per site, so a Director sees where failures cluster. Ordered by completed_pct ascending — worst first; a site with nothing due yet (completed_pct null) sorts last, not first.
           items:
             allOf:
               - type: object
@@ -1877,17 +1877,25 @@ components:
           description: cancelled / (renewed + expired + cancelled) — same cohort and window as renewal_rate_pct, so the two rates read together against one denominator rather than as two unrelated numbers.
         profit_trend:
           type: array
-          description: Trailing 6 buckets ending at the filtered period. cost/profit are never null — FR28 estimates a contract's cost (trailing 3-month average of its own recorded costs, or the tenant's average cost-to-revenue ratio if it has none) until the Accountant records the real figure.
+          description: >
+            Trailing 6 calendar-month buckets ending at the month containing the filtered period —
+            fixed to months regardless of bucket_unit, since cost is only ever recorded per calendar
+            month (`03-architecture.md` §9 D29). cost/profit are never null — FR28 estimates a
+            contract's cost (trailing 3-month average of its own recorded costs, or the tenant's
+            average cost-to-revenue ratio if it has none) until the Accountant records the real
+            figure. Items do not extend TrendBucket (no `count`) — a profit bucket has no single
+            countable thing the way a contract or tenant trend does.
           items:
-            allOf:
-              - $ref: '#/components/schemas/TrendBucket'
-              - type: object
-                properties:
-                  revenue: { type: number }
-                  cost: { type: number }
-                  profit: { type: number }
-                  margin_pct: { type: number, description: "profit / revenue * 100, precomputed so the revenue and margin charts agree with the API rather than each rounding client-side" }
-                  is_estimated: { type: boolean, description: true if any contract's cost in this bucket is FR28's estimate rather than an Accountant-recorded figure }
+            type: object
+            properties:
+              period_start: { type: string, format: date }
+              period_end: { type: string, format: date }
+              label: { type: string, example: "T10" }
+              revenue: { type: number }
+              cost: { type: number }
+              profit: { type: number }
+              margin_pct: { type: number, description: "profit / revenue * 100, precomputed so the revenue and margin charts agree with the API rather than each rounding client-side" }
+              is_estimated: { type: boolean, description: true if any contract's cost in this bucket is FR28's estimate rather than an Accountant-recorded figure }
         comparison:
           type: object
           description: The same-length period immediately before the filtered one — the previous month in month mode, or the equally long window ending the day before `from` in custom mode. Every delta badge on the dashboard reads from here, so a custom range is compared like-for-like instead of against a calendar month.
