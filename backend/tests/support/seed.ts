@@ -94,6 +94,7 @@ export async function seedShift(
     scheduledDate: string;
     status?: string;
     completedAt?: string | null;
+    teamId?: number | null;
   },
 ): Promise<number> {
   const status = params.status ?? 'scheduled';
@@ -107,8 +108,8 @@ export async function seedShift(
         ? params.scheduledDate
         : null;
   const [row] = (await dataSource.query(
-    `INSERT INTO shifts (tenant_id, contract_item_id, assignee_id, scheduled_date, status_id, completed_at)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    `INSERT INTO shifts (tenant_id, contract_item_id, assignee_id, scheduled_date, status_id, completed_at, team_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
     [
       params.tenantId,
       params.contractItemId,
@@ -116,6 +117,7 @@ export async function seedShift(
       params.scheduledDate,
       statusRow.id,
       completedAt,
+      params.teamId ?? null,
     ],
   )) as {
     id: number;

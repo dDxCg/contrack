@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class DisputeReasonAndScheduleOverload1789980266810 implements MigrationInterface {
-  name = 'DisputeReasonAndScheduleOverload1789980266810';
+export class ShiftTeamAssignment1789982497282 implements MigrationInterface {
+  name = 'ShiftTeamAssignment1789982497282';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "contracts" DROP CONSTRAINT "fk_contracts_customer"`);
@@ -22,6 +22,7 @@ export class DisputeReasonAndScheduleOverload1789980266810 implements MigrationI
     );
     await queryRunner.query(`ALTER TABLE "contract_items" ADD "day_of_week" smallint`);
     await queryRunner.query(`ALTER TABLE "contract_items" ADD "day_of_month" smallint`);
+    await queryRunner.query(`ALTER TABLE "shifts" ADD "team_id" integer`);
     await queryRunner.query(`ALTER TABLE "shifts" ADD "geo_verified" boolean NOT NULL DEFAULT false`);
     await queryRunner.query(`ALTER TABLE "shifts" ADD "field_token_used_at" TIMESTAMP`);
     await queryRunner.query(`ALTER TABLE "shifts" ADD "dispute_reason" character varying(500)`);
@@ -29,6 +30,7 @@ export class DisputeReasonAndScheduleOverload1789980266810 implements MigrationI
     await queryRunner.query(`ALTER TABLE "shifts" ADD "dispute_reported_by" character varying(255)`);
     await queryRunner.query(`ALTER TABLE "shifts" ADD "dispute_reported_at" TIMESTAMP`);
     await queryRunner.query(`ALTER TABLE "shifts" ADD "dispute_description" text`);
+    await queryRunner.query(`CREATE INDEX "idx_shifts_team" ON "shifts" ("team_id") `);
     await queryRunner.query(
       `ALTER TABLE "contract_items" ADD CONSTRAINT "ck_contract_items_day_constraint_exclusive" CHECK (day_of_week IS NULL OR day_of_month IS NULL)`,
     );
@@ -87,6 +89,9 @@ export class DisputeReasonAndScheduleOverload1789980266810 implements MigrationI
       `ALTER TABLE "shifts" ADD CONSTRAINT "fk_shifts_assignee" FOREIGN KEY ("assignee_id", "tenant_id") REFERENCES "employees"("id","tenant_id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
+      `ALTER TABLE "shifts" ADD CONSTRAINT "fk_shifts_team" FOREIGN KEY ("team_id", "tenant_id") REFERENCES "teams"("id","tenant_id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
       `ALTER TABLE "shift_photos" ADD CONSTRAINT "fk_shift_photos_shift" FOREIGN KEY ("shift_id", "tenant_id") REFERENCES "shifts"("id","tenant_id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );
     await queryRunner.query(
@@ -99,6 +104,7 @@ export class DisputeReasonAndScheduleOverload1789980266810 implements MigrationI
     await queryRunner.query(`DELETE FROM alert_kinds WHERE code = 'schedule_overload'`);
     await queryRunner.query(`ALTER TABLE "statements" DROP CONSTRAINT "fk_statements_contract"`);
     await queryRunner.query(`ALTER TABLE "shift_photos" DROP CONSTRAINT "fk_shift_photos_shift"`);
+    await queryRunner.query(`ALTER TABLE "shifts" DROP CONSTRAINT "fk_shifts_team"`);
     await queryRunner.query(`ALTER TABLE "shifts" DROP CONSTRAINT "fk_shifts_assignee"`);
     await queryRunner.query(`ALTER TABLE "shifts" DROP CONSTRAINT "fk_shifts_contract_item"`);
     await queryRunner.query(`ALTER TABLE "contract_items" DROP CONSTRAINT "fk_contract_items_site"`);
@@ -124,6 +130,7 @@ export class DisputeReasonAndScheduleOverload1789980266810 implements MigrationI
     await queryRunner.query(
       `ALTER TABLE "contract_items" DROP CONSTRAINT "ck_contract_items_day_constraint_exclusive"`,
     );
+    await queryRunner.query(`DROP INDEX "public"."idx_shifts_team"`);
     await queryRunner.query(`ALTER TABLE "shifts" DROP COLUMN "dispute_description"`);
     await queryRunner.query(`ALTER TABLE "shifts" DROP COLUMN "dispute_reported_at"`);
     await queryRunner.query(`ALTER TABLE "shifts" DROP COLUMN "dispute_reported_by"`);
@@ -131,6 +138,7 @@ export class DisputeReasonAndScheduleOverload1789980266810 implements MigrationI
     await queryRunner.query(`ALTER TABLE "shifts" DROP COLUMN "dispute_reason"`);
     await queryRunner.query(`ALTER TABLE "shifts" DROP COLUMN "field_token_used_at"`);
     await queryRunner.query(`ALTER TABLE "shifts" DROP COLUMN "geo_verified"`);
+    await queryRunner.query(`ALTER TABLE "shifts" DROP COLUMN "team_id"`);
     await queryRunner.query(`ALTER TABLE "contract_items" DROP COLUMN "day_of_month"`);
     await queryRunner.query(`ALTER TABLE "contract_items" DROP COLUMN "day_of_week"`);
     await queryRunner.query(`ALTER TABLE "contract_sites" DROP COLUMN "radius_meters"`);

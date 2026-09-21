@@ -21,6 +21,7 @@ function aScheduledShift(): Shift {
   shift.tenantId = 1;
   shift.contractItemId = 1;
   shift.assigneeId = 5;
+  shift.teamId = null;
   shift.scheduledDate = new Date('2024-10-21');
   shift.completedAt = null;
   shift.latitude = null;
@@ -147,5 +148,27 @@ describe('Shift.reassign — FR15', () => {
       new Date(),
     );
     expect(() => shift.reassign(9)).toThrow(ShiftAlreadyCompletedException);
+  });
+});
+describe('Shift.assignTeam', () => {
+  it('sets the team without touching the assignee', () => {
+    const shift = aScheduledShift();
+    shift.assignTeam(7);
+    expect(shift.teamId).toBe(7);
+    expect(shift.assigneeId).toBe(5);
+  });
+  it('clears the team when given null', () => {
+    const shift = aScheduledShift();
+    shift.assignTeam(7);
+    shift.assignTeam(null);
+    expect(shift.teamId).toBeNull();
+  });
+  it('rejects assigning a team on a completed shift', () => {
+    const shift = aScheduledShift();
+    shift.complete(
+      { receiptPhotoUrl: 'uploads/x/receipt.jpg', latitude: null, longitude: null, geoVerified: false },
+      new Date(),
+    );
+    expect(() => shift.assignTeam(7)).toThrow(ShiftAlreadyCompletedException);
   });
 });

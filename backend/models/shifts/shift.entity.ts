@@ -7,6 +7,7 @@ import {
 import { ContractItem } from '../contracts/contract-item.entity';
 import { Employee } from '../employees/employee.entity';
 import { ShiftStatusLookup } from '../lookups/shift-status.entity';
+import { Team } from '../teams/team.entity';
 import { Tenant } from '../tenants/tenant.entity';
 export interface ShiftEvidence {
   receiptPhotoUrl: string;
@@ -68,6 +69,15 @@ export class Shift {
     },
   ])
   assignee?: Employee;
+  @Index('idx_shifts_team')
+  @Column({ name: 'team_id', type: 'integer', nullable: true })
+  teamId!: number | null;
+  @ManyToOne(() => Team)
+  @JoinColumn([
+    { name: 'team_id', referencedColumnName: 'id', foreignKeyConstraintName: 'fk_shifts_team' },
+    { name: 'tenant_id', referencedColumnName: 'tenantId', foreignKeyConstraintName: 'fk_shifts_team' },
+  ])
+  team?: Team;
   @Index('idx_shifts_scheduled_date')
   @Column({ name: 'scheduled_date', type: 'date' })
   scheduledDate!: Date;
@@ -141,5 +151,11 @@ export class Shift {
     if (scheduledDate !== undefined) {
       this.scheduledDate = scheduledDate;
     }
+  }
+  assignTeam(teamId: number | null): void {
+    if (this.status === ShiftStatus.Completed) {
+      throw new ShiftAlreadyCompletedException(this.completedAt);
+    }
+    this.teamId = teamId;
   }
 }

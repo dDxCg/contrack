@@ -52,11 +52,17 @@ async function world() {
     contractItemId: chain.itemId,
     assigneeId: memberOfTeamA.id,
     scheduledDate: '2024-10-21',
+    teamId: teamA.id,
   });
   return {
+    dataSource,
     shifts,
+    employees,
     tenant,
     lead,
+    teamA,
+    teamB,
+    itemId: chain.itemId,
     memberOfTeamA,
     memberOfTeamB,
     shiftId,
@@ -134,6 +140,60 @@ describe('DispatchService.reassign — FR15', () => {
     const error = await captureDomainErrorAsync(() =>
       service.reassign(access, shiftId, { assigneeId: memberOfTeamA.id }),
     );
+    expect(error.code).toBe('auth.forbidden_role');
+  });
+  it('rejects a team lead reassigning a shift not assigned to their team', async () => {
+    const { service, access, memberOfTeamA, dataSource, tenant, itemId, teamB } = await world();
+    const otherShiftId = await seedShift(dataSource, {
+      tenantId: tenant.id,
+      contractItemId: itemId,
+      assigneeId: null,
+      scheduledDate: '2024-10-21',
+      teamId: teamB.id,
+    });
+    const error = await captureDomainErrorAsync(() =>
+      service.reassign(access, otherShiftId, { assigneeId: memberOfTeamA.id }),
+    );
+    expect(error.code).toBe('auth.out_of_scope');
+  });
+  it('rejects a team lead reassigning a shift no manager has assigned to any team yet', async () => {
+    const { service, access, memberOfTeamA, dataSource, tenant, itemId } = await world();
+    const unassignedTeamShiftId = await seedShift(dataSource, {
+      tenantId: tenant.id,
+      contractItemId: itemId,
+      assigneeId: null,
+      scheduledDate: '2024-10-21',
+    });
+    const error = await captureDomainErrorAsync(() =>
+      service.reassign(access, unassignedTeamShiftId, { assigneeId: memberOfTeamA.id }),
+    );
+    expect(error.code).toBe('auth.out_of_scope');
+  });
+});
+describe('DispatchService.assignTeam', () => {
+  it('lets a Manager assign a shift to a team', async () => {
+    const { service, shifts, tenant, shiftId, teamB } = await world();
+    const manager = draftEmployee({ tenantId: tenant.id, email: 'manager@example.com', role: Role.Manager });
+    const access = anAccessContext(manager, { tenantId: tenant.id, scope: RowScope.All });
+    await service.assignTeam(access, shiftId, teamB.id);
+    const reloaded = await shifts.findById(tenant.id, shiftId);
+    expect(reloaded?.teamId).toBe(teamB.id);
+  });
+  it('lets a Director assign a shift to a team', async () => {
+    const { service, shifts, tenant, shiftId, teamB } = await world();
+    const director = draftEmployee({
+      tenantId: tenant.id,
+      email: 'director@example.com',
+      role: Role.Director,
+    });
+    const access = anAccessContext(director, { tenantId: tenant.id, scope: RowScope.All });
+    await service.assignTeam(access, shiftId, teamB.id);
+    const reloaded = await shifts.findById(tenant.id, shiftId);
+    expect(reloaded?.teamId).toBe(teamB.id);
+  });
+  it('rejects a TeamLead assigning a team — assignTeam is manager/director-only', async () => {
+    const { service, access, shiftId, teamB } = await world();
+    const error = await captureDomainErrorAsync(() => service.assignTeam(access, shiftId, teamB.id));
     expect(error.code).toBe('auth.forbidden_role');
   });
 });

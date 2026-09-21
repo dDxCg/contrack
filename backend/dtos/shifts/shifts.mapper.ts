@@ -5,6 +5,7 @@ export function toShiftView(shift: Shift): ShiftView {
     id: shift.id,
     contract_item_id: shift.contractItemId,
     assignee_id: shift.assigneeId,
+    team_id: shift.teamId,
     scheduled_date: shift.scheduledDate.toString(),
     completed_at: shift.completedAt === null ? null : shift.completedAt.toString(),
     status: shift.status,

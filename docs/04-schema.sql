@@ -250,6 +250,7 @@ CREATE TABLE shifts (
     tenant_id               INTEGER NOT NULL,
     contract_item_id        INTEGER NOT NULL,
     assignee_id             INTEGER,
+    team_id                 INTEGER,
     scheduled_date          DATE NOT NULL,
     completed_at            TIMESTAMP,
     status_id               INTEGER NOT NULL DEFAULT 1,
@@ -268,6 +269,7 @@ CREATE TABLE shifts (
     CONSTRAINT fk_shifts_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
     CONSTRAINT fk_shifts_contract_item FOREIGN KEY (contract_item_id, tenant_id) REFERENCES contract_items(id, tenant_id) ON DELETE CASCADE,
     CONSTRAINT fk_shifts_assignee FOREIGN KEY (assignee_id, tenant_id) REFERENCES employees(id, tenant_id),
+    CONSTRAINT fk_shifts_team FOREIGN KEY (team_id, tenant_id) REFERENCES teams(id, tenant_id),
     CONSTRAINT fk_shifts_status FOREIGN KEY (status_id) REFERENCES shift_statuses(id),
     CONSTRAINT uq_shifts_id_tenant UNIQUE (id, tenant_id)
 );
@@ -275,6 +277,7 @@ CREATE TABLE shifts (
 CREATE INDEX idx_shifts_tenant ON shifts(tenant_id);
 CREATE INDEX idx_shifts_contract_item ON shifts(contract_item_id);
 CREATE INDEX idx_shifts_assignee ON shifts(assignee_id);
+CREATE INDEX idx_shifts_team ON shifts(team_id);
 CREATE INDEX idx_shifts_status ON shifts(status_id);
 CREATE INDEX idx_shifts_scheduled_date ON shifts(scheduled_date);
 

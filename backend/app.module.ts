@@ -92,8 +92,10 @@ import { CustomerService } from './services/customers/customer.service';
 import { DashboardService } from './services/dashboard/dashboard.service';
 import { DispatchService } from './services/shifts/dispatch.service';
 import { DisputeService } from './services/shifts/dispute.service';
+import { ShiftsService } from './services/shifts/shifts.service';
 import { EmployeeService } from './services/employees/employee.service';
 import { FieldLinkService } from './services/field/field-link.service';
+import { FieldContextService } from './services/field/field-context.service';
 import { FieldSubmissionService } from './services/field/field-submission.service';
 import { FieldUploadService } from './services/field/field-upload.service';
 import { RandomUploadKeyFactory, UPLOAD_KEY_FACTORY } from './services/field/upload-key-factory';
@@ -199,9 +201,11 @@ import { TokenService } from './services/auth/token.service';
     ContractService,
     ContractAssembler,
     ScheduleGeneratorService,
+    ShiftsService,
     DispatchService,
     DisputeService,
     FieldLinkService,
+    FieldContextService,
     FieldSubmissionService,
     FieldUploadService,
     StatementService,

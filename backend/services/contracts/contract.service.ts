@@ -191,6 +191,7 @@ function aScheduledShift(access: AccessContext, item: ContractItem, scheduledDat
   shift.tenantId = access.tenantId;
   shift.contractItemId = item.id;
   shift.assigneeId = null;
+  shift.teamId = null;
   shift.scheduledDate = scheduledDate;
   shift.completedAt = null;
   shift.latitude = null;

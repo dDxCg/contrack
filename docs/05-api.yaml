@@ -564,7 +564,9 @@ paths:
     patch:
       tags: [Shifts]
       operationId: updateShift
-      summary: Reassign or reschedule — rejected on a completed shift
+      summary: >-
+        Reassign or reschedule — rejected on a completed shift, and rejected if a
+        manager hasn't assigned the shift to the caller's team yet (`PATCH /shifts/{id}/team`)
       x-roles: [team_lead]
       x-scope: team
       requestBody:
@@ -587,8 +589,46 @@ paths:
               examples:
                 assignee_out_of_team: { $ref: '#/components/examples/ShiftAssigneeOutOfTeam' }
               schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: The shift isn't assigned to the caller's team (or to any team yet)
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Error' } }
         '409':
           description: Evidence is write-once — a completed shift rejects reassignment
+          content:
+            application/json:
+              examples:
+                already_completed: { $ref: '#/components/examples/ShiftAlreadyCompleted' }
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /shifts/{id}/team:
+    parameters:
+      - { $ref: '#/components/parameters/ShiftId' }
+    patch:
+      tags: [Shifts]
+      operationId: assignShiftTeam
+      summary: Assign (or clear) which team owns this shift, ahead of a team lead picking a person
+      description: >-
+        A shift can exist unassigned to any employee (FR22, D8); this hands it to a team first
+        so that team's lead can see it (`GET /shifts`, `x-scope: team`) and reassign it to one
+        of their people (`PATCH /shifts/{id}`). No capacity check — nothing stops a manager
+        from assigning a team more shifts than it can cover (D27).
+      x-roles: [manager, director]
+      x-scope: all
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team_id: { type: integer, nullable: true }
+      responses:
+        '200':
+          description: Updated shift
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Shift' } }
+        '409':
+          description: Evidence is write-once — a completed shift rejects team assignment
           content:
             application/json:
               examples:
@@ -676,9 +716,10 @@ paths:
   # -------------------------------------------------------------- Field
   /field/context:
     description: >-
-      Agreed shape, not implemented yet — the field page's context call is still
-      a gap (`temp/draft/unimplemented-audit.md`). The token travels in the
-      `X-Field-Token` header like every other field endpoint, never in the URL.
+      remaining_steps is coarse (all three or none), not per-photo — no per-upload record
+      exists to track partial progress (D22), so the API can only tell "not submitted yet"
+      from "submitted". The token travels in the `X-Field-Token` header like every other
+      field endpoint, never in the URL.
     parameters:
       - { $ref: '#/components/parameters/FieldTokenHeader' }
     get:
@@ -696,7 +737,7 @@ paths:
                 contract_site: "Tòa A — Phạm Hùng, Nam Từ Liêm"
                 service_item: "Bảo trì VRV & Chiller"
                 scheduled_at: "2024-10-21T08:30:00Z"
-                remaining_steps: [after_photo, receipt_photo]
+                remaining_steps: [before_photo, after_photo, receipt_photo]
         '401':
           description: Expired or invalid token
           content:
@@ -1690,6 +1731,7 @@ components:
         id: { type: integer }
         contract_item_id: { type: integer }
         assignee_id: { type: integer, nullable: true, description: "NULL until dispatch assigns it (FR15) — schedule generation (FR22) creates the shift unassigned" }
+        team_id: { type: integer, nullable: true, description: "NULL until a manager assigns the shift to a team (PATCH /shifts/{id}/team, D27) — independent of assignee_id" }
         scheduled_date: { type: string, format: date }
         completed_at: { type: string, format: date-time, nullable: true }
         status: { $ref: '#/components/schemas/ShiftStatus' }

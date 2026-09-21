@@ -11,12 +11,47 @@ export interface SiteGeofence {
   longitude: number | null;
   radiusMeters: number;
 }
+export interface ShiftFieldContext {
+  siteName: string;
+  itemName: string;
+}
+export type ShiftScopeFilter =
+  | { kind: 'all' }
+  | { kind: 'own'; assigneeId: number }
+  | { kind: 'team'; teamId: number }
+  | { kind: 'unit'; managerId: number }
+  | { kind: 'none' };
+export interface ShiftListFilters {
+  from?: string;
+  to?: string;
+  status?: ShiftStatus;
+  assigneeId?: number;
+  contractId?: number;
+  teamId?: number;
+  managerId?: number;
+}
+export interface ShiftScopeContext {
+  teamId: number | null;
+  assigneeId: number | null;
+  managerId: number | null;
+}
 export interface IShiftRepository {
   createMany(shifts: readonly Shift[], tx?: EntityManager): Promise<void>;
   findById(tenantId: number, id: number, tx?: EntityManager): Promise<Shift | null>;
   findByIdUnscoped(id: number): Promise<Shift | null>;
   update(shift: Shift, tx?: EntityManager): Promise<Shift>;
   siteGeofenceFor(contractItemId: number): Promise<SiteGeofence | null>;
+  fieldContextFor(contractItemId: number): Promise<ShiftFieldContext | null>;
+  list(
+    tenantId: number,
+    scope: ShiftScopeFilter,
+    filters: ShiftListFilters,
+    page: { limit: number; offset: number },
+  ): Promise<{ items: Shift[]; total: number }>;
+  findByIdWithScopeContext(
+    tenantId: number,
+    id: number,
+  ): Promise<{ shift: Shift; scope: ShiftScopeContext } | null>;
   claimFieldToken(id: number, now: Date, tx?: EntityManager): Promise<boolean>;
   revenueRows(tenantId: number, contractId: number, from: string, to: string): Promise<RevenueRow[]>;
   shiftsByContractForPeriod(tenantId: number, from: string, to: string): Promise<ContractShiftRow[]>;
@@ -74,6 +109,97 @@ export class ShiftRepository extends TenantScopedRepository<Shift> implements IS
       throw new Error(`shifts row ${saved.id} disappeared right after it was written`);
     }
     return reloaded;
+  }
+  async list(
+    tenantId: number,
+    scope: ShiftScopeFilter,
+    filters: ShiftListFilters,
+    page: { limit: number; offset: number },
+  ): Promise<{ items: Shift[]; total: number }> {
+    const query = this.listQuery(tenantId, scope, filters);
+    const total = await query.getCount();
+    const rows = await query
+      .orderBy('s.scheduled_date', 'DESC')
+      .addOrderBy('s.id', 'DESC')
+      .limit(page.limit)
+      .offset(page.offset)
+      .getRawMany<ShiftRow>();
+    return { items: rows.map(hydrateShift), total };
+  }
+  async findByIdWithScopeContext(
+    tenantId: number,
+    id: number,
+  ): Promise<{ shift: Shift; scope: ShiftScopeContext } | null> {
+    const row = await this.selected(
+      this.scopedTo(tenantId, 's').leftJoin('employees', 'a', 'a.id = s.assignee_id'),
+    )
+      .addSelect(['a.manager_id AS scope_manager_id'])
+      .andWhere('s.id = :id', { id })
+      .getRawOne<ShiftRow & { scope_manager_id: number | null }>();
+    if (row === undefined || row === null) {
+      return null;
+    }
+    return {
+      shift: hydrateShift(row),
+      scope: {
+        teamId: row.team_id,
+        assigneeId: row.assignee_id,
+        managerId: row.scope_manager_id,
+      },
+    };
+  }
+  private listQuery(
+    tenantId: number,
+    scope: ShiftScopeFilter,
+    filters: ShiftListFilters,
+  ): SelectQueryBuilder<Shift> {
+    const query = this.scopedTo(tenantId, 's')
+      .leftJoin('employees', 'a', 'a.id = s.assignee_id')
+      .innerJoin('shift_statuses', 'st', 'st.id = s.status_id')
+      .innerJoin('contract_items', 'ci', 'ci.id = s.contract_item_id')
+      .innerJoin('contract_sites', 'cs', 'cs.id = ci.site_id')
+      .select(this.shiftColumns());
+    this.applyScope(query, scope);
+    if (filters.from !== undefined) {
+      query.andWhere('s.scheduled_date >= :from', { from: filters.from });
+    }
+    if (filters.to !== undefined) {
+      query.andWhere('s.scheduled_date <= :to', { to: filters.to });
+    }
+    if (filters.status !== undefined) {
+      query.andWhere('st.code = :status', { status: filters.status });
+    }
+    if (filters.assigneeId !== undefined) {
+      query.andWhere('s.assignee_id = :filterAssigneeId', { filterAssigneeId: filters.assigneeId });
+    }
+    if (filters.contractId !== undefined) {
+      query.andWhere('cs.contract_id = :filterContractId', { filterContractId: filters.contractId });
+    }
+    if (filters.teamId !== undefined) {
+      query.andWhere('s.team_id = :filterTeamId', { filterTeamId: filters.teamId });
+    }
+    if (filters.managerId !== undefined) {
+      query.andWhere('a.manager_id = :filterManagerId', { filterManagerId: filters.managerId });
+    }
+    return query;
+  }
+  private applyScope(query: SelectQueryBuilder<Shift>, scope: ShiftScopeFilter): void {
+    switch (scope.kind) {
+      case 'all':
+        return;
+      case 'own':
+        query.andWhere('s.assignee_id = :scopeAssigneeId', { scopeAssigneeId: scope.assigneeId });
+        return;
+      case 'team':
+        query.andWhere('s.team_id = :scopeTeamId', { scopeTeamId: scope.teamId });
+        return;
+      case 'unit':
+        query.andWhere('a.manager_id = :scopeManagerId', { scopeManagerId: scope.managerId });
+        return;
+      case 'none':
+        query.andWhere('1 = 0');
+        return;
+    }
   }
   async revenueRows(tenantId: number, contractId: number, from: string, to: string): Promise<RevenueRow[]> {
     const rows = await this.scopedTo(tenantId, 's')
@@ -201,6 +327,18 @@ export class ShiftRepository extends TenantScopedRepository<Shift> implements IS
       radiusMeters: row.radius_meters,
     };
   }
+  async fieldContextFor(contractItemId: number): Promise<ShiftFieldContext | null> {
+    const row = await this.crossTenant
+      .queryFor(ContractItem, 'ci')
+      .innerJoin('contract_sites', 'cs', 'cs.id = ci.site_id')
+      .where('ci.id = :contractItemId', { contractItemId })
+      .select(['cs.name AS site_name', 'ci.name AS item_name'])
+      .getRawOne<{ site_name: string; item_name: string }>();
+    if (row === undefined || row === null) {
+      return null;
+    }
+    return { siteName: row.site_name, itemName: row.item_name };
+  }
   async claimFieldToken(id: number, now: Date, tx?: EntityManager): Promise<boolean> {
     const result = await this.crossTenant
       .queryFor(Shift, 's', tx)
@@ -211,30 +349,32 @@ export class ShiftRepository extends TenantScopedRepository<Shift> implements IS
     return (result.affected ?? 0) > 0;
   }
   private selected(query: SelectQueryBuilder<Shift>): SelectQueryBuilder<Shift> {
-    return query
-      .innerJoin('shift_statuses', 'st', 'st.id = s.status_id')
-      .select([
-        's.id AS id',
-        's.tenant_id AS tenant_id',
-        's.contract_item_id AS contract_item_id',
-        's.assignee_id AS assignee_id',
-        's.scheduled_date AS scheduled_date',
-        's.completed_at AS completed_at',
-        's.status_id AS status_id',
-        's.latitude AS latitude',
-        's.longitude AS longitude',
-        's.captured_at AS captured_at',
-        's.receipt_photo_url AS receipt_photo_url',
-        's.geo_verified AS geo_verified',
-        's.field_token_used_at AS field_token_used_at',
-        's.dispute_reason AS dispute_reason',
-        's.dispute_reported_via AS dispute_reported_via',
-        's.dispute_reported_by AS dispute_reported_by',
-        's.dispute_reported_at AS dispute_reported_at',
-        's.dispute_description AS dispute_description',
-        's.created_at AS created_at',
-        'st.code AS status',
-      ]);
+    return query.innerJoin('shift_statuses', 'st', 'st.id = s.status_id').select(this.shiftColumns());
+  }
+  private shiftColumns(): string[] {
+    return [
+      's.id AS id',
+      's.tenant_id AS tenant_id',
+      's.contract_item_id AS contract_item_id',
+      's.assignee_id AS assignee_id',
+      's.scheduled_date AS scheduled_date',
+      's.completed_at AS completed_at',
+      's.status_id AS status_id',
+      's.latitude AS latitude',
+      's.longitude AS longitude',
+      's.captured_at AS captured_at',
+      's.receipt_photo_url AS receipt_photo_url',
+      's.geo_verified AS geo_verified',
+      's.field_token_used_at AS field_token_used_at',
+      's.team_id AS team_id',
+      's.dispute_reason AS dispute_reason',
+      's.dispute_reported_via AS dispute_reported_via',
+      's.dispute_reported_by AS dispute_reported_by',
+      's.dispute_reported_at AS dispute_reported_at',
+      's.dispute_description AS dispute_description',
+      's.created_at AS created_at',
+      'st.code AS status',
+    ];
   }
 }
 export interface RevenueRow {
@@ -261,6 +401,7 @@ interface ShiftRow {
   receipt_photo_url: string | null;
   geo_verified: boolean;
   field_token_used_at: Date | null;
+  team_id: number | null;
   dispute_reason: string | null;
   dispute_reported_via: 'phone' | 'in_person' | null;
   dispute_reported_by: string | null;
@@ -284,6 +425,7 @@ function hydrateShift(row: ShiftRow): Shift {
   shift.receiptPhotoUrl = row.receipt_photo_url;
   shift.geoVerified = row.geo_verified;
   shift.fieldTokenUsedAt = row.field_token_used_at;
+  shift.teamId = row.team_id;
   shift.disputeReason = row.dispute_reason;
   shift.disputeReportedVia = row.dispute_reported_via;
   shift.disputeReportedBy = row.dispute_reported_by;

@@ -1,6 +1,7 @@
 import { FieldController } from '../../../controllers/field/field.controller';
 import { FieldSubmissionBodyDto } from '../../../dtos/field/field.dto';
 import { AuthCredentialExpiredException } from '../../../models/domain-errors';
+import { FieldContextService } from '../../../services/field/field-context.service';
 import { FieldSubmissionService } from '../../../services/field/field-submission.service';
 import { FieldUploadService } from '../../../services/field/field-upload.service';
 function aBody(): FieldSubmissionBodyDto {
@@ -11,12 +12,36 @@ function aBody(): FieldSubmissionBodyDto {
     longitude: null,
   };
 }
-function aController(submission: jest.Mock, upload: jest.Mock): FieldController {
+function aController(
+  submission: jest.Mock,
+  upload: jest.Mock,
+  context: jest.Mock = jest.fn(),
+): FieldController {
   return new FieldController(
+    { get: context } as unknown as FieldContextService,
     { submit: submission } as unknown as FieldSubmissionService,
     { issueTarget: upload } as unknown as FieldUploadService,
   );
 }
+describe('FieldController.context', () => {
+  it('reads the field token from the X-Field-Token header', async () => {
+    const context = jest.fn().mockResolvedValue({
+      contract_site: 'Toà A',
+      service_item: 'Vệ sinh sảnh',
+      scheduled_at: '2024-10-21',
+      remaining_steps: ['before_photo', 'after_photo', 'receipt_photo'],
+    });
+    const controller = aController(jest.fn(), jest.fn(), context);
+    await controller.context('a-real-token');
+    expect(context).toHaveBeenCalledWith('a-real-token');
+  });
+  it('rejects a request with no token header', () => {
+    const context = jest.fn();
+    const controller = aController(jest.fn(), jest.fn(), context);
+    expect(() => controller.context(undefined as unknown as string)).toThrow(AuthCredentialExpiredException);
+    expect(context).not.toHaveBeenCalled();
+  });
+});
 describe('FieldController.submit', () => {
   it('reads the field token from the X-Field-Token header, not the URL', async () => {
     const submit = jest.fn().mockResolvedValue({ id: 1 });

@@ -1,10 +1,11 @@
-import { Body, Controller, Headers, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { FieldSubmissionBodyDto, FieldUploadBodyDto } from '../../dtos/field/field.dto';
-import { UploadTargetView } from '../../dtos/field/field.response.dto';
+import { FieldContextView, UploadTargetView } from '../../dtos/field/field.response.dto';
 import { ShiftView } from '../../dtos/shifts/shifts.response.dto';
 import { AuthCredentialExpiredException } from '../../models/domain-errors';
 import { Public } from '../../services/access-control/access.decorator';
+import { FieldContextService } from '../../services/field/field-context.service';
 import {
   FieldSubmissionCommand,
   FieldSubmissionService,
@@ -13,9 +14,22 @@ import { FieldUploadService } from '../../services/field/field-upload.service';
 @Controller('field')
 export class FieldController {
   constructor(
+    private readonly fieldContextService: FieldContextService,
     private readonly fieldSubmissionService: FieldSubmissionService,
     private readonly fieldUploadService: FieldUploadService,
   ) {}
+  @Get('context')
+  @Public()
+  @Throttle({ default: { ttl: 60000, limit: 60 } })
+  context(
+    @Headers('x-field-token')
+    token: string,
+  ): Promise<FieldContextView> {
+    if (token === undefined || token === '') {
+      throw new AuthCredentialExpiredException();
+    }
+    return this.fieldContextService.get(token);
+  }
   @Post('uploads')
   @Public()
   @Throttle({ default: { ttl: 60000, limit: 60 } })
