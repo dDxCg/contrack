@@ -16,8 +16,9 @@ import {
   ValidationFailedException,
 } from '../../models/domain-errors';
 import { AlertKind } from '../../models/alerts/alert.entity';
-import { Contract } from '../../models/contracts/contract.entity';
+import { Contract, ContractStatus } from '../../models/contracts/contract.entity';
 import { ContractItem, FrequencyUnit } from '../../models/contracts/contract-item.entity';
+import { ContractSite } from '../../models/contracts/contract-site.entity';
 import { Shift, ShiftStatus } from '../../models/shifts/shift.entity';
 import { AlertRepository, IAlertRepository } from '../../repositories/alerts/alert.repository';
 import {
@@ -61,6 +62,18 @@ export interface ContractCreateCommand {
   signedAt: Date;
   expiresAt: Date;
   sites: ContractSiteCommand[];
+}
+export interface ContractUpdateCommand {
+  expiresAt?: Date;
+  status?: ContractStatus;
+}
+export interface ContractSiteUpdateCommand {
+  name: string;
+  workRequirements: string | null;
+  notes: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  radiusMeters: number;
 }
 @Injectable()
 export class ContractService {
@@ -174,9 +187,104 @@ export class ContractService {
     }
     return { view: toContractView(savedContract, siteViews), overloadedDates };
   }
+  async update(access: AccessContext, id: number, command: ContractUpdateCommand): Promise<ContractView> {
+    const contract = await this.requireContract(access, id);
+    if (command.expiresAt !== undefined) {
+      contract.setTerm(contract.signedAt, command.expiresAt);
+    }
+    if (command.status !== undefined) {
+      contract.setStatus(command.status);
+    }
+    const saved = await this.contractRepository.update(contract);
+    return toContractView(saved, []);
+  }
   async delete(access: AccessContext, id: number): Promise<void> {
     await this.requireContract(access, id);
     await this.contractRepository.delete(access.tenantId, id);
+  }
+  async addSite(
+    access: AccessContext,
+    contractId: number,
+    command: ContractSiteCommand,
+  ): Promise<ContractSiteView> {
+    const contract = await this.requireContract(access, contractId);
+    const violations = validateSiteItems(command.items);
+    if (violations.length > 0) {
+      throw new ValidationFailedException(violations);
+    }
+    const site = new ContractSite();
+    site.tenantId = access.tenantId;
+    site.contractId = contract.id;
+    site.setName(command.name);
+    site.setWorkRequirements(command.workRequirements);
+    site.setNotes(command.notes);
+    site.setLocation(command.latitude, command.longitude, command.radiusMeters);
+    const savedSite = await this.contractSiteRepository.create(site);
+    const itemViews: ContractItemView[] = [];
+    for (const itemCommand of command.items) {
+      const item = buildContractItem(access.tenantId, savedSite.id, itemCommand);
+      const savedItem = await this.contractItemRepository.create(item);
+      itemViews.push(toContractItemView(savedItem));
+    }
+    return toContractSiteView(savedSite, itemViews);
+  }
+  async updateSite(
+    access: AccessContext,
+    siteId: number,
+    command: ContractSiteUpdateCommand,
+  ): Promise<ContractSiteView> {
+    const site = await this.requireSite(access, siteId);
+    site.setName(command.name);
+    site.setWorkRequirements(command.workRequirements);
+    site.setNotes(command.notes);
+    site.setLocation(command.latitude, command.longitude, command.radiusMeters);
+    const saved = await this.contractSiteRepository.update(site);
+    const items = await this.contractItemRepository.listBySite(access.tenantId, saved.id);
+    return toContractSiteView(saved, items.map(toContractItemView));
+  }
+  async deleteSite(access: AccessContext, siteId: number): Promise<void> {
+    await this.requireSite(access, siteId);
+    await this.contractSiteRepository.delete(access.tenantId, siteId);
+  }
+  async addItem(
+    access: AccessContext,
+    siteId: number,
+    command: ContractItemCommand,
+  ): Promise<ContractItemView> {
+    const site = await this.requireSite(access, siteId);
+    const item = buildContractItem(access.tenantId, site.id, command);
+    const violations = item.assertValid();
+    if (violations.length > 0) {
+      throw new ValidationFailedException(violations);
+    }
+    const saved = await this.contractItemRepository.create(item);
+    return toContractItemView(saved);
+  }
+  async updateItem(
+    access: AccessContext,
+    itemId: number,
+    command: ContractItemCommand,
+  ): Promise<ContractItemView> {
+    const item = await this.requireItem(access, itemId);
+    item.setName(command.name);
+    item.setFrequency(
+      command.frequencyCount,
+      command.frequencyUnit,
+      command.frequencyRule,
+      command.dayOfWeek,
+      command.dayOfMonth,
+    );
+    item.setUnitPrice(command.unitPrice);
+    const violations = item.assertValid();
+    if (violations.length > 0) {
+      throw new ValidationFailedException(violations);
+    }
+    const saved = await this.contractItemRepository.update(item);
+    return toContractItemView(saved);
+  }
+  async deleteItem(access: AccessContext, itemId: number): Promise<void> {
+    await this.requireItem(access, itemId);
+    await this.contractItemRepository.delete(access.tenantId, itemId);
   }
   private async requireContract(access: AccessContext, id: number): Promise<Contract> {
     const contract = await this.contractRepository.findById(access.tenantId, id);
@@ -185,6 +293,57 @@ export class ContractService {
     }
     return contract;
   }
+  private async requireSite(access: AccessContext, id: number): Promise<ContractSite> {
+    const site = await this.contractSiteRepository.findById(access.tenantId, id);
+    if (site === null) {
+      throw new AuthOutOfScopeException();
+    }
+    return site;
+  }
+  private async requireItem(access: AccessContext, id: number): Promise<ContractItem> {
+    const item = await this.contractItemRepository.findById(access.tenantId, id);
+    if (item === null) {
+      throw new AuthOutOfScopeException();
+    }
+    return item;
+  }
+}
+function buildContractItem(tenantId: number, siteId: number, command: ContractItemCommand): ContractItem {
+  const item = new ContractItem();
+  item.tenantId = tenantId;
+  item.siteId = siteId;
+  item.setName(command.name);
+  item.setFrequency(
+    command.frequencyCount,
+    command.frequencyUnit,
+    command.frequencyRule,
+    command.dayOfWeek,
+    command.dayOfMonth,
+  );
+  item.setUnitPrice(command.unitPrice);
+  return item;
+}
+function toContractSiteView(site: ContractSite, items: ContractItemView[]): ContractSiteView {
+  return {
+    id: site.id,
+    name: site.name,
+    work_requirements: site.workRequirements,
+    notes: site.notes,
+    latitude: site.latitude,
+    longitude: site.longitude,
+    radius_meters: site.radiusMeters,
+    items,
+  };
+}
+function validateSiteItems(items: ContractItemCommand[]): FieldViolation[] {
+  const violations: FieldViolation[] = [];
+  items.forEach((itemCommand, index) => {
+    const item = buildContractItem(0, 0, itemCommand);
+    for (const violation of item.assertValid()) {
+      violations.push({ field: `items[${index}].${violation.field}`, message: violation.message });
+    }
+  });
+  return violations;
 }
 function aScheduledShift(access: AccessContext, item: ContractItem, scheduledDate: Date): Shift {
   const shift = new Shift();

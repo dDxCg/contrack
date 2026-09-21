@@ -4,6 +4,7 @@ import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedTenant } from '../../support/seed';
 import { NullChannelClient } from '../../../data/channel-client/null-channel-client';
 import { Customer, CustomerSegment } from '../../../models/customers/customer.entity';
+import { ContractStatus } from '../../../models/contracts/contract.entity';
 import { FrequencyUnit } from '../../../models/contracts/contract-item.entity';
 import { Role } from '../../../models/employees/employee.entity';
 import { AlertRepository } from '../../../repositories/alerts/alert.repository';
@@ -14,7 +15,11 @@ import { CustomerRepository } from '../../../repositories/customers/customer.rep
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { Team } from '../../../models/teams/team.entity';
 import { TeamRepository } from '../../../repositories/teams/team.repository';
-import { ContractCreateCommand, ContractService } from '../../../services/contracts/contract.service';
+import {
+  ContractCreateCommand,
+  ContractItemCommand,
+  ContractService,
+} from '../../../services/contracts/contract.service';
 import { ContractAssembler } from '../../../services/contracts/contract-assembler';
 import { ScheduleGeneratorService } from '../../../services/contracts/schedule-generator.service';
 import { daysSinceEpoch } from '../../../utils/period';
@@ -432,5 +437,258 @@ describe('ContractService.get / list / delete', () => {
     const created = await service.create(access, validCommand(customer.id));
     await service.delete(access, created.id);
     expect(await contracts.findById(tenant.id, created.id)).toBeNull();
+  });
+});
+describe('ContractService.update — PATCH /contracts/:id', () => {
+  it('updates expires_at while leaving signed_at untouched', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const updated = await service.update(access, created.id, { expiresAt: new Date('2024-06-01') });
+    expect(updated).toMatchObject({
+      signed_at: created.signed_at,
+      expires_at: new Date('2024-06-01').toString(),
+    });
+  });
+  it('updates status', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const updated = await service.update(access, created.id, { status: ContractStatus.Cancelled });
+    expect(updated.status).toBe('cancelled');
+  });
+  it('updates both fields at once', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const updated = await service.update(access, created.id, {
+      expiresAt: new Date('2024-07-01'),
+      status: ContractStatus.Renewed,
+    });
+    expect(updated).toMatchObject({ expires_at: new Date('2024-07-01').toString(), status: 'renewed' });
+  });
+  it('answers 404 auth.out_of_scope for another tenant’s contract', async () => {
+    const { service, access, customer, otherTenant } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const otherTenantAccess = anAccessContext(
+      anEmployee({ id: 91, tenantId: otherTenant.id, role: Role.Director }),
+    );
+    const error = await captureDomainErrorAsync(() =>
+      service.update(otherTenantAccess, created.id, { status: ContractStatus.Cancelled }),
+    );
+    expect(error.code).toBe('auth.out_of_scope');
+  });
+});
+function anItemCommand(overrides: Partial<ContractItemCommand> = {}): ContractItemCommand {
+  return {
+    name: 'Vệ sinh sảnh',
+    frequencyCount: 1,
+    frequencyUnit: FrequencyUnit.Week,
+    frequencyRule: null,
+    dayOfWeek: null,
+    dayOfMonth: null,
+    unitPrice: 500000,
+    ...overrides,
+  };
+}
+describe('ContractService.addSite — POST /contracts/:id/sites', () => {
+  it('adds a site with no items yet', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const site = await service.addSite(access, created.id, {
+      name: 'Toà B',
+      workRequirements: null,
+      notes: null,
+      latitude: null,
+      longitude: null,
+      radiusMeters: 200,
+      items: [],
+    });
+    expect(site).toMatchObject({ name: 'Toà B', radius_meters: 200, items: [] });
+  });
+  it('adds a site with items', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const site = await service.addSite(access, created.id, {
+      name: 'Toà B',
+      workRequirements: null,
+      notes: null,
+      latitude: null,
+      longitude: null,
+      radiusMeters: 200,
+      items: [anItemCommand()],
+    });
+    expect(site.items).toHaveLength(1);
+    expect(site.items[0]).toMatchObject({ name: 'Vệ sinh sảnh', unit_price: 500000 });
+  });
+  it('rejects an invalid item with the field named', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const error = await captureDomainErrorAsync(() =>
+      service.addSite(access, created.id, {
+        name: 'Toà B',
+        workRequirements: null,
+        notes: null,
+        latitude: null,
+        longitude: null,
+        radiusMeters: 200,
+        items: [anItemCommand({ unitPrice: -1 })],
+      }),
+    );
+    expect(error.code).toBe('validation.failed');
+    expect(error.details).toEqual({
+      fields: [{ field: 'items[0].unit_price', message: expect.any(String) }],
+    });
+  });
+  it('answers 404 auth.out_of_scope for another tenant’s contract', async () => {
+    const { service, access, customer, otherTenant } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const otherTenantAccess = anAccessContext(
+      anEmployee({ id: 92, tenantId: otherTenant.id, role: Role.Director }),
+    );
+    const error = await captureDomainErrorAsync(() =>
+      service.addSite(otherTenantAccess, created.id, {
+        name: 'Toà B',
+        workRequirements: null,
+        notes: null,
+        latitude: null,
+        longitude: null,
+        radiusMeters: 200,
+        items: [],
+      }),
+    );
+    expect(error.code).toBe('auth.out_of_scope');
+  });
+});
+describe('ContractService.updateSite / deleteSite', () => {
+  it('updates a site’s fields and still reports its existing items', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const siteId = created.sites[0].id;
+    const updated = await service.updateSite(access, siteId, {
+      name: 'Toà A — đổi tên',
+      workRequirements: 'Yêu cầu mới',
+      notes: null,
+      latitude: 21.0,
+      longitude: 105.8,
+      radiusMeters: 300,
+    });
+    expect(updated).toMatchObject({
+      name: 'Toà A — đổi tên',
+      work_requirements: 'Yêu cầu mới',
+      radius_meters: 300,
+    });
+    expect(updated.items).toHaveLength(2);
+  });
+  it('answers 404 auth.out_of_scope for a site of another tenant', async () => {
+    const { service, access, customer, otherTenant } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const otherTenantAccess = anAccessContext(
+      anEmployee({ id: 93, tenantId: otherTenant.id, role: Role.Director }),
+    );
+    const error = await captureDomainErrorAsync(() =>
+      service.updateSite(otherTenantAccess, created.sites[0].id, {
+        name: 'x',
+        workRequirements: null,
+        notes: null,
+        latitude: null,
+        longitude: null,
+        radiusMeters: 200,
+      }),
+    );
+    expect(error.code).toBe('auth.out_of_scope');
+  });
+  it('deletes a site, cascading to its items and shifts', async () => {
+    const { service, access, customer, dataSource } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const siteId = created.sites[0].id;
+    const itemId = created.sites[0].items[0].id;
+    await service.deleteSite(access, siteId);
+    const error = await captureDomainErrorAsync(() =>
+      service.updateSite(access, siteId, {
+        name: 'x',
+        workRequirements: null,
+        notes: null,
+        latitude: null,
+        longitude: null,
+        radiusMeters: 200,
+      }),
+    );
+    expect(error.code).toBe('auth.out_of_scope');
+    const remainingShifts = (await dataSource.query('SELECT id FROM shifts WHERE contract_item_id = $1', [
+      itemId,
+    ])) as unknown[];
+    expect(remainingShifts).toHaveLength(0);
+  });
+});
+describe('ContractService.addItem / updateItem / deleteItem', () => {
+  it('adds an item to an existing site', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const siteId = created.sites[0].id;
+    const item = await service.addItem(access, siteId, anItemCommand({ name: 'Hút bụi' }));
+    expect(item).toMatchObject({ name: 'Hút bụi', unit_price: 500000 });
+  });
+  it('rejects an invalid new item with the field named', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const siteId = created.sites[0].id;
+    const error = await captureDomainErrorAsync(() =>
+      service.addItem(access, siteId, anItemCommand({ unitPrice: -1 })),
+    );
+    expect(error.code).toBe('validation.failed');
+    expect(error.details).toEqual({ fields: [{ field: 'unit_price', message: expect.any(String) }] });
+  });
+  it('answers 404 auth.out_of_scope for a site of another tenant', async () => {
+    const { service, access, customer, otherTenant } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const otherTenantAccess = anAccessContext(
+      anEmployee({ id: 94, tenantId: otherTenant.id, role: Role.Director }),
+    );
+    const error = await captureDomainErrorAsync(() =>
+      service.addItem(otherTenantAccess, created.sites[0].id, anItemCommand()),
+    );
+    expect(error.code).toBe('auth.out_of_scope');
+  });
+  it('updates an item’s frequency and price', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const itemId = created.sites[0].items[0].id;
+    const updated = await service.updateItem(
+      access,
+      itemId,
+      anItemCommand({ name: 'Vệ sinh sảnh — mới', unitPrice: 600000 }),
+    );
+    expect(updated).toMatchObject({ name: 'Vệ sinh sảnh — mới', unit_price: 600000 });
+  });
+  it('rejects an invalid item update with the field named', async () => {
+    const { service, access, customer } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const itemId = created.sites[0].items[0].id;
+    const error = await captureDomainErrorAsync(() =>
+      service.updateItem(access, itemId, anItemCommand({ frequencyCount: 0 })),
+    );
+    expect(error.code).toBe('validation.failed');
+    expect(error.details).toEqual({ fields: [{ field: 'frequency_count', message: expect.any(String) }] });
+  });
+  it('answers 404 auth.out_of_scope for an item of another tenant', async () => {
+    const { service, access, customer, otherTenant } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const otherTenantAccess = anAccessContext(
+      anEmployee({ id: 95, tenantId: otherTenant.id, role: Role.Director }),
+    );
+    const error = await captureDomainErrorAsync(() =>
+      service.updateItem(otherTenantAccess, created.sites[0].items[0].id, anItemCommand()),
+    );
+    expect(error.code).toBe('auth.out_of_scope');
+  });
+  it('deletes an item, cascading to its shifts', async () => {
+    const { service, access, customer, dataSource } = await world();
+    const created = await service.create(access, validCommand(customer.id));
+    const itemId = created.sites[0].items[0].id;
+    await service.deleteItem(access, itemId);
+    const error = await captureDomainErrorAsync(() => service.updateItem(access, itemId, anItemCommand()));
+    expect(error.code).toBe('auth.out_of_scope');
+    const remainingShifts = (await dataSource.query('SELECT id FROM shifts WHERE contract_item_id = $1', [
+      itemId,
+    ])) as unknown[];
+    expect(remainingShifts).toHaveLength(0);
   });
 });

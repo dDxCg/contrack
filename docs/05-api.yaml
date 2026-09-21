@@ -411,6 +411,10 @@ paths:
       tags: [Contracts]
       operationId: updateSite
       summary: Update a site
+      description: >
+        Updates only the site's own fields (name, work_requirements, notes, latitude, longitude,
+        radius_meters). Any `items` in the body are ignored — items are managed through their own
+        endpoints below, never replaced wholesale here (`03-architecture.md` §9 D28).
       x-roles: [director]
       x-scope: all
       requestBody:

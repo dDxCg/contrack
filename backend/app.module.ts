@@ -13,6 +13,8 @@ import { DashboardController } from './controllers/dashboard/dashboard.controlle
 import { EmployeesController } from './controllers/employees/employees.controller';
 import { FieldController } from './controllers/field/field.controller';
 import { HealthController } from './controllers/health.controller';
+import { ItemsController } from './controllers/contracts/items.controller';
+import { SitesController } from './controllers/contracts/sites.controller';
 import { PlatformAuthController } from './controllers/platform/platform-auth.controller';
 import { PlatformDashboardController } from './controllers/platform/platform-dashboard.controller';
 import { TenantsController } from './controllers/platform/tenants.controller';
@@ -118,11 +120,13 @@ import { TokenService } from './services/auth/token.service';
     EmployeesController,
     FieldController,
     HealthController,
+    ItemsController,
     PlatformAuthController,
     PlatformDashboardController,
     TenantsController,
     ReconciliationController,
     ShiftsController,
+    SitesController,
     StatementsController,
     TeamsController,
   ],

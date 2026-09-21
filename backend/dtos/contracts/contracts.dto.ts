@@ -15,6 +15,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { FrequencyUnit } from '../../models/contracts/contract-item.entity';
+import { ContractStatus } from '../../models/contracts/contract.entity';
 export class ContractItemBodyDto {
   @IsString()
   @IsNotEmpty()
@@ -41,7 +42,7 @@ export class ContractItemBodyDto {
   @Min(0)
   unit_price!: number;
 }
-export class ContractSiteBodyDto {
+export class ContractSiteFieldsBodyDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
@@ -65,12 +66,22 @@ export class ContractSiteBodyDto {
   @IsInt()
   @Min(1)
   radius_meters?: number;
+}
+export class ContractSiteBodyDto extends ContractSiteFieldsBodyDto {
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => ContractItemBodyDto)
   items!: ContractItemBodyDto[];
 }
+export class ContractSiteAddBodyDto extends ContractSiteFieldsBodyDto {
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ContractItemBodyDto)
+  items?: ContractItemBodyDto[];
+}
+export class ContractSiteUpdateBodyDto extends ContractSiteFieldsBodyDto {}
 export class ContractBodyDto {
   @IsInt()
   @Min(1)
@@ -86,4 +97,12 @@ export class ContractBodyDto {
   @ValidateNested({ each: true })
   @Type(() => ContractSiteBodyDto)
   sites!: ContractSiteBodyDto[];
+}
+export class ContractUpdateBodyDto {
+  @IsOptional()
+  @IsDateString()
+  expires_at?: string;
+  @IsOptional()
+  @IsEnum(ContractStatus)
+  status?: ContractStatus;
 }
