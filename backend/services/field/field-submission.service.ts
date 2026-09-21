@@ -6,6 +6,7 @@ import {
   FieldTokenAlreadyUsedException,
   FieldTokenInvalidException,
   ShiftEvidenceIncompleteException,
+  UploadKeyUnknownException,
 } from '../../models/domain-errors';
 import { PhotoType, ShiftPhoto } from '../../models/shifts/shift-photo.entity';
 import {
@@ -17,6 +18,7 @@ import { CLOCK, IClock } from '../access-control/clock';
 import { toShiftView } from '../../dtos/shifts/shifts.mapper';
 import { haversineDistanceMeters } from '../../utils/geo';
 import { FieldTokenService } from './field-token.service';
+import { isKeyIssuedForShift } from './upload-key';
 export interface FieldSubmissionCommand {
   photoKeys: {
     before: string[];
@@ -48,6 +50,10 @@ export class FieldSubmissionService {
     const shift = await this.shiftRepository.findByIdUnscoped(claims.shift_id);
     if (shift === null) {
       throw new FieldTokenInvalidException();
+    }
+    const unknown = unknownPhotoKeys(command, shift.tenantId, shift.id);
+    if (unknown.length > 0) {
+      throw new UploadKeyUnknownException(unknown);
     }
     const geofence = await this.shiftRepository.siteGeofenceFor(shift.contractItemId);
     shift.complete(
@@ -92,6 +98,11 @@ function isWithinGeofence(
   }
   const distance = haversineDistanceMeters(latitude, longitude, geofence.latitude, geofence.longitude);
   return distance <= geofence.radiusMeters;
+}
+function unknownPhotoKeys(command: FieldSubmissionCommand, tenantId: number, shiftId: number): string[] {
+  return [...command.photoKeys.before, ...command.photoKeys.after, command.receiptPhotoKey].filter(
+    (key) => !isKeyIssuedForShift(key, tenantId, shiftId),
+  );
 }
 function missingEvidence(command: FieldSubmissionCommand): string[] {
   const missing: string[] = [];

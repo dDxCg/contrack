@@ -22,6 +22,17 @@ import { StatementsController } from './controllers/statements/statements.contro
 import { TeamsController } from './controllers/teams/teams.controller';
 import { CHANNEL_CLIENT } from './data/channel-client/channel-client';
 import { NullChannelClient } from './data/channel-client/null-channel-client';
+import {
+  OBJECT_STORAGE_CLIENT,
+  ObjectStorageClient,
+} from './data/object-storage-client/object-storage-client';
+import { NullObjectStorageClient } from './data/object-storage-client/null-object-storage-client';
+import { S3ObjectStorageClient } from './data/object-storage-client/s3-object-storage-client';
+import {
+  STORAGE_CONFIG,
+  StorageConfig,
+  loadStorageConfig,
+} from './data/object-storage-client/storage.config';
 import { DATA_SOURCE, createDataSource } from './data/db-context/data-source';
 import { RequestIdMiddleware } from './middleware/request-id.middleware';
 import { securityHeaders } from './middleware/security-headers';
@@ -84,6 +95,8 @@ import { DisputeService } from './services/shifts/dispute.service';
 import { EmployeeService } from './services/employees/employee.service';
 import { FieldLinkService } from './services/field/field-link.service';
 import { FieldSubmissionService } from './services/field/field-submission.service';
+import { FieldUploadService } from './services/field/field-upload.service';
+import { RandomUploadKeyFactory, UPLOAD_KEY_FACTORY } from './services/field/upload-key-factory';
 import { FieldTokenService } from './services/field/field-token.service';
 import { BcryptPasswordHasher, PASSWORD_HASHER } from './services/auth/password-hasher.service';
 import { ReconciliationService } from './services/statements/reconciliation.service';
@@ -129,6 +142,14 @@ import { TokenService } from './services/auth/token.service';
     { provide: APP_GUARD, useClass: AccessControlGuard },
     { provide: APP_FILTER, useClass: DomainExceptionFilter },
     { provide: CHANNEL_CLIENT, useClass: NullChannelClient },
+    { provide: STORAGE_CONFIG, useFactory: (): StorageConfig | null => loadStorageConfig(process.env) },
+    {
+      provide: OBJECT_STORAGE_CLIENT,
+      useFactory: (config: StorageConfig | null): ObjectStorageClient =>
+        config === null ? new NullObjectStorageClient() : new S3ObjectStorageClient(config),
+      inject: [STORAGE_CONFIG],
+    },
+    { provide: UPLOAD_KEY_FACTORY, useClass: RandomUploadKeyFactory },
     { provide: REDIS_CLIENT, useFactory: (): Redis | null => createRedisClient(process.env) },
     {
       provide: DISTRIBUTED_LOCK,
@@ -182,6 +203,7 @@ import { TokenService } from './services/auth/token.service';
     DisputeService,
     FieldLinkService,
     FieldSubmissionService,
+    FieldUploadService,
     StatementService,
     ReconciliationService,
     ContractCostService,

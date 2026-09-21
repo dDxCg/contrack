@@ -7,6 +7,7 @@ const HttpStatus = {
   NOT_FOUND: 404,
   CONFLICT: 409,
   BAD_GATEWAY: 502,
+  SERVICE_UNAVAILABLE: 503,
 } as const;
 export interface ErrorBody {
   error: {
@@ -194,6 +195,24 @@ export class AlertChannelUnavailableException extends DomainException {
   readonly code = 'alert.channel_unavailable';
   constructor() {
     super(HttpStatus.BAD_GATEWAY, 'Không gửi được qua Zalo/SMS, đã chuyển sang nhắc trong ứng dụng');
+  }
+}
+export class StorageUnavailableException extends DomainException {
+  readonly code = 'storage.unavailable';
+  constructor() {
+    super(HttpStatus.SERVICE_UNAVAILABLE, 'Kho ảnh chưa được cấu hình');
+  }
+}
+export class UploadUnsupportedTypeException extends DomainException {
+  readonly code = 'upload.unsupported_type';
+  constructor(contentType: string) {
+    super(HttpStatus.BAD_REQUEST, 'Định dạng ảnh không được hỗ trợ', { content_type: contentType });
+  }
+}
+export class UploadKeyUnknownException extends DomainException {
+  readonly code = 'upload.key_unknown';
+  constructor(keys: readonly string[]) {
+    super(HttpStatus.BAD_REQUEST, 'Ảnh tải lên không thuộc ca làm việc này', { keys: [...keys] });
   }
 }
 export class ValidationFailedException extends DomainException {

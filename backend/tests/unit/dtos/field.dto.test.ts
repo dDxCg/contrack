@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { FieldSubmissionBodyDto } from '../../../dtos/field/field.dto';
+import { FieldSubmissionBodyDto, FieldUploadBodyDto } from '../../../dtos/field/field.dto';
 function aBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     photo_keys: { before: ['shifts/1/before-1.jpg'], after: ['shifts/1/after-1.jpg'] },
@@ -56,5 +56,24 @@ describe('FieldSubmissionBodyDto', () => {
   });
   it('still allows an empty receipt_photo_key — the service reports it as missing evidence, not a shape error', async () => {
     expect(await errorsFor(aBody({ receipt_photo_key: '' }))).toEqual([]);
+  });
+});
+describe('FieldUploadBodyDto', () => {
+  async function uploadErrorsFor(body: Record<string, unknown>): Promise<string[]> {
+    const instance = plainToInstance(FieldUploadBodyDto, body);
+    const errors = await validate(instance);
+    return errors.map((error) => error.property);
+  }
+  it('accepts an image content type', async () => {
+    expect(await uploadErrorsFor({ content_type: 'image/jpeg' })).toEqual([]);
+  });
+  it('rejects a missing content type', async () => {
+    expect(await uploadErrorsFor({})).toContain('content_type');
+  });
+  it('rejects a content type that is not an image', async () => {
+    expect(await uploadErrorsFor({ content_type: 'application/pdf' })).toContain('content_type');
+  });
+  it('rejects a content type carrying extra characters', async () => {
+    expect(await uploadErrorsFor({ content_type: 'image/jpeg; rm -rf /' })).toContain('content_type');
   });
 });

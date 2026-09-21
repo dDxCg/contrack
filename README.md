@@ -622,6 +622,36 @@ sequenceDiagram
 Full architecture: [docs/03-architecture.md](docs/03-architecture.md).
 
 ---
+## Configuration
+
+Everything comes from the environment; `backend/.env.example` is the canonical list (`dotenv` reads
+`backend/.env` in development).
+
+```bash
+cd backend
+npm install
+cp .env.example .env     # then fill in JWT_SECRET at minimum
+npm run migration:run
+npm run dev
+```
+
+| Variable | Purpose | If unset |
+|---|---|---|
+| `JWT_SECRET` | Signs desk, platform and field tokens | **Required** — the app refuses to boot |
+| `JWT_*_TTL_SECONDS`, `BCRYPT_ROUNDS` | Token lifetimes and password-hash cost | Sensible defaults |
+| `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`/`DB_SSL`/`DB_POOL_MAX` | PostgreSQL connection | Local defaults — `localhost:5432/contrack` |
+| `REDIS_LOCK_URL` | Distributed lock and token/refresh revocation | In-process fallbacks in development; **required** in production |
+| `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Object storage for field photos (S3 API) | Field photo uploads answer `storage.unavailable` (503) — no bucket, no keys |
+| `S3_ENDPOINT`, `S3_REGION`, `S3_FORCE_PATH_STYLE`, `S3_UPLOAD_URL_TTL_SECONDS` | S3-compatible endpoints (MinIO, R2, B2) and signed-URL lifetime | AWS S3, `ap-southeast-1`, virtual-hosted style, 300 s |
+| `CORS_ORIGINS` | Comma-separated browser origins | CORS disabled |
+
+Storage is configured the same way Redis is: `data/object-storage-client/` reads the environment once
+at startup and picks its implementation there (a null client that fails loudly when nothing is set).
+Adding a bucket later is an environment change only, never a code change — rationale and limits in
+[docs/03-architecture.md §9 D22](docs/03-architecture.md#9-architecture-decisions)
+and [§11 R11](docs/03-architecture.md#11-risks-and-technical-debt).
+
+---
 ## Repository layout
 
 ```
