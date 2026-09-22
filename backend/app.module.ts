@@ -30,6 +30,7 @@ import {
 } from './data/object-storage-client/object-storage-client';
 import { NullObjectStorageClient } from './data/object-storage-client/null-object-storage-client';
 import { S3ObjectStorageClient } from './data/object-storage-client/s3-object-storage-client';
+import { ResilientObjectStorageClient } from './data/object-storage-client/resilient-object-storage-client';
 import { PDF_RENDERER } from './data/pdf-renderer/pdf-renderer';
 import { PdfKitStatementRenderer } from './data/pdf-renderer/pdfkit-statement-renderer';
 import {
@@ -38,6 +39,7 @@ import {
   loadStorageConfig,
 } from './data/object-storage-client/storage.config';
 import { DATA_SOURCE, createDataSource } from './data/db-context/data-source';
+import { DataSourceShutdownService } from './data/db-context/data-source-shutdown.service';
 import { RequestIdMiddleware } from './middleware/request-id.middleware';
 import { securityHeaders } from './middleware/security-headers';
 import { AlertRepository } from './repositories/alerts/alert.repository';
@@ -136,6 +138,7 @@ import { TokenService } from './services/auth/token.service';
   providers: [
     { provide: AUTH_CONFIG, useFactory: () => loadAuthConfig(process.env) },
     { provide: DATA_SOURCE, useFactory: () => createDataSource(process.env) },
+    DataSourceShutdownService,
     { provide: CLOCK, useClass: SystemClock },
     {
       provide: JwtService,
@@ -155,7 +158,14 @@ import { TokenService } from './services/auth/token.service';
     {
       provide: OBJECT_STORAGE_CLIENT,
       useFactory: (config: StorageConfig | null): ObjectStorageClient =>
-        config === null ? new NullObjectStorageClient() : new S3ObjectStorageClient(config),
+        config === null
+          ? new NullObjectStorageClient()
+          : new ResilientObjectStorageClient(new S3ObjectStorageClient(config), {
+              retries: 2,
+              baseDelayMs: 200,
+              failureThreshold: 5,
+              resetTimeoutMs: 30_000,
+            }),
       inject: [STORAGE_CONFIG],
     },
     { provide: UPLOAD_KEY_FACTORY, useClass: RandomUploadKeyFactory },
