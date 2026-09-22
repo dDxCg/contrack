@@ -9,25 +9,30 @@ import {
 import { AccessContext } from '../access-control/access-context';
 import { toDateString } from '../../utils/period';
 import { Money } from '../../utils/money';
+
 export interface UpsertCostCommand {
   category: CostCategory;
   period: Date;
   amount: number;
 }
+
 @Injectable()
 export class ContractCostService {
   constructor(
     @Inject(ContractCostRepository)
     private readonly contractCostRepository: IContractCostRepository,
   ) {}
+
   async list(access: AccessContext, contractId: number, period?: Date): Promise<ContractCostView[]> {
     const rows = await this.contractCostRepository.listByContract(
       access.tenantId,
       contractId,
       period === undefined ? undefined : toDateString(period),
     );
+
     return rows.map(toContractCostView);
   }
+
   async upsert(
     access: AccessContext,
     contractId: number,
@@ -40,6 +45,7 @@ export class ContractCostService {
     cost.period = command.period;
     cost.amount = Money.fromNumber(command.amount);
     cost.createdBy = access.employee.id;
+
     return toContractCostView(await this.contractCostRepository.upsert(cost));
   }
 }

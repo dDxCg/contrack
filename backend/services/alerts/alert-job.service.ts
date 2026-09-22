@@ -8,14 +8,18 @@ import { ITenantRepository, TenantRepository } from '../../repositories/tenants/
 import { CLOCK, IClock } from '../access-control/clock';
 import { fireAlert } from './alert-firer';
 import { addDaysUTC, toDateString, toDateStringInZone } from '../../utils/period';
+
 const EXPIRY_THRESHOLD_DAYS = 30;
+
 export interface AlertJobSummary {
   sent: number;
   skipped: number;
 }
+
 @Injectable()
 export class AlertJobService {
   private readonly logger = new Logger(AlertJobService.name);
+
   constructor(
     @Inject(ContractRepository)
     private readonly contractRepository: IContractRepository,
@@ -30,8 +34,10 @@ export class AlertJobService {
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}
+
   async runAll(): Promise<AlertJobSummary> {
     const total: AlertJobSummary = { sent: 0, skipped: 0 };
+
     for (const tenantId of await this.tenantRepository.activeIds()) {
       try {
         const summary = await this.run(tenantId);
@@ -44,8 +50,10 @@ export class AlertJobService {
         );
       }
     }
+
     return total;
   }
+
   async run(tenantId: number): Promise<AlertJobSummary> {
     const timezone = await this.tenantRepository.timezoneOf(tenantId);
     const today = toDateStringInZone(this.clock.now(), timezone);
@@ -56,15 +64,20 @@ export class AlertJobService {
       today,
       toDateString(addDaysUTC(todayStart, EXPIRY_THRESHOLD_DAYS)),
     );
+
     for (const contract of expiring) {
       await this.fire(tenantId, AlertKind.ContractExpiring, contract.id, summary);
     }
+
     const overdue = await this.shiftRepository.overdue(tenantId, today);
+
     for (const shift of overdue) {
       await this.fire(tenantId, AlertKind.ShiftOverdue, shift.id, summary);
     }
+
     return summary;
   }
+
   private async fire(
     tenantId: number,
     kind: AlertKind,
@@ -77,6 +90,7 @@ export class AlertJobService {
       kind,
       subjectId,
     );
+
     if (fired) {
       summary.sent += 1;
     } else {

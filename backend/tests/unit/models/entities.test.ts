@@ -37,6 +37,7 @@ describe('ENTITIES — one shared entity list for every data source', () => {
     for (const entity of ALL_ENTITY_CLASSES) {
       expect(ENTITIES).toContain(entity);
     }
+
     expect(new Set(ENTITIES).size).toBe(ENTITIES.length);
   });
   it('createDataSource registers the shared list, not its own subset', () => {
@@ -48,11 +49,13 @@ describe('ENTITIES — one shared entity list for every data source', () => {
     const productionDataSource = createDataSource({ DB_PORT: '5432' });
     const registered = (entity: new () => unknown): string | undefined =>
       dataSource.entityMetadatas.find((metadata) => metadata.target === entity)?.tableName;
+
     for (const entity of ENTITIES) {
       const tableName = registered(entity as new () => unknown);
       expect(tableName).toBeDefined();
       expect(productionDataSource.options?.entities).toContain(entity);
     }
+
     expect(dataSource.entityMetadatas).toHaveLength(ENTITIES.length);
   });
 });

@@ -4,7 +4,9 @@ import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.entity';
 import { CrossTenantLookup } from '../cross-tenant-lookup';
 import { Page, PageOf, TenantScopedRepository } from '../tenant-scoped.repository';
+
 const MAX_MANAGER_CHAIN = 100;
+
 export interface IEmployeeRepository {
   list(tenantId: number, page: Page): Promise<PageOf<Employee>>;
   findById(tenantId: number, id: number, tx?: EntityManager): Promise<Employee | null>;
@@ -16,10 +18,13 @@ export interface IEmployeeRepository {
   update(employee: Employee, tx?: EntityManager): Promise<Employee>;
   futureShiftIdsFor(tenantId: number, employeeId: number): Promise<number[]>;
 }
+
 @Injectable()
 export class EmployeeRepository extends TenantScopedRepository<Employee> implements IEmployeeRepository {
   protected override readonly entity: EntityTarget<Employee> = Employee;
+
   private readonly crossTenant: CrossTenantLookup;
+
   constructor(
     @Inject(DATA_SOURCE)
     dataSource: DataSource,
@@ -27,6 +32,7 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> impleme
     super(dataSource);
     this.crossTenant = new CrossTenantLookup(dataSource);
   }
+
   async list(tenantId: number, page: Page): Promise<PageOf<Employee>> {
     const rows = await this.selected(tenantId)
       .orderBy('e.id', 'ASC')
@@ -34,38 +40,50 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> impleme
       .offset(page.offset)
       .getRawMany<EmployeeRow>();
     const total = await this.scopedTo(tenantId, 'e').getCount();
+
     return { items: rows.map(hydrateEmployee), total };
   }
+
   async findById(tenantId: number, id: number, tx?: EntityManager): Promise<Employee | null> {
     const row = await this.selected(tenantId, tx).andWhere('e.id = :id', { id }).getRawOne<EmployeeRow>();
+
     return row === undefined || row === null ? null : hydrateEmployee(row);
   }
+
   async findByEmail(email: string): Promise<Employee | null> {
     const row = await this.withColumns(this.crossTenant.queryFor(Employee, 'e'))
       .andWhere('e.email = :email', { email })
       .getRawOne<EmployeeRow>();
+
     return row === undefined || row === null ? null : hydrateEmployee(row);
   }
+
   async existsEmail(email: string): Promise<boolean> {
     const count = await this.crossTenant
       .queryFor(Employee, 'e')
       .andWhere('e.email = :email', { email })
       .getCount();
+
     return count > 0;
   }
+
   async findByTeamIds(tenantId: number, teamIds: readonly number[]): Promise<Employee[]> {
     if (teamIds.length === 0) {
       return [];
     }
+
     const rows = await this.selected(tenantId)
       .andWhere('e.team_id IN (:...teamIds)', { teamIds: [...teamIds] })
       .orderBy('e.id', 'ASC')
       .getRawMany<EmployeeRow>();
+
     return rows.map(hydrateEmployee);
   }
+
   async managerChainOf(tenantId: number, employeeId: number): Promise<number[]> {
     const chain: number[] = [];
     let current: number | null = employeeId;
+
     while (current !== null && chain.length < MAX_MANAGER_CHAIN) {
       chain.push(current);
       const manager = await this.dataSource
@@ -73,16 +91,22 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> impleme
         .findOne({ where: { id: current, tenantId }, select: { managerId: true } });
       current = manager?.managerId ?? null;
     }
+
     return chain;
   }
+
   async create(employee: Employee, tx?: EntityManager): Promise<Employee> {
     await this.resolveLookups(employee, tx);
+
     return this.saveAndReload(employee, tx);
   }
+
   async update(employee: Employee, tx?: EntityManager): Promise<Employee> {
     await this.resolveLookups(employee, tx);
+
     return this.saveAndReload(employee, tx);
   }
+
   async futureShiftIdsFor(tenantId: number, employeeId: number): Promise<number[]> {
     const rows = await this.scopedIds('shifts', tenantId, 's')
       .andWhere('s.assignee_id = :employeeId', { employeeId })
@@ -92,11 +116,14 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> impleme
       .getRawMany<{
         id: number;
       }>();
+
     return rows.map((row) => row.id);
   }
+
   private selected(tenantId: number, tx?: EntityManager): SelectQueryBuilder<Employee> {
     return this.withColumns(this.scopedTo(tenantId, 'e', tx));
   }
+
   private withColumns(query: SelectQueryBuilder<Employee>): SelectQueryBuilder<Employee> {
     return query
       .innerJoin('roles', 'r', 'r.id = e.role_id')
@@ -117,19 +144,24 @@ export class EmployeeRepository extends TenantScopedRepository<Employee> impleme
         's.code AS status',
       ]);
   }
+
   private async resolveLookups(employee: Employee, tx?: EntityManager): Promise<void> {
     employee.roleId = await this.lookupId('roles', employee.role, tx);
     employee.statusId = await this.lookupId('employee_statuses', employee.status, tx);
   }
+
   private async saveAndReload(employee: Employee, tx?: EntityManager): Promise<Employee> {
     const saved = await this.mgr(tx).getRepository(Employee).save(employee);
     const reloaded = await this.findById(saved.tenantId, saved.id, tx);
+
     if (reloaded === null) {
       throw new Error(`employees row ${saved.id} disappeared right after it was written`);
     }
+
     return reloaded;
   }
 }
+
 interface EmployeeRow {
   id: number;
   tenant_id: number;
@@ -145,6 +177,7 @@ interface EmployeeRow {
   role: Role;
   status: EmployeeStatus;
 }
+
 function hydrateEmployee(row: EmployeeRow): Employee {
   const employee = new Employee();
   employee.id = row.id;
@@ -160,5 +193,6 @@ function hydrateEmployee(row: EmployeeRow): Employee {
   employee.createdAt = row.created_at;
   employee.role = row.role;
   employee.status = row.status;
+
   return employee;
 }

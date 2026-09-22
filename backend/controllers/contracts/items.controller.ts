@@ -6,9 +6,11 @@ import { Access, CurrentAccess } from '../../services/access-control/access.deco
 import { Operation, Resource } from '../../services/access-control/role-resolver';
 import { ContractService } from '../../services/contracts/contract.service';
 import { toItemCommand } from './contracts.controller';
+
 @Controller('items')
 export class ItemsController {
   constructor(private readonly contractService: ContractService) {}
+
   @Patch(':id')
   @Access(Resource.Contracts, Operation.Update)
   update(
@@ -21,6 +23,7 @@ export class ItemsController {
   ): Promise<ContractItemView> {
     return this.contractService.updateItem(access, id, toItemCommand(body));
   }
+
   @Delete(':id')
   @HttpCode(204)
   @Access(Resource.Contracts, Operation.Delete)

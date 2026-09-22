@@ -1,4 +1,5 @@
 import { loadAuthConfig } from '../../../../services/access-control/auth.config';
+
 describe('loadAuthConfig', () => {
   it('refuses to start without a signing secret', () => {
     expect(() => loadAuthConfig({})).toThrow(/JWT_SECRET/);

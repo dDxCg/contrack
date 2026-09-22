@@ -29,28 +29,36 @@ describe('InMemoryRevocationStore', () => {
 describe('RedisRevocationStore', () => {
   function fakeRedis() {
     const store = new Map<string, { value: string; expiresAt: number }>();
+
     return {
       store,
       async set(key: string, value: string, mode: string, ttlSeconds: number) {
         if (mode !== 'EX') {
           throw new Error(`unexpected redis invocation: ${mode}`);
         }
+
         store.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
+
         return 'OK';
       },
       async exists(key: string) {
         const entry = store.get(key);
+
         if (entry === undefined) {
           return 0;
         }
+
         if (entry.expiresAt <= Date.now()) {
           store.delete(key);
+
           return 0;
         }
+
         return 1;
       },
     };
   }
+
   it('sets a key with a TTL derived from the credential expiry', async () => {
     const clock = new FakeClock();
     const store = new RedisRevocationStore(fakeRedis() as never, clock);

@@ -1,6 +1,7 @@
 import { FrequencyUnit } from '../../../models/contracts/contract-item.entity';
 import { aContractItem } from '../../support/builders';
 import { Money } from '../../../utils/money';
+
 describe('ContractItem', () => {
   describe('field changes', () => {
     it('changes name, frequency and unit price', () => {

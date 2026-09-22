@@ -28,9 +28,11 @@ import {
   ContractSiteCommand,
   ContractUpdateCommand,
 } from '../../services/contracts/contract.service';
+
 @Controller('contracts')
 export class ContractsController {
   constructor(private readonly contractService: ContractService) {}
+
   @Get()
   @Access(Resource.Contracts, Operation.Read)
   list(
@@ -41,6 +43,7 @@ export class ContractsController {
   ): Promise<ContractPage> {
     return this.contractService.list(access, { limit: query.limit, offset: query.offset });
   }
+
   @Post()
   @HttpCode(201)
   @Access(Resource.Contracts, Operation.Create)
@@ -52,6 +55,7 @@ export class ContractsController {
   ): Promise<ContractView> {
     return this.contractService.create(access, toCommand(body));
   }
+
   @Get(':id')
   @Access(Resource.Contracts, Operation.Read)
   get(
@@ -62,6 +66,7 @@ export class ContractsController {
   ): Promise<ContractView> {
     return this.contractService.get(access, id);
   }
+
   @Patch(':id')
   @Access(Resource.Contracts, Operation.Update)
   update(
@@ -74,6 +79,7 @@ export class ContractsController {
   ): Promise<ContractView> {
     return this.contractService.update(access, id, toUpdateCommand(body));
   }
+
   @Delete(':id')
   @HttpCode(204)
   @Access(Resource.Contracts, Operation.Delete)
@@ -85,6 +91,7 @@ export class ContractsController {
   ): Promise<void> {
     return this.contractService.delete(access, id);
   }
+
   @Post(':id/sites')
   @HttpCode(201)
   @Access(Resource.Contracts, Operation.Create)
@@ -99,7 +106,9 @@ export class ContractsController {
     return this.contractService.addSite(access, id, toSiteCommand(body));
   }
 }
+
 const DEFAULT_GEOFENCE_RADIUS_METERS = 200;
+
 export function toItemCommand(item: ContractItemBodyDto): ContractItemCommand {
   return {
     name: item.name,
@@ -111,6 +120,7 @@ export function toItemCommand(item: ContractItemBodyDto): ContractItemCommand {
     unitPrice: item.unit_price,
   };
 }
+
 function toSiteCommand(body: ContractSiteAddBodyDto): ContractSiteCommand {
   return {
     name: body.name,
@@ -122,16 +132,21 @@ function toSiteCommand(body: ContractSiteAddBodyDto): ContractSiteCommand {
     items: (body.items ?? []).map(toItemCommand),
   };
 }
+
 function toUpdateCommand(body: ContractUpdateBodyDto): ContractUpdateCommand {
   const command: ContractUpdateCommand = {};
+
   if (body.expires_at !== undefined) {
     command.expiresAt = new Date(body.expires_at);
   }
+
   if (body.status !== undefined) {
     command.status = body.status;
   }
+
   return command;
 }
+
 function toCommand(body: ContractBodyDto): ContractCreateCommand {
   return {
     customerId: body.customer_id,

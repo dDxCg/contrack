@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { Tenant, TenantStatus } from '../../models/tenants/tenant.entity';
+
 export async function seedTenant(
   dataSource: DataSource,
   overrides: {
@@ -30,8 +31,10 @@ export async function seedTenant(
   tenant.timezone = timezone;
   tenant.createdAt = row.created_at;
   tenant.status = status;
+
   return tenant;
 }
+
 export async function seedContractItemChain(
   dataSource: DataSource,
   tenantId: number,
@@ -83,8 +86,10 @@ export async function seedContractItemChain(
   )) as {
     id: number;
   }[];
+
   return { contractId: contract.id, siteId: site.id, itemId: item.id };
 }
+
 export async function seedShift(
   dataSource: DataSource,
   params: {
@@ -122,5 +127,6 @@ export async function seedShift(
   )) as {
     id: number;
   }[];
+
   return row.id;
 }

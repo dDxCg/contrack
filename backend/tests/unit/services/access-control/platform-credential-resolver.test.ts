@@ -5,6 +5,7 @@ import { AccessRequirement } from '../../../../services/access-control/access.de
 import { PlatformCredentialResolver } from '../../../../services/access-control/platform-credential-resolver';
 import { Operation, Resource } from '../../../../services/access-control/role-resolver';
 import { TokenClaims } from '../../../../services/auth/token.service';
+
 async function world() {
   const dataSource = await createTestDataSource();
   const [admin] =
@@ -12,16 +13,19 @@ async function world() {
      RETURNING id`)) as {
       id: number;
     }[];
+
   return {
     resolver: new PlatformCredentialResolver(new PlatformAdminRepository(dataSource)),
     adminId: admin.id,
   };
 }
+
 function claimsFor(sub: number): TokenClaims & {
   sub: number;
 } {
   return { typ: 'platform', jti: 't', iat: 0, exp: Number.MAX_SAFE_INTEGER, sub };
 }
+
 describe('PlatformCredentialResolver', () => {
   it('loads the platform admin for a platform resource requirement', async () => {
     const { resolver, adminId } = await world();

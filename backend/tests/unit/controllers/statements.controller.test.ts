@@ -2,6 +2,7 @@ import { anAccessContext, anEmployee } from '../../support/builders';
 import { StatementsController } from '../../../controllers/statements/statements.controller';
 import { StatementService } from '../../../services/statements/statement.service';
 import { StatementStatus } from '../../../models/statements/statement.entity';
+
 describe('StatementsController', () => {
   const access = anAccessContext(anEmployee());
   it('list splits the query into a filter and a page window', async () => {
@@ -31,10 +32,13 @@ describe('StatementsController', () => {
     await controller.get(access, 9);
     expect(get).toHaveBeenCalledWith(access, 9);
   });
-  it('export unwraps the jobId into a job_id envelope', async () => {
-    const exportFn = jest.fn().mockResolvedValue({ jobId: 'job-9' });
+  it('export unwraps the jobId and the real pdfUrl into a snake_case envelope', async () => {
+    const exportFn = jest.fn().mockResolvedValue({ jobId: 'job-9', pdfUrl: 'https://storage.test/9.pdf' });
     const controller = new StatementsController({ export: exportFn } as unknown as StatementService);
-    await expect(controller.export(access, 9)).resolves.toEqual({ job_id: 'job-9' });
+    await expect(controller.export(access, 9)).resolves.toEqual({
+      job_id: 'job-9',
+      pdf_url: 'https://storage.test/9.pdf',
+    });
     expect(exportFn).toHaveBeenCalledWith(access, 9);
   });
   it('send forwards the id', async () => {

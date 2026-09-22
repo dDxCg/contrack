@@ -45,10 +45,13 @@ export class HealthController {
         checks: { database: 'down', redis: await this.checkRedis() },
       });
     }
+
     const redis = await this.checkRedis();
+
     if (redis === 'down') {
       throw new ServiceUnavailableException({ status: 'error', checks: { database: 'ok', redis } });
     }
+
     return { status: 'ok', checks: { database: 'ok', redis } };
   }
 
@@ -56,8 +59,10 @@ export class HealthController {
     if (this.redis === null) {
       return 'in-memory';
     }
+
     try {
       await this.redis.ping();
+
       return 'ok';
     } catch {
       return 'down';

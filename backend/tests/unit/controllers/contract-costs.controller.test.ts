@@ -2,6 +2,7 @@ import { anAccessContext, anEmployee } from '../../support/builders';
 import { ContractCostsController } from '../../../controllers/contract-costs/contract-costs.controller';
 import { ContractCostService } from '../../../services/contract-costs/contract-cost.service';
 import { ContractProfitabilityService } from '../../../services/contract-costs/contract-profitability.service';
+
 describe('ContractCostsController', () => {
   const access = anAccessContext(anEmployee());
   it('listCosts parses the optional period query and wraps items', async () => {

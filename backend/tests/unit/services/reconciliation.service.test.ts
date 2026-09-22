@@ -4,6 +4,7 @@ import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed
 import { Role } from '../../../models/employees/employee.entity';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { ReconciliationService } from '../../../services/statements/reconciliation.service';
+
 async function world() {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
@@ -11,6 +12,7 @@ async function world() {
   const chainA = await seedContractItemChain(dataSource, tenant.id);
   const chainB = await seedContractItemChain(dataSource, tenant.id);
   const director = anEmployee({ id: 12, tenantId: tenant.id, role: Role.Director });
+
   return {
     dataSource,
     shifts,
@@ -21,6 +23,7 @@ async function world() {
     service: new ReconciliationService(shifts),
   };
 }
+
 describe('ReconciliationService.get — FR13', () => {
   it('reports due vs. evidenced shifts per contract, with the variance', async () => {
     const { service, access, chainA, chainB, tenant, dataSource } = await world();

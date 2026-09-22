@@ -1,6 +1,7 @@
 import { TenantsController } from '../../../controllers/platform/tenants.controller';
 import { TenantService } from '../../../services/platform/tenant.service';
 import { TenantStatus } from '../../../models/tenants/tenant.entity';
+
 describe('TenantsController', () => {
   it('list forwards status, limit and offset from the query', async () => {
     const list = jest.fn().mockResolvedValue({ items: [], total: 0, limit: 25, offset: 0 });

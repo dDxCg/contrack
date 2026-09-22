@@ -10,6 +10,7 @@ import { InMemoryRevocationStore } from '../../../services/auth/revocation-store
 import { FieldLinkService } from '../../../services/field/field-link.service';
 import { FieldTokenService } from '../../../services/field/field-token.service';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
   accessTtlSeconds: 1800,
@@ -17,6 +18,7 @@ const config: AuthConfig = {
   fieldTtlSeconds: 86400,
   bcryptRounds: 4,
 };
+
 async function world() {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
@@ -35,6 +37,7 @@ async function world() {
     scheduledDate: '2024-10-21',
   });
   const director = anEmployee({ id: 12, tenantId: tenant.id, role: Role.Director });
+
   return {
     shiftId,
     tenant,
@@ -44,6 +47,7 @@ async function world() {
     service: new FieldLinkService(shifts, fieldTokenService, clock),
   };
 }
+
 describe('FieldLinkService.issue — D3', () => {
   it('issues a field token naming this shift, expiring after the configured lifetime', async () => {
     const { service, access, shiftId, clock, fieldTokenService } = await world();

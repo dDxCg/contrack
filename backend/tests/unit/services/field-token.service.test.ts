@@ -4,6 +4,7 @@ import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { AuthConfig } from '../../../services/access-control/auth.config';
 import { InMemoryRevocationStore } from '../../../services/auth/revocation-store';
 import { FieldTokenService } from '../../../services/field/field-token.service';
+
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
   accessTtlSeconds: 1800,

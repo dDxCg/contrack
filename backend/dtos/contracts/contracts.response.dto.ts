@@ -1,6 +1,7 @@
 import { ContractStatus } from '../../models/contracts/contract.entity';
 import { FrequencyUnit } from '../../models/contracts/contract-item.entity';
 import { PageView } from '../page.dto';
+
 export interface ContractItemView {
   id: number;
   name: string;
@@ -11,6 +12,7 @@ export interface ContractItemView {
   day_of_month: number | null;
   unit_price: number;
 }
+
 export interface ContractSiteView {
   id: number;
   name: string;
@@ -21,6 +23,7 @@ export interface ContractSiteView {
   radius_meters: number;
   items: ContractItemView[];
 }
+
 export interface ContractView {
   id: number;
   customer_id: number;
@@ -29,4 +32,5 @@ export interface ContractView {
   status: ContractStatus;
   sites: ContractSiteView[];
 }
+
 export type ContractPage = PageView<ContractView>;

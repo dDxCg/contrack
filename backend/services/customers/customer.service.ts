@@ -7,6 +7,7 @@ import { Customer, CustomerSegment } from '../../models/customers/customer.entit
 import { CustomerRepository, ICustomerRepository } from '../../repositories/customers/customer.repository';
 import { Page } from '../../repositories/tenant-scoped.repository';
 import { AccessContext } from '../access-control/access-context';
+
 export interface CustomerCommand {
   name: string;
   companyName?: string | null;
@@ -14,19 +15,24 @@ export interface CustomerCommand {
   address?: string | null;
   segment?: CustomerSegment;
 }
+
 @Injectable()
 export class CustomerService {
   constructor(
     @Inject(CustomerRepository)
     private readonly customerRepository: ICustomerRepository,
   ) {}
+
   async list(access: AccessContext, page: Page): Promise<CustomerPage> {
     const { items, total } = await this.customerRepository.list(access.tenantId, page);
+
     return pageOf(items.map(toCustomerView), total, page);
   }
+
   async get(access: AccessContext, id: number): Promise<CustomerView> {
     return toCustomerView(await this.requireCustomer(access, id));
   }
+
   async create(access: AccessContext, command: CustomerCommand): Promise<CustomerView> {
     const customer = new Customer();
     customer.tenantId = access.tenantId;
@@ -35,29 +41,37 @@ export class CustomerService {
     customer.setContact(command.contact ?? null);
     customer.setAddress(command.address ?? null);
     customer.setSegment(command.segment ?? CustomerSegment.Regular);
+
     return toCustomerView(await this.customerRepository.create(customer));
   }
+
   async update(access: AccessContext, id: number, command: CustomerCommand): Promise<CustomerView> {
     const customer = await this.requireCustomer(access, id);
     customer.setName(command.name);
     customer.setCompanyName(command.companyName ?? null);
     customer.setContact(command.contact ?? null);
     customer.setAddress(command.address ?? null);
+
     if (command.segment !== undefined) {
       customer.setSegment(command.segment);
     }
+
     return toCustomerView(await this.customerRepository.update(customer));
   }
+
   async delete(access: AccessContext, id: number): Promise<void> {
     const customer = await this.requireCustomer(access, id);
     customer.delete(await this.customerRepository.activeContractIds(access.tenantId, id));
     await this.customerRepository.delete(access.tenantId, id);
   }
+
   private async requireCustomer(access: AccessContext, id: number): Promise<Customer> {
     const customer = await this.customerRepository.findById(access.tenantId, id);
+
     if (customer === null) {
       throw new AuthOutOfScopeException();
     }
+
     return customer;
   }
 }

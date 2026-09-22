@@ -4,19 +4,24 @@ import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { TenantStatus } from '../../../models/tenants/tenant.entity';
 import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
 import { PlatformDashboardService } from '../../../services/platform/platform-dashboard.service';
+
 const NOW = new Date('2024-10-14T10:00:00.000Z');
+
 async function world() {
   const dataSource = await createTestDataSource();
   const tenants = new TenantRepository(dataSource);
   const service = new PlatformDashboardService(tenants, new FakeClock(NOW));
+
   return { service, tenants, dataSource };
 }
+
 async function seedTenantAt(dataSource: DataSource, name: string, createdAt: Date): Promise<void> {
   await dataSource.query('INSERT INTO tenants (name, status_id, created_at) VALUES ($1, 1, $2)', [
     name,
     createdAt,
   ]);
 }
+
 describe('PlatformDashboardService.get — FR21', () => {
   it('counts tenants by status and lists recent ones, reading only from tenants', async () => {
     const { service, tenants } = await world();

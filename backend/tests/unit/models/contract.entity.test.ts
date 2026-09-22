@@ -1,5 +1,6 @@
 import { aContract } from '../../support/builders';
 import { ContractStatus } from '../../../models/contracts/contract.entity';
+
 describe('Contract', () => {
   describe('field changes', () => {
     it('changes the term and status', () => {

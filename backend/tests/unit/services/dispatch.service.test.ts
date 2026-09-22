@@ -7,6 +7,7 @@ import { RowScope } from '../../../services/access-control/row-scope';
 import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { DispatchService } from '../../../services/shifts/dispatch.service';
+
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Lê Thị Mai');
@@ -18,8 +19,10 @@ function draftEmployee(overrides: Partial<Employee>): Employee {
   employee.status = EmployeeStatus.Active;
   employee.setPasswordHash('x');
   Object.assign(employee, overrides);
+
   return employee;
 }
+
 async function world() {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
@@ -54,6 +57,7 @@ async function world() {
     scheduledDate: '2024-10-21',
     teamId: teamA.id,
   });
+
   return {
     dataSource,
     shifts,
@@ -70,6 +74,7 @@ async function world() {
     service: new DispatchService(shifts, employees),
   };
 }
+
 describe('DispatchService.reassign — FR15', () => {
   it('reassigns to another member of the team lead’s own team', async () => {
     const { service, access, memberOfTeamA, shiftId, shifts, tenant } = await world();

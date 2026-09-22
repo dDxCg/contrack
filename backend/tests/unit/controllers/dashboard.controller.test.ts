@@ -1,6 +1,7 @@
 import { anAccessContext, anEmployee } from '../../support/builders';
 import { DashboardController } from '../../../controllers/dashboard/dashboard.controller';
 import { DashboardService } from '../../../services/dashboard/dashboard.service';
+
 describe('DashboardController', () => {
   it('forwards the access context and query straight through', () => {
     const access = anAccessContext(anEmployee());

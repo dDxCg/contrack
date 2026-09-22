@@ -6,12 +6,15 @@ import {
   Public,
 } from '../../../../services/access-control/access.decorator';
 import { Operation, Resource } from '../../../../services/access-control/role-resolver';
+
 class GuardedRoutes {
   @Access(Resource.Shifts, Operation.Update)
   patchShift(): void {}
+
   @Public()
   login(): void {}
 }
+
 describe('access decorators', () => {
   it('Access stamps the resource × operation requirement the guard will enforce', () => {
     expect(Reflect.getMetadata(ACCESS_METADATA, GuardedRoutes.prototype.patchShift)).toEqual({

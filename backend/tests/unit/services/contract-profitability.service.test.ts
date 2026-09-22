@@ -11,6 +11,7 @@ import { TenantRepository } from '../../../repositories/tenants/tenant.repositor
 import { ContractProfitabilityService } from '../../../services/contract-costs/contract-profitability.service';
 import { CostEstimationService } from '../../../services/contract-costs/cost-estimation.service';
 import { Money } from '../../../utils/money';
+
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Kế toán');
@@ -22,8 +23,10 @@ function draftEmployee(overrides: Partial<Employee>): Employee {
   employee.status = EmployeeStatus.Active;
   employee.setPasswordHash('x');
   Object.assign(employee, overrides);
+
   return employee;
 }
+
 async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
   const dataSource = await createTestDataSource();
   const costs = new ContractCostRepository(dataSource);
@@ -34,6 +37,7 @@ async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1000000 });
   const accountant = await employees.create(draftEmployee({ tenantId: tenant.id }));
+
   return {
     dataSource,
     costs,
@@ -52,6 +56,7 @@ async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
     ),
   };
 }
+
 describe('ContractProfitabilityService.get — FR4, FR28', () => {
   it('uses the recorded cost for a month that has one, flagging it as not estimated', async () => {
     const { service, access, chain, tenant, dataSource, costs, accountant } = await world();

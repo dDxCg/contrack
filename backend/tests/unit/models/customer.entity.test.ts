@@ -1,6 +1,7 @@
 import { aCustomer } from '../../support/builders';
 import { captureDomainError } from '../../support/domain-errors';
 import { CustomerSegment } from '../../../models/customers/customer.entity';
+
 describe('Customer', () => {
   describe('delete — a customer still billing is not deleted (customer.has_active_contracts)', () => {
     it('deletes a customer with no contract left', () => {

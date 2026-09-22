@@ -23,6 +23,7 @@ import { ShiftPhoto } from './shifts/shift-photo.entity';
 import { Statement } from './statements/statement.entity';
 import { Team } from './teams/team.entity';
 import { Tenant } from './tenants/tenant.entity';
+
 export const ENTITIES = [
   Tenant,
   Customer,

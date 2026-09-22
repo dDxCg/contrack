@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { FieldSubmissionBodyDto, FieldUploadBodyDto } from '../../../dtos/field/field.dto';
+
 function aBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     photo_keys: { before: ['shifts/1/before-1.jpg'], after: ['shifts/1/after-1.jpg'] },
@@ -11,11 +12,14 @@ function aBody(overrides: Record<string, unknown> = {}): Record<string, unknown>
     ...overrides,
   };
 }
+
 async function errorsFor(body: Record<string, unknown>): Promise<string[]> {
   const instance = plainToInstance(FieldSubmissionBodyDto, body);
   const errors = await validate(instance);
+
   return errors.map((error) => error.property);
 }
+
 describe('FieldSubmissionBodyDto', () => {
   it('accepts a well-formed submission', async () => {
     expect(await errorsFor(aBody())).toEqual([]);
@@ -62,8 +66,10 @@ describe('FieldUploadBodyDto', () => {
   async function uploadErrorsFor(body: Record<string, unknown>): Promise<string[]> {
     const instance = plainToInstance(FieldUploadBodyDto, body);
     const errors = await validate(instance);
+
     return errors.map((error) => error.property);
   }
+
   it('accepts an image content type', async () => {
     expect(await uploadErrorsFor({ content_type: 'image/jpeg' })).toEqual([]);
   });

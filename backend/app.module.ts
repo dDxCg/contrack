@@ -30,6 +30,8 @@ import {
 } from './data/object-storage-client/object-storage-client';
 import { NullObjectStorageClient } from './data/object-storage-client/null-object-storage-client';
 import { S3ObjectStorageClient } from './data/object-storage-client/s3-object-storage-client';
+import { PDF_RENDERER } from './data/pdf-renderer/pdf-renderer';
+import { PdfKitStatementRenderer } from './data/pdf-renderer/pdfkit-statement-renderer';
 import {
   STORAGE_CONFIG,
   StorageConfig,
@@ -108,6 +110,7 @@ import { ScheduleGeneratorService } from './services/contracts/schedule-generato
 import { StatementService } from './services/statements/statement.service';
 import { TeamService } from './services/teams/team.service';
 import { TokenService } from './services/auth/token.service';
+
 @Module({
   imports: [ScheduleModule.forRoot(), ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }])],
   controllers: [
@@ -156,6 +159,7 @@ import { TokenService } from './services/auth/token.service';
       inject: [STORAGE_CONFIG],
     },
     { provide: UPLOAD_KEY_FACTORY, useClass: RandomUploadKeyFactory },
+    { provide: PDF_RENDERER, useClass: PdfKitStatementRenderer },
     { provide: REDIS_CLIENT, useFactory: (): Redis | null => createRedisClient(process.env) },
     {
       provide: DISTRIBUTED_LOCK,
@@ -230,6 +234,7 @@ export class AppModule implements NestModule {
     consumer.apply(RequestIdMiddleware).forRoutes('*');
   }
 }
+
 export function configureApp(app: INestApplication, env: NodeJS.ProcessEnv = process.env): void {
   app.setGlobalPrefix('api/v1');
   app.use(securityHeaders());
@@ -243,11 +248,14 @@ export function configureApp(app: INestApplication, env: NodeJS.ProcessEnv = pro
     }),
   );
 }
+
 export function corsOrigins(env: NodeJS.ProcessEnv): string[] | boolean {
   const raw = env.CORS_ORIGINS;
+
   if (raw === undefined || raw.trim() === '') {
     return false;
   }
+
   return raw
     .split(',')
     .map((origin) => origin.trim())

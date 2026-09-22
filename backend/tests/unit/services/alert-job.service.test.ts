@@ -9,27 +9,36 @@ import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
 import { ChannelClient } from '../../../data/channel-client/channel-client';
 import { AlertJobService } from '../../../services/alerts/alert-job.service';
+
 class FakeChannelClient implements ChannelClient {
   public readonly messages: string[] = [];
+
   constructor(private readonly status: AlertDeliveryStatus = AlertDeliveryStatus.Sent) {}
+
   async send(message: string): Promise<AlertDeliveryStatus> {
     this.messages.push(message);
+
     return this.status;
   }
 }
+
 class ThrowingChannelClient implements ChannelClient {
   private remaining: number;
+
   constructor(failures: number) {
     this.remaining = failures;
   }
+
   async send(): Promise<AlertDeliveryStatus> {
     if (this.remaining > 0) {
       this.remaining -= 1;
       throw new Error('zalo gateway down');
     }
+
     return AlertDeliveryStatus.Sent;
   }
 }
+
 async function world(now = new Date('2024-10-01T00:00:00.000Z'), status = AlertDeliveryStatus.Sent) {
   const dataSource = await createTestDataSource();
   const alerts = new AlertRepository(dataSource);
@@ -40,6 +49,7 @@ async function world(now = new Date('2024-10-01T00:00:00.000Z'), status = AlertD
   const channelClient = new FakeChannelClient(status);
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id);
+
   return {
     dataSource,
     alerts,
@@ -53,6 +63,7 @@ async function world(now = new Date('2024-10-01T00:00:00.000Z'), status = AlertD
     service: new AlertJobService(contracts, shifts, alerts, tenants, channelClient, clock),
   };
 }
+
 describe('AlertJobService.run — FR25, US-12', () => {
   it('fires one alert for a contract crossing the 30-day expiry threshold', async () => {
     const { service, tenant, chain, dataSource, alerts } = await world(new Date('2024-10-01T00:00:00.000Z'));
@@ -196,12 +207,14 @@ describe('AlertJobService.runAll — the daily fan-out (FR25/FR26, decision 1)',
     const { service, tenants, dataSource, tenant, chain, alerts } = await world();
     const second = await seedTenant(dataSource, { name: 'Second Co' });
     const secondChain = await seedContractItemChain(dataSource, second.id);
+
     for (const contractId of [chain.contractId, secondChain.contractId]) {
       await dataSource.query('UPDATE contracts SET expires_at = $1 WHERE id = $2', [
         '2024-10-25',
         contractId,
       ]);
     }
+
     const summary = await service.runAll();
     expect(summary.sent).toBe(2);
     expect(await alerts.list(tenant.id)).toMatchObject([{ kind: 'contract_expiring' }]);
@@ -212,12 +225,14 @@ describe('AlertJobService.runAll — the daily fan-out (FR25/FR26, decision 1)',
     const { service, dataSource, tenant, chain, alerts } = await world();
     const suspended = await seedTenant(dataSource, { name: 'Suspended Co', status: TenantStatus.Suspended });
     const suspendedChain = await seedContractItemChain(dataSource, suspended.id);
+
     for (const contractId of [chain.contractId, suspendedChain.contractId]) {
       await dataSource.query('UPDATE contracts SET expires_at = $1 WHERE id = $2', [
         '2024-10-25',
         contractId,
       ]);
     }
+
     const summary = await service.runAll();
     expect(summary.sent).toBe(1);
     expect(await alerts.list(tenant.id)).toHaveLength(1);

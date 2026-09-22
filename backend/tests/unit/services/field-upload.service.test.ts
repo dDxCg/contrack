@@ -4,6 +4,7 @@ import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
 import {
+  DownloadTarget,
   ObjectStorageClient,
   PresignUploadInput,
   UploadTarget,
@@ -14,6 +15,7 @@ import { InMemoryRevocationStore } from '../../../services/auth/revocation-store
 import { FieldTokenService } from '../../../services/field/field-token.service';
 import { FieldUploadService } from '../../../services/field/field-upload.service';
 import { IUploadKeyFactory } from '../../../services/field/upload-key-factory';
+
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
   accessTtlSeconds: 1800,
@@ -21,18 +23,31 @@ const config: AuthConfig = {
   fieldTtlSeconds: 86400,
   bcryptRounds: 4,
 };
+
 class FakeObjectStorage implements ObjectStorageClient {
   readonly calls: PresignUploadInput[] = [];
+
   async presignUpload(input: PresignUploadInput): Promise<UploadTarget> {
     this.calls.push(input);
+
     return { uploadUrl: `https://storage.test/${input.key}?sig=fake`, key: input.key };
   }
+
+  async putObject(): Promise<{ key: string }> {
+    throw new Error('not used by this test');
+  }
+
+  async presignDownload(): Promise<DownloadTarget> {
+    throw new Error('not used by this test');
+  }
 }
+
 class FixedUploadKeyFactory implements IUploadKeyFactory {
   next(): string {
     return '9f1c0d0e';
   }
 }
+
 async function world() {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
@@ -50,6 +65,7 @@ async function world() {
     assigneeId: null,
     scheduledDate: '2024-10-21',
   });
+
   return {
     service: new FieldUploadService(tokens, shifts, storage, new FixedUploadKeyFactory()),
     tokens,
@@ -58,6 +74,7 @@ async function world() {
     shiftId,
   };
 }
+
 describe('FieldUploadService.issueTarget — photo upload', () => {
   it('issues a presigned target under a key scoped to the shift, and returns both', async () => {
     const { service, tokens, storage, tenant, shiftId } = await world();

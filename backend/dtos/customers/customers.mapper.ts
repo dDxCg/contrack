@@ -1,5 +1,6 @@
 import { Customer } from '../../models/customers/customer.entity';
 import { CustomerView } from './customers.response.dto';
+
 export function toCustomerView(customer: Customer): CustomerView {
   return {
     id: customer.id,

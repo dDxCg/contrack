@@ -1,4 +1,5 @@
 import { PageView } from '../page.dto';
+
 export interface ShiftView {
   id: number;
   contract_item_id: number;
@@ -18,4 +19,5 @@ export interface ShiftView {
   dispute_reported_at: string | null;
   dispute_description: string | null;
 }
+
 export type ShiftPage = PageView<ShiftView>;

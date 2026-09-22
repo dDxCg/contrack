@@ -5,32 +5,39 @@ import { ContractSite } from '../../models/contracts/contract-site.entity';
 import { AccessContext } from '../access-control/access-context';
 import { ContractCreateCommand, ContractItemCommand, ContractSiteCommand } from './contract.service';
 import { ScheduleGeneratorService } from './schedule-generator.service';
+
 export interface AssembledItem {
   entity: ContractItem;
   scheduledDates: Date[];
 }
+
 export interface AssembledSite {
   entity: ContractSite;
   items: AssembledItem[];
 }
+
 export interface AssembledContract {
   entity: Contract;
   sites: AssembledSite[];
 }
+
 @Injectable()
 export class ContractAssembler {
   constructor(private readonly scheduleGenerator: ScheduleGeneratorService) {}
+
   assemble(access: AccessContext, command: ContractCreateCommand): AssembledContract {
     const contract = new Contract();
     contract.tenantId = access.tenantId;
     contract.customerId = command.customerId;
     contract.setTerm(command.signedAt, command.expiresAt);
     contract.setStatus(ContractStatus.Active);
+
     return {
       entity: contract,
       sites: command.sites.map((siteCommand) => this.assembleSite(access, contract, siteCommand)),
     };
   }
+
   private assembleSite(
     access: AccessContext,
     contract: Contract,
@@ -42,11 +49,13 @@ export class ContractAssembler {
     site.setWorkRequirements(siteCommand.workRequirements);
     site.setNotes(siteCommand.notes);
     site.setLocation(siteCommand.latitude, siteCommand.longitude, siteCommand.radiusMeters);
+
     return {
       entity: site,
       items: siteCommand.items.map((itemCommand) => this.assembleItem(access, contract, itemCommand)),
     };
   }
+
   private assembleItem(
     access: AccessContext,
     contract: Contract,
@@ -72,6 +81,7 @@ export class ContractAssembler {
         dayOfMonth: item.dayOfMonth,
       },
     );
+
     return { entity: item, scheduledDates };
   }
 }

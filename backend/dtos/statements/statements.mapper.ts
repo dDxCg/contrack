@@ -1,6 +1,7 @@
 import { Statement } from '../../models/statements/statement.entity';
 import { RevenueRow } from '../../repositories/shifts/shift.repository';
 import { StatementLineView, StatementView } from './statements.response.dto';
+
 export function toLine(row: RevenueRow): StatementLineView {
   return {
     shift_id: row.id,
@@ -9,6 +10,7 @@ export function toLine(row: RevenueRow): StatementLineView {
     amount: row.unitPrice.toNumber(),
   };
 }
+
 export function toStatementView(statement: Statement, lines: StatementLineView[]): StatementView {
   return {
     id: statement.id,

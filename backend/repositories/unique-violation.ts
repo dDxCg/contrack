@@ -8,10 +8,12 @@ export async function withUniqueViolation<T>(op: () => Promise<T>, onViolation: 
   } catch (error) {
     if (error instanceof QueryFailedError) {
       const driverError = error.driverError as { code?: string } | undefined;
+
       if (driverError?.code === UNIQUE_VIOLATION) {
         throw onViolation();
       }
     }
+
     throw error;
   }
 }

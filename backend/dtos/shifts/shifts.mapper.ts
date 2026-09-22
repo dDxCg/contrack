@@ -1,5 +1,6 @@
 import { Shift } from '../../models/shifts/shift.entity';
 import { ShiftView } from './shifts.response.dto';
+
 export function toShiftView(shift: Shift): ShiftView {
   return {
     id: shift.id,

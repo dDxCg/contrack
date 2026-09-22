@@ -6,6 +6,7 @@ import { Role } from '../../../models/employees/employee.entity';
 import { AuthConfig } from '../../../services/access-control/auth.config';
 import { InMemoryRevocationStore } from '../../../services/auth/revocation-store';
 import { TokenService } from '../../../services/auth/token.service';
+
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
   accessTtlSeconds: 1800,
@@ -144,6 +145,7 @@ describe('TokenService', () => {
     });
   });
 });
+
 function futureEpoch(offsetSeconds: number): number {
   return Math.floor(Date.now() / 1000) + offsetSeconds;
 }

@@ -1,6 +1,7 @@
 import { captureDomainError } from '../../support/domain-errors';
 import { aTenant } from '../../support/builders';
 import { TenantStatus } from '../../../models/tenants/tenant.entity';
+
 describe('Tenant', () => {
   describe('assertActive', () => {
     it('lets an active tenant through', () => {

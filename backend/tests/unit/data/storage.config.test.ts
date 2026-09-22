@@ -1,4 +1,5 @@
 import { loadStorageConfig } from '../../../data/object-storage-client/storage.config';
+
 const REQUIRED = {
   S3_BUCKET: 'contrack-evidence',
   S3_ACCESS_KEY_ID: 'AKIA-contrack',

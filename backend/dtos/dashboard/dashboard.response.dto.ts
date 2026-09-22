@@ -1,4 +1,5 @@
 import { TrendBucketView } from '../platform/platform.response.dto';
+
 export interface ShiftStatsView {
   scheduled: number;
   due: number;
@@ -11,10 +12,12 @@ export interface ShiftStatsView {
   disputed_pct: number | null;
   missing_evidence: number;
 }
+
 export interface SiteShiftStatsView extends ShiftStatsView {
   site_id: number;
   site_name: string;
 }
+
 export interface ProfitTrendBucketView {
   period_start: string;
   period_end: string;
@@ -25,6 +28,7 @@ export interface ProfitTrendBucketView {
   margin_pct: number;
   is_estimated: boolean;
 }
+
 export interface DashboardComparisonView {
   period_start: string;
   period_end: string;
@@ -33,6 +37,7 @@ export interface DashboardComparisonView {
   late_shifts: number;
   new_contracts: number;
 }
+
 export interface DashboardSummaryView {
   active_contracts: number;
   expiring_soon: number;

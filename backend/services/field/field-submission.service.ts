@@ -19,6 +19,7 @@ import { toShiftView } from '../../dtos/shifts/shifts.mapper';
 import { haversineDistanceMeters } from '../../utils/geo';
 import { FieldTokenService } from './field-token.service';
 import { isKeyIssuedForShift } from './upload-key';
+
 export interface FieldSubmissionCommand {
   photoKeys: {
     before: string[];
@@ -28,6 +29,7 @@ export interface FieldSubmissionCommand {
   latitude: number | null;
   longitude: number | null;
 }
+
 @Injectable()
 export class FieldSubmissionService {
   constructor(
@@ -41,20 +43,27 @@ export class FieldSubmissionService {
     @Inject(DATA_SOURCE)
     private readonly dataSource: DataSource,
   ) {}
+
   async submit(token: string, command: FieldSubmissionCommand): Promise<ShiftView> {
     const claims = await this.fieldTokenService.verify(token);
     const missing = missingEvidence(command);
+
     if (missing.length > 0) {
       throw new ShiftEvidenceIncompleteException(missing);
     }
+
     const shift = await this.shiftRepository.findByIdUnscoped(claims.shift_id);
+
     if (shift === null) {
       throw new FieldTokenInvalidException();
     }
+
     const unknown = unknownPhotoKeys(command, shift.tenantId, shift.id);
+
     if (unknown.length > 0) {
       throw new UploadKeyUnknownException(unknown);
     }
+
     const geofence = await this.shiftRepository.siteGeofenceFor(shift.contractItemId);
     shift.complete(
       {
@@ -67,9 +76,11 @@ export class FieldSubmissionService {
     );
     const saved = await this.dataSource.transaction(async (tx) => {
       const claimed = await this.shiftRepository.claimFieldToken(shift.id, this.clock.now(), tx);
+
       if (!claimed) {
         throw new FieldTokenAlreadyUsedException();
       }
+
       shift.fieldTokenUsedAt = this.clock.now();
       const updated = await this.shiftRepository.update(shift, tx);
       await this.shiftPhotoRepository.createMany(
@@ -79,12 +90,15 @@ export class FieldSubmissionService {
         ],
         tx,
       );
+
       return updated;
     });
     await this.fieldTokenService.markUsed(claims);
+
     return toShiftView(saved);
   }
 }
+
 function isWithinGeofence(
   geofence: SiteGeofence | null,
   latitude: number | null,
@@ -93,30 +107,40 @@ function isWithinGeofence(
   if (geofence === null || geofence.latitude === null || geofence.longitude === null) {
     return false;
   }
+
   if (latitude === null || longitude === null) {
     return false;
   }
+
   const distance = haversineDistanceMeters(latitude, longitude, geofence.latitude, geofence.longitude);
+
   return distance <= geofence.radiusMeters;
 }
+
 function unknownPhotoKeys(command: FieldSubmissionCommand, tenantId: number, shiftId: number): string[] {
   return [...command.photoKeys.before, ...command.photoKeys.after, command.receiptPhotoKey].filter(
     (key) => !isKeyIssuedForShift(key, tenantId, shiftId),
   );
 }
+
 function missingEvidence(command: FieldSubmissionCommand): string[] {
   const missing: string[] = [];
+
   if (command.photoKeys.before.length === 0) {
     missing.push('before_photo');
   }
+
   if (command.photoKeys.after.length === 0) {
     missing.push('after_photo');
   }
+
   if (command.receiptPhotoKey === '') {
     missing.push('receipt_photo');
   }
+
   return missing;
 }
+
 function aPhoto(
   shift: {
     id: number;
@@ -130,5 +154,6 @@ function aPhoto(
   photo.shiftId = shift.id;
   photo.type = type;
   photo.url = url;
+
   return photo;
 }

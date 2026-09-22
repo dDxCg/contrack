@@ -2,6 +2,7 @@ import { StatementImmutableException, StatementNotIssuedException } from '../../
 import { Statement, StatementStatus } from '../../../models/statements/statement.entity';
 import { captureDomainError } from '../../support/domain-errors';
 import { Money } from '../../../utils/money';
+
 function aDraftStatement(): Statement {
   const statement = new Statement();
   statement.id = 1;
@@ -12,8 +13,10 @@ function aDraftStatement(): Statement {
   statement.pdfUrl = null;
   statement.createdAt = new Date('2024-11-01T00:00:00.000Z');
   statement.status = StatementStatus.Draft;
+
   return statement;
 }
+
 describe('Statement.export — FR11', () => {
   it('moves a draft to issued', () => {
     const statement = aDraftStatement();

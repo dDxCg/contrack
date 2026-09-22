@@ -6,6 +6,7 @@ import { Employee, EmployeeStatus, Role } from '../../../models/employees/employ
 import { ContractCostRepository } from '../../../repositories/contract-costs/contract-cost.repository';
 import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
 import { ContractCostService } from '../../../services/contract-costs/contract-cost.service';
+
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Kế toán');
@@ -17,8 +18,10 @@ function draftEmployee(overrides: Partial<Employee>): Employee {
   employee.status = EmployeeStatus.Active;
   employee.setPasswordHash('x');
   Object.assign(employee, overrides);
+
   return employee;
 }
+
 async function world() {
   const dataSource = await createTestDataSource();
   const costs = new ContractCostRepository(dataSource);
@@ -26,6 +29,7 @@ async function world() {
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id);
   const accountant = await employees.create(draftEmployee({ tenantId: tenant.id }));
+
   return {
     costs,
     tenant,
@@ -35,6 +39,7 @@ async function world() {
     service: new ContractCostService(costs),
   };
 }
+
 describe('ContractCostService.upsert — FR14', () => {
   it('records a new cost entry', async () => {
     const { service, access, chain, accountant } = await world();

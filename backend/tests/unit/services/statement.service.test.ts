@@ -2,12 +2,59 @@ import { anAccessContext, anEmployee } from '../../support/builders';
 import { captureDomainErrorAsync } from '../../support/domain-errors';
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedShift, seedTenant } from '../../support/seed';
+import { AlertDeliveryStatus } from '../../../models/alerts/alert.entity';
 import { Role } from '../../../models/employees/employee.entity';
 import { ContractRepository } from '../../../repositories/contracts/contract.repository';
 import { StatementRepository } from '../../../repositories/statements/statement.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
+import { ChannelClient } from '../../../data/channel-client/channel-client';
+import {
+  DownloadTarget,
+  ObjectStorageClient,
+  PutObjectInput,
+} from '../../../data/object-storage-client/object-storage-client';
+import { PdfRenderer, StatementPdfInput } from '../../../data/pdf-renderer/pdf-renderer';
 import { StatementService } from '../../../services/statements/statement.service';
+
+class FakePdfRenderer implements PdfRenderer {
+  public readonly calls: StatementPdfInput[] = [];
+
+  async renderStatement(input: StatementPdfInput): Promise<Buffer> {
+    this.calls.push(input);
+
+    return Buffer.from(`fake-pdf-for-statement-${input.statementId}`);
+  }
+}
+
+class FakeObjectStorageClient implements ObjectStorageClient {
+  public readonly putCalls: PutObjectInput[] = [];
+
+  async presignUpload(): Promise<never> {
+    throw new Error('not used by StatementService');
+  }
+
+  async putObject(input: PutObjectInput): Promise<{ key: string }> {
+    this.putCalls.push(input);
+
+    return { key: input.key };
+  }
+
+  async presignDownload(): Promise<DownloadTarget> {
+    return { url: 'https://storage.test/signed-download' };
+  }
+}
+
+class FakeChannelClient implements ChannelClient {
+  public readonly messages: string[] = [];
+
+  async send(message: string): Promise<AlertDeliveryStatus> {
+    this.messages.push(message);
+
+    return AlertDeliveryStatus.Sent;
+  }
+}
+
 async function world() {
   const dataSource = await createTestDataSource();
   const statements = new StatementRepository(dataSource);
@@ -17,6 +64,10 @@ async function world() {
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 500000 });
   const accountant = anEmployee({ id: 12, tenantId: tenant.id, role: Role.Accountant });
+  const pdfRenderer = new FakePdfRenderer();
+  const objectStorage = new FakeObjectStorageClient();
+  const channelClient = new FakeChannelClient();
+
   return {
     dataSource,
     statements,
@@ -25,10 +76,22 @@ async function world() {
     tenants,
     tenant,
     chain,
+    pdfRenderer,
+    objectStorage,
+    channelClient,
     access: anAccessContext(accountant, { tenantId: tenant.id }),
-    service: new StatementService(statements, shifts, contracts, tenants),
+    service: new StatementService(
+      statements,
+      shifts,
+      contracts,
+      tenants,
+      pdfRenderer,
+      objectStorage,
+      channelClient,
+    ),
   };
 }
+
 describe('StatementService.compute — FR10, D6', () => {
   it('sums completed shifts × item unit_price for the period', async () => {
     const { service, access, chain, tenant, dataSource } = await world();
@@ -195,6 +258,62 @@ describe('StatementService.export / send — FR11, FR12', () => {
     const reloaded = await service.get(access, created.id);
     expect(reloaded.status).toBe('issued');
   });
+  it('actually renders a PDF and writes it to object storage — not just a status flip', async () => {
+    const { service, access, chain, dataSource, tenant, pdfRenderer, objectStorage } = await world();
+    await seedShift(dataSource, {
+      tenantId: tenant.id,
+      contractItemId: chain.itemId,
+      assigneeId: null,
+      scheduledDate: '2024-10-03',
+      status: 'completed',
+    });
+    const created = await service.compute(access, {
+      contractId: chain.contractId,
+      period: new Date('2024-10-01'),
+    });
+
+    const result = await service.export(access, created.id);
+
+    expect(pdfRenderer.calls).toHaveLength(1);
+    expect(pdfRenderer.calls[0]).toMatchObject({
+      statementId: created.id,
+      contractId: chain.contractId,
+      period: '2024-10-01',
+    });
+    expect(pdfRenderer.calls[0].lines).toHaveLength(1);
+    expect(objectStorage.putCalls).toHaveLength(1);
+    expect(objectStorage.putCalls[0]).toMatchObject({
+      key: `statements/${tenant.id}/${created.id}.pdf`,
+      contentType: 'application/pdf',
+    });
+    expect(objectStorage.putCalls[0].body.toString()).toBe(`fake-pdf-for-statement-${created.id}`);
+    expect(result.pdfUrl).toBe('https://storage.test/signed-download');
+    const reloaded = await service.get(access, created.id);
+    expect(reloaded.pdf_url).toBe('https://storage.test/signed-download');
+  });
+  it('does not render or write anything when the statement cannot be exported (already issued)', async () => {
+    const { service, access, chain, dataSource, tenant, pdfRenderer, objectStorage } = await world();
+    await seedShift(dataSource, {
+      tenantId: tenant.id,
+      contractItemId: chain.itemId,
+      assigneeId: null,
+      scheduledDate: '2024-10-03',
+      status: 'completed',
+    });
+    const created = await service.compute(access, {
+      contractId: chain.contractId,
+      period: new Date('2024-10-01'),
+    });
+    await service.export(access, created.id);
+    pdfRenderer.calls.length = 0;
+    objectStorage.putCalls.length = 0;
+
+    const error = await captureDomainErrorAsync(() => service.export(access, created.id));
+
+    expect(error.code).toBe('statement.immutable');
+    expect(pdfRenderer.calls).toHaveLength(0);
+    expect(objectStorage.putCalls).toHaveLength(0);
+  });
   it('rejects sending before export', async () => {
     const { service, access, chain, dataSource, tenant } = await world();
     await seedShift(dataSource, {
@@ -212,7 +331,7 @@ describe('StatementService.export / send — FR11, FR12', () => {
     expect(error.code).toBe('statement.not_issued');
   });
   it('sends an issued statement, then rejects a second send', async () => {
-    const { service, access, chain, dataSource, tenant } = await world();
+    const { service, access, chain, dataSource, tenant, channelClient } = await world();
     await seedShift(dataSource, {
       tenantId: tenant.id,
       contractItemId: chain.itemId,
@@ -227,7 +346,11 @@ describe('StatementService.export / send — FR11, FR12', () => {
     await service.export(access, created.id);
     const sent = await service.send(access, created.id);
     expect(sent.status).toBe('sent');
+    expect(channelClient.messages).toHaveLength(1);
+    expect(channelClient.messages[0]).toContain('2024-10-01');
+    expect(channelClient.messages[0]).toContain('https://storage.test/signed-download');
     const error = await captureDomainErrorAsync(() => service.send(access, created.id));
     expect(error.code).toBe('statement.not_issued');
+    expect(channelClient.messages).toHaveLength(1);
   });
 });

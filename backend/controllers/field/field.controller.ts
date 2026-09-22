@@ -11,6 +11,7 @@ import {
   FieldSubmissionService,
 } from '../../services/field/field-submission.service';
 import { FieldUploadService } from '../../services/field/field-upload.service';
+
 @Controller('field')
 export class FieldController {
   constructor(
@@ -18,6 +19,7 @@ export class FieldController {
     private readonly fieldSubmissionService: FieldSubmissionService,
     private readonly fieldUploadService: FieldUploadService,
   ) {}
+
   @Get('context')
   @Public()
   @Throttle({ default: { ttl: 60000, limit: 60 } })
@@ -28,8 +30,10 @@ export class FieldController {
     if (token === undefined || token === '') {
       throw new AuthCredentialExpiredException();
     }
+
     return this.fieldContextService.get(token);
   }
+
   @Post('uploads')
   @Public()
   @Throttle({ default: { ttl: 60000, limit: 60 } })
@@ -42,8 +46,10 @@ export class FieldController {
     if (token === undefined || token === '') {
       throw new AuthCredentialExpiredException();
     }
+
     return this.fieldUploadService.issueTarget(token, body.content_type);
   }
+
   @Post('submit')
   @Public()
   @Throttle({ default: { ttl: 60000, limit: 20 } })
@@ -56,9 +62,11 @@ export class FieldController {
     if (token === undefined || token === '') {
       throw new AuthCredentialExpiredException();
     }
+
     return this.fieldSubmissionService.submit(token, toCommand(body));
   }
 }
+
 function toCommand(body: FieldSubmissionBodyDto): FieldSubmissionCommand {
   return {
     photoKeys: { before: body.photo_keys.before, after: body.photo_keys.after },

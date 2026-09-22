@@ -10,6 +10,7 @@ import { ScopeResolver } from '../../../services/access-control/scope-resolver';
 import { EmployeeRepository } from '../../../repositories/employees/employee.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { ShiftsService } from '../../../services/shifts/shifts.service';
+
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Nhân viên');
@@ -21,8 +22,10 @@ function draftEmployee(overrides: Partial<Employee>): Employee {
   employee.status = EmployeeStatus.Active;
   employee.setPasswordHash('x');
   Object.assign(employee, overrides);
+
   return employee;
 }
+
 async function world() {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
@@ -85,6 +88,7 @@ async function world() {
     assigneeId: null,
     scheduledDate: '2024-10-21',
   });
+
   return {
     dataSource,
     itemId: chain.itemId,
@@ -102,6 +106,7 @@ async function world() {
     service: new ShiftsService(shifts, new ScopeResolver(new RoleResolver())),
   };
 }
+
 const page = { limit: 25, offset: 0 };
 describe('ShiftsService.list — row scope', () => {
   it('an All-scope caller (Director) sees every shift in the tenant', async () => {

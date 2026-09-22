@@ -3,10 +3,12 @@ export interface FieldLinkView {
   url: string;
   expires_at: string;
 }
+
 export interface UploadTargetView {
   upload_url: string;
   key: string;
 }
+
 export interface FieldContextView {
   contract_site: string;
   service_item: string;

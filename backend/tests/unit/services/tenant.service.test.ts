@@ -6,13 +6,16 @@ import { EmployeeRepository } from '../../../repositories/employees/employee.rep
 import { TenantRepository } from '../../../repositories/tenants/tenant.repository';
 import { BcryptPasswordHasher } from '../../../services/auth/password-hasher.service';
 import { TenantService } from '../../../services/platform/tenant.service';
+
 async function world() {
   const dataSource = await createTestDataSource();
   const tenants = new TenantRepository(dataSource);
   const employees = new EmployeeRepository(dataSource);
   const service = new TenantService(tenants, employees, new BcryptPasswordHasher(4), dataSource);
+
   return { service, tenants, employees, dataSource };
 }
+
 describe('TenantService', () => {
   describe('create — FR19', () => {
     it('creates the tenant and its first Director in one call, both active', async () => {
@@ -78,6 +81,7 @@ describe('TenantService', () => {
     });
   });
 });
+
 async function seedDirector(employees: EmployeeRepository, tenantId: number, email: string): Promise<void> {
   const employee = new Employee();
   employee.tenantId = tenantId;

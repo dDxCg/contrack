@@ -8,13 +8,18 @@ import {
 
 class FakeResponse {
   sentStatus: number | undefined;
+
   sentBody: unknown;
+
   status(code: number): this {
     this.sentStatus = code;
+
     return this;
   }
+
   json(body: unknown): this {
     this.sentBody = body;
+
     return this;
   }
 }
@@ -27,6 +32,7 @@ describe('DomainExceptionFilter', () => {
     const logger = (filter as unknown as { logger: Logger }).logger;
     loggerError = jest.spyOn(logger, 'error').mockImplementation(() => undefined);
   });
+
   function respondTo(
     exception: unknown,
     request: { id?: string; url?: string; access?: { tenantId: number } } = {},
@@ -38,8 +44,10 @@ describe('DomainExceptionFilter', () => {
         getRequest: () => ({ id: 'req-1', url: '/api/v1/whatever', ...request }),
       }),
     } as unknown as ArgumentsHost);
+
     return response;
   }
+
   it('sends a domain exception as its own envelope — code, message, details, status', () => {
     const response = respondTo(new AuthOutOfScopeException());
     expect(response.sentStatus).toBe(404);

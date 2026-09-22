@@ -15,6 +15,7 @@ import { TenantRepository } from '../../../repositories/tenants/tenant.repositor
 import { CostEstimationService } from '../../../services/contract-costs/cost-estimation.service';
 import { DashboardService } from '../../../services/dashboard/dashboard.service';
 import { Money } from '../../../utils/money';
+
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Kế toán');
@@ -26,8 +27,10 @@ function draftEmployee(overrides: Partial<Employee>): Employee {
   employee.status = EmployeeStatus.Active;
   employee.setPasswordHash('x');
   Object.assign(employee, overrides);
+
   return employee;
 }
+
 async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
   const dataSource = await createTestDataSource();
   const contracts = new ContractRepository(dataSource);
@@ -41,6 +44,7 @@ async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
   const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1000000 });
   const director = anEmployee({ id: 12, tenantId: tenant.id, role: Role.Director });
   const accountant = await employees.create(draftEmployee({ tenantId: tenant.id }));
+
   return {
     dataSource,
     contracts,
@@ -63,6 +67,7 @@ async function world(now = new Date('2024-10-15T00:00:00.000Z')) {
     ),
   };
 }
+
 describe('DashboardService.get — FR2', () => {
   it('counts active contracts, expiring-soon contracts and disputed shifts as of now', async () => {
     const { service, access, chain, dataSource } = await world(new Date('2024-10-15T00:00:00.000Z'));

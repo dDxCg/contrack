@@ -30,30 +30,38 @@ describe('InMemoryDistributedLock', () => {
 describe('RedisDistributedLock', () => {
   function fakeRedis() {
     const store = new Map<string, string>();
+
     return {
       store,
       async set(key: string, value: string, mode: string, ttlMs: number, condition: string) {
         if (mode !== 'PX' || condition !== 'NX') {
           throw new Error(`unexpected redis invocation: ${mode} ${condition}`);
         }
+
         if (store.has(key)) {
           return null;
         }
+
         store.set(key, value);
+
         return 'OK';
       },
       async eval(_script: string, numKeys: number, key: string, value: string) {
         if (numKeys !== 1) {
           throw new Error(`unexpected key count: ${numKeys}`);
         }
+
         if (store.get(key) === value) {
           store.delete(key);
+
           return 1;
         }
+
         return 0;
       },
     };
   }
+
   it('grants via SET NX PX and refuses while the key is held', async () => {
     const lock = new RedisDistributedLock(fakeRedis() as never);
     expect(await lock.tryAcquire('alerts:daily', 300)).toBe(true);

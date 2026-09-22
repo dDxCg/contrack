@@ -952,17 +952,17 @@ paths:
     post:
       tags: [Statements]
       operationId: exportStatement
-      summary: Render the PDF with photos and receipts embedded; sets status = issued
+      summary: Render the PDF (line-item summary — evidence photos/receipts not embedded yet); sets status = issued
       x-roles: [accountant]
       x-scope: all
       responses:
         '202':
-          description: Rendering queued; body carries the job reference
+          description: Rendering happens synchronously today (no worker queue yet); body still carries the job reference plus the real, immediately-usable PDF URL
           content:
             application/json:
               schema:
                 type: object
-                properties: { job_id: { type: string } }
+                properties: { job_id: { type: string }, pdf_url: { type: string } }
         '409':
           description: Editing a statement already issued or sent
           content:

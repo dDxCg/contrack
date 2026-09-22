@@ -5,9 +5,11 @@ import { AccessControlGuard } from '../../../../services/access-control/access-c
 import { AccessRequirement } from '../../../../services/access-control/access.decorator';
 import { CredentialResolver } from '../../../../services/access-control/credential-resolver';
 import { TokenClaims } from '../../../../services/auth/token.service';
+
 function fakeResolver(kind: string, access: unknown = { resolved: kind }): CredentialResolver {
   return { kind, resolve: jest.fn().mockResolvedValue(access) };
 }
+
 function contextFor(
   headers: Record<string, string | undefined>,
   metadata: {
@@ -27,7 +29,9 @@ function contextFor(
     access?: unknown;
   } = { headers };
   const handler = (): void => undefined;
+
   class Controller {}
+
   const context = {
     switchToHttp: () => ({ getRequest: () => request }),
     getHandler: () => handler,
@@ -35,17 +39,23 @@ function contextFor(
   } as unknown as ExecutionContext;
   jest.spyOn(Reflector.prototype, 'getAllAndOverride').mockImplementation((key: unknown) => {
     if (key === 'public') return metadata.public === true;
+
     if (key === 'access') return metadata.access;
+
     if (key === 'self_scoped') return metadata.selfScoped === true;
+
     return undefined;
   });
+
   return { context, request };
 }
+
 function verifyAnyReturning(claims: TokenClaims): {
   verifyAny: jest.Mock;
 } {
   return { verifyAny: jest.fn().mockReturnValue(claims) };
 }
+
 describe('AccessControlGuard', () => {
   afterEach(() => jest.restoreAllMocks());
   it('bypasses everything for a @Public() route', async () => {

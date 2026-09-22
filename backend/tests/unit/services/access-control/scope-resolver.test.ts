@@ -3,6 +3,7 @@ import { Role } from '../../../../models/employees/employee.entity';
 import { Resource, RoleResolver } from '../../../../services/access-control/role-resolver';
 import { RowScope } from '../../../../services/access-control/row-scope';
 import { ScopeResolver } from '../../../../services/access-control/scope-resolver';
+
 describe('ScopeResolver', () => {
   const resolver = new ScopeResolver(new RoleResolver());
   const teamLeadOfSeven = anEmployee({ id: 12, role: Role.TeamLead, teamId: 7 });

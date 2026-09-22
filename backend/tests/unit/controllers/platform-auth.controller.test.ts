@@ -1,5 +1,6 @@
 import { PlatformAuthController } from '../../../controllers/platform/platform-auth.controller';
 import { PlatformAuthService } from '../../../services/platform/platform-auth.service';
+
 describe('PlatformAuthController', () => {
   it('login forwards username and password', async () => {
     const login = jest.fn().mockResolvedValue({ token: 't' });

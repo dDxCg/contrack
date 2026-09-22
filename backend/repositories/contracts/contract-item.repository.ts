@@ -4,6 +4,7 @@ import { DATA_SOURCE } from '../../data/db-context/data-source';
 import { ContractItem, FrequencyUnit } from '../../models/contracts/contract-item.entity';
 import { Money } from '../../utils/money';
 import { TenantScopedRepository } from '../tenant-scoped.repository';
+
 export interface IContractItemRepository {
   create(item: ContractItem, tx?: EntityManager): Promise<ContractItem>;
   findById(tenantId: number, id: number, tx?: EntityManager): Promise<ContractItem | null>;
@@ -11,45 +12,58 @@ export interface IContractItemRepository {
   delete(tenantId: number, id: number, tx?: EntityManager): Promise<void>;
   listBySite(tenantId: number, siteId: number, tx?: EntityManager): Promise<ContractItem[]>;
 }
+
 @Injectable()
 export class ContractItemRepository
   extends TenantScopedRepository<ContractItem>
   implements IContractItemRepository
 {
   protected override readonly entity: EntityTarget<ContractItem> = ContractItem;
+
   constructor(
     @Inject(DATA_SOURCE)
     dataSource: DataSource,
   ) {
     super(dataSource);
   }
+
   async create(item: ContractItem, tx?: EntityManager): Promise<ContractItem> {
     item.frequencyUnitId = await this.lookupId('frequency_units', item.frequencyUnit, tx);
+
     return this.mgr(tx).getRepository(ContractItem).save(item);
   }
+
   async findById(tenantId: number, id: number, tx?: EntityManager): Promise<ContractItem | null> {
     const row = await this.selected(tenantId, tx).andWhere('i.id = :id', { id }).getRawOne<ContractItemRow>();
+
     return row === undefined || row === null ? null : hydrateContractItem(row);
   }
+
   async update(item: ContractItem, tx?: EntityManager): Promise<ContractItem> {
     item.frequencyUnitId = await this.lookupId('frequency_units', item.frequencyUnit, tx);
     await this.mgr(tx).getRepository(ContractItem).save(item);
     const reloaded = await this.findById(item.tenantId, item.id, tx);
+
     if (reloaded === null) {
       throw new Error(`contract_items row ${item.id} disappeared right after it was written`);
     }
+
     return reloaded;
   }
+
   async delete(tenantId: number, id: number, tx?: EntityManager): Promise<void> {
     await this.mgr(tx).getRepository(ContractItem).delete({ id, tenantId });
   }
+
   async listBySite(tenantId: number, siteId: number, tx?: EntityManager): Promise<ContractItem[]> {
     const rows = await this.selected(tenantId, tx)
       .andWhere('i.site_id = :siteId', { siteId })
       .orderBy('i.id', 'ASC')
       .getRawMany<ContractItemRow>();
+
     return rows.map(hydrateContractItem);
   }
+
   private selected(tenantId: number, tx?: EntityManager): SelectQueryBuilder<ContractItem> {
     return this.scopedTo(tenantId, 'i', tx)
       .innerJoin('frequency_units', 'fu', 'fu.id = i.frequency_unit_id')
@@ -69,6 +83,7 @@ export class ContractItemRepository
       ]);
   }
 }
+
 interface ContractItemRow {
   id: number;
   tenant_id: number;
@@ -83,6 +98,7 @@ interface ContractItemRow {
   created_at: Date;
   frequency_unit: FrequencyUnit;
 }
+
 function hydrateContractItem(row: ContractItemRow): ContractItem {
   const item = new ContractItem();
   item.id = row.id;
@@ -97,5 +113,6 @@ function hydrateContractItem(row: ContractItemRow): ContractItem {
   item.dayOfMonth = row.day_of_month;
   item.unitPrice = Money.fromString(row.unit_price);
   item.createdAt = row.created_at;
+
   return item;
 }

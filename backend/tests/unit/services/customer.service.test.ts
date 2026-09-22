@@ -7,6 +7,7 @@ import { Customer, CustomerSegment } from '../../../models/customers/customer.en
 import { Role } from '../../../models/employees/employee.entity';
 import { CustomerRepository } from '../../../repositories/customers/customer.repository';
 import { CustomerService } from '../../../services/customers/customer.service';
+
 async function world() {
   const dataSource = await createTestDataSource();
   const repository = new CustomerRepository(dataSource);
@@ -34,6 +35,7 @@ async function world() {
   const otherTenantCustomer = await repository.create(
     draftCustomer({ tenantId: otherTenant.id, name: 'Công ty của tenant khác' }),
   );
+
   return {
     dataSource,
     repository,
@@ -44,6 +46,7 @@ async function world() {
     otherTenantCustomer,
   };
 }
+
 function draftCustomer(overrides: Partial<Customer>): Customer {
   const customer = new Customer();
   customer.setName('');
@@ -52,8 +55,10 @@ function draftCustomer(overrides: Partial<Customer>): Customer {
   customer.setAddress(null);
   customer.setSegment(CustomerSegment.Regular);
   Object.assign(customer, overrides);
+
   return customer;
 }
+
 async function seedActiveContract(
   dataSource: DataSource,
   tenantId: number,
@@ -65,8 +70,10 @@ async function seedActiveContract(
   )) as {
     id: number;
   }[];
+
   return row.id;
 }
+
 describe('CustomerService.list — FR21', () => {
   it('answers the collection envelope with only the caller’s tenant', async () => {
     const { service, access, keangnam, goldenPark } = await world();

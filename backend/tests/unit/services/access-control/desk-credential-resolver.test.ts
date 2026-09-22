@@ -13,6 +13,7 @@ import { RowScope } from '../../../../services/access-control/row-scope';
 import { ScopeResolver } from '../../../../services/access-control/scope-resolver';
 import { TenantResolver } from '../../../../services/access-control/tenant-resolver';
 import { TokenClaims } from '../../../../services/auth/token.service';
+
 async function world(
   employeeOverrides: {
     role?: Role;
@@ -44,8 +45,10 @@ async function world(
       status: employeeOverrides.status ?? EmployeeStatus.Active,
     }),
   );
+
   return { resolver, tenant, employee };
 }
+
 function claimsFor(
   sub: number,
   tenantId: number,
@@ -55,6 +58,7 @@ function claimsFor(
 } {
   return { typ: 'access', jti: 't', iat: 0, exp: Number.MAX_SAFE_INTEGER, sub, tenant_id: tenantId };
 }
+
 const readCustomers: AccessRequirement = { resource: Resource.Customers, operation: Operation.Read };
 describe('DeskCredentialResolver', () => {
   it('loads the employee and returns an all-scope AccessContext for a granted role+resource', async () => {

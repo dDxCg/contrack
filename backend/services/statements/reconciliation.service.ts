@@ -3,12 +3,14 @@ import { ReconciliationRowView } from '../../dtos/statements/statements.response
 import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shift.repository';
 import { AccessContext } from '../access-control/access-context';
 import { addMonthsUTC, toDateString } from '../../utils/period';
+
 @Injectable()
 export class ReconciliationService {
   constructor(
     @Inject(ShiftRepository)
     private readonly shiftRepository: IShiftRepository,
   ) {}
+
   async get(access: AccessContext, period: Date): Promise<ReconciliationRowView[]> {
     const from = toDateString(period);
     const to = toDateString(addMonthsUTC(period, 1));
@@ -20,14 +22,18 @@ export class ReconciliationService {
         withEvidence: number;
       }
     >();
+
     for (const row of rows) {
       const totals = byContract.get(row.contractId) ?? { due: 0, withEvidence: 0 };
       totals.due += 1;
+
       if (row.completed) {
         totals.withEvidence += 1;
       }
+
       byContract.set(row.contractId, totals);
     }
+
     return [...byContract.entries()]
       .sort(([a], [b]) => a - b)
       .map(([contractId, totals]) => ({

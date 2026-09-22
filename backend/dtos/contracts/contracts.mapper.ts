@@ -1,6 +1,7 @@
 import { Contract } from '../../models/contracts/contract.entity';
 import { ContractItem } from '../../models/contracts/contract-item.entity';
 import { ContractItemView, ContractSiteView, ContractView } from './contracts.response.dto';
+
 export function toContractItemView(item: ContractItem): ContractItemView {
   return {
     id: item.id,
@@ -13,6 +14,7 @@ export function toContractItemView(item: ContractItem): ContractItemView {
     unit_price: item.unitPrice.toNumber(),
   };
 }
+
 export function toContractView(contract: Contract, sites: ContractSiteView[]): ContractView {
   return {
     id: contract.id,

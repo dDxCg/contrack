@@ -8,6 +8,7 @@ import { EmployeeRepository } from '../../../repositories/employees/employee.rep
 import { TeamRepository } from '../../../repositories/teams/team.repository';
 import { BcryptPasswordHasher } from '../../../services/auth/password-hasher.service';
 import { EmployeeCommand, EmployeeService } from '../../../services/employees/employee.service';
+
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Lê Thị Mai');
@@ -19,15 +20,19 @@ function draftEmployee(overrides: Partial<Employee>): Employee {
   employee.status = EmployeeStatus.Active;
   employee.setPasswordHash('x');
   Object.assign(employee, overrides);
+
   return employee;
 }
+
 function draftTeam(overrides: Partial<Team>): Team {
   const team = new Team();
   team.setName('Tổ');
   team.setCode('T0');
   Object.assign(team, overrides);
+
   return team;
 }
+
 async function world() {
   const dataSource = await createTestDataSource();
   const employees = new EmployeeRepository(dataSource);
@@ -59,6 +64,7 @@ async function world() {
   const otherTenantEmployee = await employees.create(
     draftEmployee({ tenantId: otherTenant.id, email: 'van.a@example.com', role: Role.Director }),
   );
+
   return {
     dataSource,
     employees,
@@ -76,9 +82,11 @@ async function world() {
     service: new EmployeeService(employees, teams, hasher),
   };
 }
+
 function command(overrides: Partial<EmployeeCommand> = {}): EmployeeCommand {
   return { name: 'Nguyễn Văn Toàn', email: 'toan.nv@example.com', role: Role.Employee, ...overrides };
 }
+
 describe('EmployeeService.list — FR18, Director only', () => {
   it('answers the collection envelope with only the caller’s tenant', async () => {
     const { service, access, director, toan, teamLead } = await world();

@@ -6,6 +6,7 @@ import { FakeClock } from '../../support/clock';
 import { Role } from '../../../models/employees/employee.entity';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { DisputeService } from '../../../services/shifts/dispute.service';
+
 async function world() {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
@@ -19,6 +20,7 @@ async function world() {
   });
   const manager = anEmployee({ id: 12, tenantId: tenant.id, role: Role.Manager });
   const clock = new FakeClock(new Date('2024-10-22T09:00:00.000Z'));
+
   return {
     shifts,
     tenant,
@@ -28,6 +30,7 @@ async function world() {
     service: new DisputeService(shifts, clock),
   };
 }
+
 describe('DisputeService.mark — FR8', () => {
   it('marks a shift disputed, excluding it from the next statement (D6)', async () => {
     const { service, access, shiftId, shifts, tenant } = await world();

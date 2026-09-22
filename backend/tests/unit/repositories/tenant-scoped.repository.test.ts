@@ -2,39 +2,53 @@ import { DataSource, EntityTarget, ObjectLiteral, SelectQueryBuilder } from 'typ
 import { Customer } from '../../../models/customers/customer.entity';
 import { Employee } from '../../../models/employees/employee.entity';
 import { TenantScopedRepository } from '../../../repositories/tenant-scoped.repository';
+
 class FakeSelectQueryBuilder {
   readonly calls: Array<{
     method: string;
     args: unknown[];
   }> = [];
+
   private readonly raw: unknown;
+
   constructor(raw: unknown = undefined) {
     this.raw = raw;
   }
+
   select(...args: unknown[]): this {
     this.calls.push({ method: 'select', args });
+
     return this;
   }
+
   from(...args: unknown[]): this {
     this.calls.push({ method: 'from', args });
+
     return this;
   }
+
   where(...args: unknown[]): this {
     this.calls.push({ method: 'where', args });
+
     return this;
   }
+
   async getRawOne(): Promise<unknown> {
     return this.raw;
   }
 }
+
 class TestCustomerRepository extends TenantScopedRepository<Customer> {
   protected readonly entity: EntityTarget<Customer> = Customer;
+
   constructor(dataSource: DataSource) {
     super(dataSource);
   }
+
   byTenant(tenantId: number): SelectQueryBuilder<Customer> {
     return this.scopedTo(tenantId);
   }
+
   byTenantOn<E extends ObjectLiteral>(
     entity: EntityTarget<E>,
     tenantId: number,
@@ -42,10 +56,12 @@ class TestCustomerRepository extends TenantScopedRepository<Customer> {
   ): SelectQueryBuilder<E> {
     return this.scopedQuery(entity, tenantId, alias);
   }
+
   async roleIdFor(code: string): Promise<number> {
     return this.lookupId('roles', code);
   }
 }
+
 describe('TenantScopedRepository', () => {
   const builder = new FakeSelectQueryBuilder();
   const createQueryBuilder = jest.fn(() => builder);

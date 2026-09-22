@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Role } from '../../models/employees/employee.entity';
 import { AuthForbiddenRoleException } from '../../models/domain-errors';
 import { RowScope } from './row-scope';
+
 export enum Resource {
   Customers = 'customers',
   Employees = 'employees',
@@ -15,16 +16,19 @@ export enum Resource {
   Tenants = 'tenants',
   PlatformDashboard = 'platform_dashboard',
 }
+
 export enum Operation {
   Read = 'read',
   Create = 'create',
   Update = 'update',
   Delete = 'delete',
 }
+
 export interface Grant {
   readonly operations: readonly Operation[];
   readonly scope: RowScope;
 }
+
 const ALL_OPERATIONS: readonly Operation[] = [
   Operation.Read,
   Operation.Create,
@@ -77,7 +81,7 @@ const GRANTS: Readonly<Record<Resource, Partial<Record<Role, Grant>>>> = {
   },
   [Resource.Alerts]: {
     [Role.Director]: { operations: [Operation.Read, Operation.Update], scope: RowScope.All },
-    [Role.Manager]: { operations: [Operation.Read, Operation.Update], scope: RowScope.Unit },
+    [Role.Manager]: { operations: [Operation.Read, Operation.Update], scope: RowScope.All },
     [Role.TeamLead]: { operations: [Operation.Read], scope: RowScope.Team },
   },
   [Resource.Dashboard]: {
@@ -86,6 +90,7 @@ const GRANTS: Readonly<Record<Resource, Partial<Record<Role, Grant>>>> = {
   [Resource.Tenants]: {},
   [Resource.PlatformDashboard]: {},
 };
+
 @Injectable()
 export class RoleResolver {
   rolesFor(resource: Resource, operation: Operation): Role[] {
@@ -93,16 +98,20 @@ export class RoleResolver {
       (role) => GRANTS[resource][role]?.operations.includes(operation) === true,
     );
   }
+
   grantFor(resource: Resource, role: Role): Grant | null {
     return GRANTS[resource][role] ?? null;
   }
+
   scopeFor(resource: Resource, role: Role): RowScope {
     return this.grantFor(resource, role)?.scope ?? RowScope.None;
   }
+
   requireRole(resource: Resource, operation: Operation, role: Role): void {
     if (this.grantFor(resource, role)?.operations.includes(operation) === true) {
       return;
     }
+
     throw new AuthForbiddenRoleException(this.rolesFor(resource, operation));
   }
 }

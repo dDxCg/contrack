@@ -4,6 +4,7 @@ function fakeReqRes(headers: Record<string, string | undefined> = {}) {
   const req = { headers } as unknown as Parameters<RequestIdMiddleware['use']>[0];
   const setHeader = jest.fn();
   const res = { setHeader } as unknown as Parameters<RequestIdMiddleware['use']>[1];
+
   return { req, res, setHeader };
 }
 

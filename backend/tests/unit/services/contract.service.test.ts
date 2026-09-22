@@ -23,13 +23,16 @@ import {
 import { ContractAssembler } from '../../../services/contracts/contract-assembler';
 import { ScheduleGeneratorService } from '../../../services/contracts/schedule-generator.service';
 import { daysSinceEpoch } from '../../../utils/period';
+
 function draftTeam(overrides: Partial<Team>): Team {
   const team = new Team();
   team.setName('Team');
   team.setCode('T0');
   Object.assign(team, overrides);
+
   return team;
 }
+
 async function world(options: { teamCount?: number } = {}) {
   const dataSource = await createTestDataSource();
   const contracts = new ContractRepository(dataSource);
@@ -41,9 +44,11 @@ async function world(options: { teamCount?: number } = {}) {
   const tenant = await seedTenant(dataSource);
   const otherTenant = await seedTenant(dataSource, { name: 'Other Tenant' });
   const teamCount = options.teamCount ?? 5;
+
   for (let i = 0; i < teamCount; i++) {
     await teams.create(draftTeam({ tenantId: tenant.id, name: `Team ${i}`, code: `T${i}` }));
   }
+
   const director = anEmployee({
     id: 12,
     tenantId: tenant.id,
@@ -59,6 +64,7 @@ async function world(options: { teamCount?: number } = {}) {
   customerDraft.setSegment(CustomerSegment.Regular);
   const customer = await customers.create(customerDraft);
   const alerts = new AlertRepository(dataSource);
+
   return {
     dataSource,
     contracts,
@@ -84,6 +90,7 @@ async function world(options: { teamCount?: number } = {}) {
     ),
   };
 }
+
 function validCommand(
   customerId: number,
   overrides: Partial<ContractCreateCommand> = {},
@@ -125,6 +132,7 @@ function validCommand(
     ...overrides,
   };
 }
+
 describe('ContractService.create — FR5, FR6, FR7, FR22', () => {
   it('creates the contract with its nested sites and items', async () => {
     const { service, access, customer } = await world();
@@ -270,6 +278,7 @@ describe('ContractService.create — schedule overload alert (team-capacity conf
       ...overrides,
     };
   }
+
   it('fires a schedule_overload alert once a day holds more shifts than there are teams', async () => {
     const { service, access, customer, alerts, tenant } = await world({ teamCount: 3 });
     await service.create(
@@ -476,6 +485,7 @@ describe('ContractService.update — PATCH /contracts/:id', () => {
     expect(error.code).toBe('auth.out_of_scope');
   });
 });
+
 function anItemCommand(overrides: Partial<ContractItemCommand> = {}): ContractItemCommand {
   return {
     name: 'Vệ sinh sảnh',
@@ -488,6 +498,7 @@ function anItemCommand(overrides: Partial<ContractItemCommand> = {}): ContractIt
     ...overrides,
   };
 }
+
 describe('ContractService.addSite — POST /contracts/:id/sites', () => {
   it('adds a site with no items yet', async () => {
     const { service, access, customer } = await world();

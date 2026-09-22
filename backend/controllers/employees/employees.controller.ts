@@ -17,9 +17,11 @@ import { EmployeeCommand, EmployeeService } from '../../services/employees/emplo
 import { EmployeeBodyDto } from '../../dtos/employees/employees.dto';
 import { EmployeePage, EmployeeView } from '../../dtos/employees/employees.response.dto';
 import { PageQueryDto } from '../../dtos/page-query.dto';
+
 @Controller('employees')
 export class EmployeesController {
   constructor(private readonly employeeService: EmployeeService) {}
+
   @Get()
   @Access(Resource.Employees, Operation.Read)
   list(
@@ -30,6 +32,7 @@ export class EmployeesController {
   ): Promise<EmployeePage> {
     return this.employeeService.list(access, { limit: query.limit, offset: query.offset });
   }
+
   @Post()
   @HttpCode(201)
   @Access(Resource.Employees, Operation.Create)
@@ -41,6 +44,7 @@ export class EmployeesController {
   ): Promise<EmployeeView> {
     return this.employeeService.create(access, toCommand(body));
   }
+
   @Get(':id')
   @Access(Resource.Employees, Operation.Read)
   get(
@@ -51,6 +55,7 @@ export class EmployeesController {
   ): Promise<EmployeeView> {
     return this.employeeService.get(access, id);
   }
+
   @Patch(':id')
   @Access(Resource.Employees, Operation.Update)
   update(
@@ -63,6 +68,7 @@ export class EmployeesController {
   ): Promise<EmployeeView> {
     return this.employeeService.update(access, id, toCommand(body));
   }
+
   @Delete(':id')
   @Access(Resource.Employees, Operation.Delete)
   deactivate(
@@ -74,6 +80,7 @@ export class EmployeesController {
     return this.employeeService.deactivate(access, id);
   }
 }
+
 function toCommand(body: EmployeeBodyDto): EmployeeCommand {
   return {
     name: body.name,

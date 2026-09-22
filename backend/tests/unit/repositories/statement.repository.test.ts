@@ -9,6 +9,7 @@ async function world() {
   const tenant = await seedTenant(dataSource);
   const { contractId } = await seedContractItemChain(dataSource, tenant.id);
   const statements = new StatementRepository(dataSource);
+
   return { dataSource, tenant, contractId, statements };
 }
 
@@ -25,6 +26,7 @@ async function seedStatement(
   statement.totalAmount = Money.fromNumber(overrides.totalAmount ?? 150);
   statement.status = overrides.status ?? StatementStatus.Draft;
   statement.pdfUrl = null;
+
   return repository.create(statement);
 }
 
@@ -130,9 +132,11 @@ describe('StatementRepository', () => {
     });
     it('honours limit/offset for the page window', async () => {
       const { statements, tenant, contractId } = await world();
+
       for (const period of ['2024-01-01', '2024-02-01', '2024-03-01']) {
         await seedStatement(statements, tenant.id, contractId, { period });
       }
+
       const page = await statements.list(tenant.id, {}, { limit: 2, offset: 1 });
       expect(page.total).toBe(3);
       expect(page.items).toHaveLength(2);

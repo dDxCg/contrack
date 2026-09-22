@@ -35,19 +35,23 @@ import {
   toDateStringInZone,
 } from '../../utils/period';
 import { Money } from '../../utils/money';
+
 const EXPIRY_THRESHOLD_DAYS = 30;
 const TREND_BUCKET_COUNT = 6;
 const RENEWAL_COHORT_MONTHS = 12;
+
 export interface DashboardQuery {
   month?: string;
   from?: string;
   to?: string;
 }
+
 interface ResolvedPeriod {
   start: Date;
   end: Date;
   bucketUnit: 'month' | 'week' | 'day';
 }
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -65,6 +69,7 @@ export class DashboardService {
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}
+
   async get(access: AccessContext, query: DashboardQuery): Promise<DashboardSummaryView> {
     const now = this.clock.now();
     const timezone = await this.tenantRepository.timezoneOf(access.tenantId);
@@ -93,6 +98,7 @@ export class DashboardService {
       this.shiftRepository.statsRowsBySite(access.tenantId, from, to),
       this.shiftRepository.shiftsByContractForPeriod(access.tenantId, from, to),
     ]);
+
     return {
       active_contracts: activeContracts,
       expiring_soon: expiring.length,
@@ -108,16 +114,20 @@ export class DashboardService {
       bucket_unit: period.bucketUnit,
     };
   }
+
   private async profitTrend(tenantId: number, period: ResolvedPeriod): Promise<ProfitTrendBucketView[]> {
     const lastDay = addDaysUTC(period.end, -1);
     const monthEnd = addMonthsUTC(startOfMonthUTC(lastDay), 1);
     const windows: { start: Date; end: Date }[] = [];
+
     for (let i = TREND_BUCKET_COUNT - 1; i >= 0; i--) {
       const start = addMonthsUTC(monthEnd, -1 - i);
       windows.push({ start, end: addMonthsUTC(start, 1) });
     }
+
     return Promise.all(windows.map((window) => this.profitBucket(tenantId, window)));
   }
+
   private async profitBucket(
     tenantId: number,
     window: { start: Date; end: Date },
@@ -125,6 +135,7 @@ export class DashboardService {
     const { revenue, cost, isEstimated } = await this.revenueAndCost(tenantId, window);
     const profit = revenue.subtract(cost);
     const marginPct = revenue.isZero() ? 0 : round2((profit.toNumber() / revenue.toNumber()) * 100);
+
     return {
       period_start: toDateString(window.start),
       period_end: toDateString(addDaysUTC(window.end, -1)),
@@ -136,6 +147,7 @@ export class DashboardService {
       is_estimated: isEstimated,
     };
   }
+
   private async revenueAndCost(
     tenantId: number,
     window: { start: Date; end: Date },
@@ -149,8 +161,10 @@ export class DashboardService {
     const contractIds = [...new Set(contractShiftRows.map((row) => row.contractId))];
     let cost = Money.zero();
     let isEstimated = false;
+
     for (const contractId of contractIds) {
       const recorded = await this.contractCostRepository.totalForMonth(tenantId, contractId, from);
+
       if (recorded !== null) {
         cost = cost.add(recorded);
       } else {
@@ -158,8 +172,10 @@ export class DashboardService {
         cost = cost.add(await this.costEstimationService.estimate(tenantId, contractId, window.start));
       }
     }
+
     return { revenue, cost, isEstimated };
   }
+
   private async comparison(tenantId: number, period: ResolvedPeriod): Promise<DashboardComparisonView> {
     const window = trendWindows(period, 2)[0];
     const from = toDateString(window.start);
@@ -171,6 +187,7 @@ export class DashboardService {
     ]);
     const profit = revenue.subtract(cost);
     const marginPct = revenue.isZero() ? 0 : round2((profit.toNumber() / revenue.toNumber()) * 100);
+
     return {
       period_start: from,
       period_end: toDateString(addDaysUTC(window.end, -1)),
@@ -180,6 +197,7 @@ export class DashboardService {
       new_contracts: newContracts,
     };
   }
+
   private async renewalRates(
     tenantId: number,
     period: ResolvedPeriod,
@@ -193,13 +211,16 @@ export class DashboardService {
     const expired = countOf(ContractStatus.Expired);
     const cancelled = countOf(ContractStatus.Cancelled);
     const cohortTotal = renewed + expired + cancelled;
+
     return {
       renewal_rate_pct: cohortTotal === 0 ? 0 : round2((renewed / cohortTotal) * 100),
       cancellation_rate_pct: cohortTotal === 0 ? 0 : round2((cancelled / cohortTotal) * 100),
     };
   }
+
   private async newContractsTrend(tenantId: number, period: ResolvedPeriod): Promise<TrendBucketView[]> {
     const windows = trendWindows(period, TREND_BUCKET_COUNT);
+
     return Promise.all(
       windows.map(async (window) => ({
         period_start: toDateString(window.start),
@@ -213,6 +234,7 @@ export class DashboardService {
       })),
     );
   }
+
   private async statementsClosed(
     tenantId: number,
     rows: readonly {
@@ -230,54 +252,73 @@ export class DashboardService {
       period,
     );
     let closed = 0;
+
     for (const contractId of contractIds) {
       if (byContract.get(contractId)?.status === StatementStatus.Sent) {
         closed += 1;
       }
     }
+
     return { closed, total: contractIds.length };
   }
 }
+
 function resolvePeriod(query: DashboardQuery, now: Date, timezone: string): ResolvedPeriod {
   const hasMonth = query.month !== undefined;
   const hasRange = query.from !== undefined || query.to !== undefined;
+
   if (hasMonth && hasRange) {
     throw new DashboardConflictingPeriodException();
   }
+
   if (hasMonth) {
     const start = new Date(`${query.month}-01T00:00:00.000Z`);
+
     return { start, end: addMonthsUTC(start, 1), bucketUnit: 'month' };
   }
+
   if (hasRange) {
     if (query.from === undefined || query.to === undefined) {
       throw new DashboardConflictingPeriodException();
     }
+
     const start = new Date(query.from);
+
     return { start, end: addDaysUTC(new Date(query.to), 1), bucketUnit: 'day' };
   }
+
   const start = startOfMonthInZone(now, timezone);
+
   return { start, end: addMonthsUTC(start, 1), bucketUnit: 'month' };
 }
+
 function trendWindows(period: ResolvedPeriod, count: number): { start: Date; end: Date }[] {
   if (period.bucketUnit === 'month') {
     const windows: { start: Date; end: Date }[] = [];
+
     for (let i = count - 1; i >= 0; i--) {
       const start = addMonthsUTC(period.start, -i);
       windows.push({ start, end: addMonthsUTC(start, 1) });
     }
+
     return windows;
   }
+
   const lengthMs = period.end.getTime() - period.start.getTime();
   const windows: { start: Date; end: Date }[] = [];
+
   for (let i = count - 1; i >= 0; i--) {
     const end = new Date(period.end.getTime() - i * lengthMs);
     windows.push({ start: new Date(end.getTime() - lengthMs), end });
   }
+
   return windows;
 }
+
 function bucketLabel(start: Date, bucketUnit: ResolvedPeriod['bucketUnit']): string {
   return bucketUnit === 'month' ? `T${start.getUTCMonth() + 1}` : toDateString(start);
 }
+
 function computeShiftStats(
   rows: readonly {
     status: ShiftStatus;
@@ -289,11 +330,13 @@ function computeShiftStats(
   let completed = 0;
   let overdue = 0;
   let disputed = 0;
+
   for (const row of rows) {
     if (toDateString(row.scheduledDate) > today) {
       notDue += 1;
       continue;
     }
+
     if (row.status === ShiftStatus.Completed) {
       completed += 1;
     } else if (row.status === ShiftStatus.Disputed) {
@@ -302,8 +345,10 @@ function computeShiftStats(
       overdue += 1;
     }
   }
+
   const due = rows.length - notDue;
   const pct = (count: number): number | null => (due === 0 ? null : round2((count / due) * 100));
+
   return {
     scheduled: rows.length,
     due,
@@ -317,6 +362,7 @@ function computeShiftStats(
     missing_evidence: 0,
   };
 }
+
 function computeShiftStatsBySite(
   rows: readonly {
     siteId: number;
@@ -330,19 +376,23 @@ function computeShiftStatsBySite(
     number,
     { siteName: string; rows: { status: ShiftStatus; scheduledDate: Date }[] }
   >();
+
   for (const row of rows) {
     const group = bySite.get(row.siteId);
+
     if (group === undefined) {
       bySite.set(row.siteId, { siteName: row.siteName, rows: [row] });
     } else {
       group.rows.push(row);
     }
   }
+
   const stats = [...bySite.entries()].map(([siteId, group]) => ({
     site_id: siteId,
     site_name: group.siteName,
     ...computeShiftStats(group.rows, today),
   }));
   stats.sort((a, b) => (a.completed_pct ?? Infinity) - (b.completed_pct ?? Infinity));
+
   return stats;
 }

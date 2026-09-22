@@ -1,4 +1,5 @@
 import { CostCategory } from '../../models/contract-costs/contract-cost.entity';
+
 export interface ContractCostView {
   id: number;
   contract_id: number;
@@ -8,6 +9,7 @@ export interface ContractCostView {
   recorded_by: number;
   recorded_at: string;
 }
+
 export interface ContractProfitMonthView {
   period: string;
   revenue: number;

@@ -5,6 +5,7 @@ import {
 } from '../../../models/domain-errors';
 import { DisputeDetails, Shift, ShiftStatus } from '../../../models/shifts/shift.entity';
 import { captureDomainError } from '../../support/domain-errors';
+
 function aDisputeDetails(overrides: Partial<DisputeDetails> = {}): DisputeDetails {
   return {
     reason: 'Không thấy nhân viên đến',
@@ -15,6 +16,7 @@ function aDisputeDetails(overrides: Partial<DisputeDetails> = {}): DisputeDetail
     ...overrides,
   };
 }
+
 function aScheduledShift(): Shift {
   const shift = new Shift();
   shift.id = 1;
@@ -29,8 +31,10 @@ function aScheduledShift(): Shift {
   shift.capturedAt = null;
   shift.receiptPhotoUrl = null;
   shift.status = ShiftStatus.Scheduled;
+
   return shift;
 }
+
 describe('Shift.complete — FR16, FR24, D7', () => {
   it('captures evidence and server time, marks completed', () => {
     const shift = aScheduledShift();

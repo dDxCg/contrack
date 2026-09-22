@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Employee } from '../../../models/employees/employee.entity';
 import { CrossTenantLookup } from '../../../repositories/cross-tenant-lookup';
+
 describe('CrossTenantLookup', () => {
   it('builds a query with no tenant filter — the explicit escape hatch, not an inherited one', () => {
     const builder = { where: jest.fn() };

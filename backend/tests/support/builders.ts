@@ -9,8 +9,10 @@ import { Employee, EmployeeStatus, Role } from '../../models/employees/employee.
 import { Team } from '../../models/teams/team.entity';
 import { Tenant, TenantStatus } from '../../models/tenants/tenant.entity';
 import { Money } from '../../utils/money';
+
 export function anEmployee(overrides: Partial<Employee> = {}): Employee {
   const employee = new Employee();
+
   return Object.assign(
     employee,
     {
@@ -31,8 +33,10 @@ export function anEmployee(overrides: Partial<Employee> = {}): Employee {
     overrides,
   );
 }
+
 export function aCustomer(overrides: Partial<Customer> = {}): Customer {
   const customer = new Customer();
+
   return Object.assign(
     customer,
     {
@@ -49,8 +53,10 @@ export function aCustomer(overrides: Partial<Customer> = {}): Customer {
     overrides,
   );
 }
+
 export function aTeam(overrides: Partial<Team> = {}): Team {
   const team = new Team();
+
   return Object.assign(
     team,
     {
@@ -64,8 +70,10 @@ export function aTeam(overrides: Partial<Team> = {}): Team {
     overrides,
   );
 }
+
 export function aContract(overrides: Partial<Contract> = {}): Contract {
   const contract = new Contract();
+
   return Object.assign(
     contract,
     {
@@ -81,8 +89,10 @@ export function aContract(overrides: Partial<Contract> = {}): Contract {
     overrides,
   );
 }
+
 export function aContractSite(overrides: Partial<ContractSite> = {}): ContractSite {
   const site = new ContractSite();
+
   return Object.assign(
     site,
     {
@@ -97,8 +107,10 @@ export function aContractSite(overrides: Partial<ContractSite> = {}): ContractSi
     overrides,
   );
 }
+
 export function aContractItem(overrides: Partial<ContractItem> = {}): ContractItem {
   const item = new ContractItem();
+
   return Object.assign(
     item,
     {
@@ -118,8 +130,10 @@ export function aContractItem(overrides: Partial<ContractItem> = {}): ContractIt
     overrides,
   );
 }
+
 export function aTenant(overrides: Partial<Tenant> = {}): Tenant {
   const tenant = new Tenant();
+
   return Object.assign(
     tenant,
     {
@@ -133,6 +147,7 @@ export function aTenant(overrides: Partial<Tenant> = {}): Tenant {
     overrides,
   );
 }
+
 export function anAccessContext(employee: Employee, overrides: Partial<AccessContext> = {}): AccessContext {
   const credential: TokenClaims = {
     typ: 'access',
@@ -140,6 +155,7 @@ export function anAccessContext(employee: Employee, overrides: Partial<AccessCon
     iat: 0,
     exp: Number.MAX_SAFE_INTEGER,
   };
+
   return {
     tenantId: employee.tenantId,
     employee,

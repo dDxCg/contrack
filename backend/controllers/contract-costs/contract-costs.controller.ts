@@ -13,12 +13,14 @@ import { Access, CurrentAccess } from '../../services/access-control/access.deco
 import { Operation, Resource } from '../../services/access-control/role-resolver';
 import { ContractCostService } from '../../services/contract-costs/contract-cost.service';
 import { ContractProfitabilityService } from '../../services/contract-costs/contract-profitability.service';
+
 @Controller('contracts/:id')
 export class ContractCostsController {
   constructor(
     private readonly contractCostService: ContractCostService,
     private readonly contractProfitabilityService: ContractProfitabilityService,
   ) {}
+
   @Get('costs')
   @Access(Resource.ContractCosts, Operation.Read)
   async listCosts(
@@ -32,8 +34,10 @@ export class ContractCostsController {
     items: ContractCostView[];
   }> {
     const period = query.period === undefined ? undefined : new Date(query.period);
+
     return { items: await this.contractCostService.list(access, contractId, period) };
   }
+
   @Put('costs')
   @Access(Resource.ContractCosts, Operation.Update)
   upsertCost(
@@ -50,6 +54,7 @@ export class ContractCostsController {
       amount: body.amount,
     });
   }
+
   @Get('profitability')
   @Access(Resource.ContractCosts, Operation.Read)
   async profitability(

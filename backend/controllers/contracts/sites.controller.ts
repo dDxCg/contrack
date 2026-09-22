@@ -6,9 +6,11 @@ import { Access, CurrentAccess } from '../../services/access-control/access.deco
 import { Operation, Resource } from '../../services/access-control/role-resolver';
 import { ContractService, ContractSiteUpdateCommand } from '../../services/contracts/contract.service';
 import { toItemCommand } from './contracts.controller';
+
 @Controller('sites')
 export class SitesController {
   constructor(private readonly contractService: ContractService) {}
+
   @Patch(':id')
   @Access(Resource.Contracts, Operation.Update)
   update(
@@ -21,6 +23,7 @@ export class SitesController {
   ): Promise<ContractSiteView> {
     return this.contractService.updateSite(access, id, toSiteUpdateCommand(body));
   }
+
   @Delete(':id')
   @HttpCode(204)
   @Access(Resource.Contracts, Operation.Delete)
@@ -32,6 +35,7 @@ export class SitesController {
   ): Promise<void> {
     return this.contractService.deleteSite(access, id);
   }
+
   @Post(':id/items')
   @HttpCode(201)
   @Access(Resource.Contracts, Operation.Create)
@@ -46,7 +50,9 @@ export class SitesController {
     return this.contractService.addItem(access, id, toItemCommand(body));
   }
 }
+
 const DEFAULT_GEOFENCE_RADIUS_METERS = 200;
+
 function toSiteUpdateCommand(body: ContractSiteUpdateBodyDto): ContractSiteUpdateCommand {
   return {
     name: body.name,

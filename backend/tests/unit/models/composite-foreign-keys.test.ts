@@ -1,5 +1,6 @@
 import { createTestDataSource } from '../../support/pg-mem-data-source';
 import { seedContractItemChain, seedTenant } from '../../support/seed';
+
 describe('Composite tenant-scoped foreign keys (M4) — DB-level defence in depth', () => {
   it('rejects a contract_sites row that points at another tenant’s contract', async () => {
     const dataSource = await createTestDataSource();

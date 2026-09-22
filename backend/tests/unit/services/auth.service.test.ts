@@ -16,6 +16,7 @@ import { AuthService } from '../../../services/auth/auth.service';
 import { BcryptPasswordHasher } from '../../../services/auth/password-hasher.service';
 import { InMemoryRevocationStore } from '../../../services/auth/revocation-store';
 import { TokenService } from '../../../services/auth/token.service';
+
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
   accessTtlSeconds: 1800,
@@ -31,6 +32,7 @@ interface World {
   tenant: Tenant;
   employee: Employee;
 }
+
 async function loadWorld(
   setup: {
     tenant?: {
@@ -60,6 +62,7 @@ async function loadWorld(
   draft.setPasswordHash(await hasher.hash('secret'));
   Object.assign(draft, setup.employee);
   const employee = await employeeRepository.create(draft);
+
   return {
     dataSource,
     hasher,
@@ -69,6 +72,7 @@ async function loadWorld(
     service: new AuthService(new TenantRepository(dataSource), employeeRepository, tokenService, hasher),
   };
 }
+
 async function sessionContext(world: World, token: string): Promise<AccessContext> {
   return anAccessContext(world.employee, {
     tenantId: world.employee.tenantId,
@@ -76,6 +80,7 @@ async function sessionContext(world: World, token: string): Promise<AccessContex
     credential: await world.tokenService.verifyAccess(token),
   });
 }
+
 describe('AuthService.login — FR22', () => {
   it('exchanges an email and password for a credential pair', async () => {
     const { service, tenant, employee } = await loadWorld();

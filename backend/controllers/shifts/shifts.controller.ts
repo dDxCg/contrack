@@ -14,6 +14,7 @@ import { DispatchService, ReassignCommand } from '../../services/shifts/dispatch
 import { DisputeCommand, DisputeService } from '../../services/shifts/dispute.service';
 import { ShiftListQuery, ShiftsService } from '../../services/shifts/shifts.service';
 import { FieldLinkService } from '../../services/field/field-link.service';
+
 @Controller('shifts')
 export class ShiftsController {
   constructor(
@@ -22,6 +23,7 @@ export class ShiftsController {
     private readonly disputeService: DisputeService,
     private readonly fieldLinkService: FieldLinkService,
   ) {}
+
   @Get()
   @Access(Resource.Shifts, Operation.Read)
   list(
@@ -32,6 +34,7 @@ export class ShiftsController {
   ): Promise<ShiftPage> {
     return this.shiftsService.list(access, toListQuery(query), { limit: query.limit, offset: query.offset });
   }
+
   @Get(':id')
   @Access(Resource.Shifts, Operation.Read)
   get(
@@ -42,6 +45,7 @@ export class ShiftsController {
   ): Promise<ShiftView> {
     return this.shiftsService.get(access, id);
   }
+
   @Patch(':id')
   @Access(Resource.Shifts, Operation.Update)
   reassign(
@@ -54,6 +58,7 @@ export class ShiftsController {
   ): Promise<ShiftView> {
     return this.dispatchService.reassign(access, id, toReassignCommand(body));
   }
+
   @Patch(':id/team')
   @Access(Resource.Shifts, Operation.Update)
   assignTeam(
@@ -66,6 +71,7 @@ export class ShiftsController {
   ): Promise<ShiftView> {
     return this.dispatchService.assignTeam(access, id, body.team_id ?? null);
   }
+
   @Post(':id/dispute')
   @HttpCode(200)
   @Access(Resource.Shifts, Operation.Update)
@@ -79,6 +85,7 @@ export class ShiftsController {
   ): Promise<ShiftView> {
     return this.disputeService.mark(access, id, toDisputeCommand(body));
   }
+
   @Post(':id/dispute:resolve')
   @HttpCode(200)
   @Access(Resource.Shifts, Operation.Update)
@@ -90,6 +97,7 @@ export class ShiftsController {
   ): Promise<ShiftView> {
     return this.disputeService.resolve(access, id);
   }
+
   @Get(':id/link')
   @Access(Resource.Shifts, Operation.Read)
   link(
@@ -101,6 +109,7 @@ export class ShiftsController {
     return this.fieldLinkService.issue(access, id);
   }
 }
+
 function toListQuery(query: ShiftListQueryDto): ShiftListQuery {
   return {
     from: query.from,
@@ -112,12 +121,14 @@ function toListQuery(query: ShiftListQueryDto): ShiftListQuery {
     managerId: query.manager_id,
   };
 }
+
 function toReassignCommand(body: ShiftReassignBodyDto): ReassignCommand {
   return {
     assigneeId: body.assignee_id ?? null,
     scheduledDate: body.scheduled_date === undefined ? undefined : new Date(body.scheduled_date),
   };
 }
+
 function toDisputeCommand(body: ShiftDisputeBodyDto): DisputeCommand {
   return {
     reason: body.reason,

@@ -11,6 +11,7 @@ import { CLOCK, IClock } from '../access-control/clock';
 import { CostEstimationService } from './cost-estimation.service';
 import { addMonthsUTC, round2, startOfMonthInZone, toDateString } from '../../utils/period';
 import { Money } from '../../utils/money';
+
 @Injectable()
 export class ContractProfitabilityService {
   constructor(
@@ -24,16 +25,20 @@ export class ContractProfitabilityService {
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}
+
   async get(access: AccessContext, contractId: number, months: number): Promise<ContractProfitMonthView[]> {
     const timezone = await this.tenantRepository.timezoneOf(access.tenantId);
     const currentMonth = startOfMonthInZone(this.clock.now(), timezone);
     const results: ContractProfitMonthView[] = [];
+
     for (let i = months - 1; i >= 0; i--) {
       const period = addMonthsUTC(currentMonth, -i);
       results.push(await this.monthOf(access.tenantId, contractId, period));
     }
+
     return results;
   }
+
   private async monthOf(
     tenantId: number,
     contractId: number,
@@ -54,6 +59,7 @@ export class ContractProfitabilityService {
       : recorded;
     const profit = revenue.subtract(cost);
     const marginPct = revenue.isZero() ? 0 : round2((profit.toNumber() / revenue.toNumber()) * 100);
+
     return {
       period: periodStart,
       revenue: revenue.toNumber(),

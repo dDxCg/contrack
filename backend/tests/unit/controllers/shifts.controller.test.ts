@@ -5,9 +5,11 @@ import { DisputeService } from '../../../services/shifts/dispute.service';
 import { ShiftsService } from '../../../services/shifts/shifts.service';
 import { FieldLinkService } from '../../../services/field/field-link.service';
 import { DisputeReportedVia, ShiftListQueryDto } from '../../../dtos/shifts/shifts.dto';
+
 function aListQuery(overrides: Partial<ShiftListQueryDto> = {}): ShiftListQueryDto {
   return { offset: 0, limit: 25, ...overrides };
 }
+
 describe('ShiftsController', () => {
   const access = anAccessContext(anEmployee());
   it('list maps query params into a scope-agnostic query and page', async () => {

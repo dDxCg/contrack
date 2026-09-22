@@ -1,5 +1,6 @@
 import { Employee } from '../../models/employees/employee.entity';
 import { EmployeeView } from './employees.response.dto';
+
 export function toEmployeeView(employee: Employee): EmployeeView {
   return {
     id: employee.id,

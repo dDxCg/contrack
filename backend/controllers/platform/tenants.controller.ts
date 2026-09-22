@@ -4,9 +4,11 @@ import { TenantPage, TenantView } from '../../dtos/platform/platform.response.dt
 import { Access } from '../../services/access-control/access.decorator';
 import { Operation, Resource } from '../../services/access-control/role-resolver';
 import { TenantService } from '../../services/platform/tenant.service';
+
 @Controller('platform/tenants')
 export class TenantsController {
   constructor(private readonly tenantService: TenantService) {}
+
   @Get()
   @Access(Resource.Tenants, Operation.Read)
   list(
@@ -15,6 +17,7 @@ export class TenantsController {
   ): Promise<TenantPage> {
     return this.tenantService.list({ status: query.status, limit: query.limit, offset: query.offset });
   }
+
   @Post()
   @HttpCode(201)
   @Access(Resource.Tenants, Operation.Create)
@@ -28,6 +31,7 @@ export class TenantsController {
       directorPassword: body.director_password,
     });
   }
+
   @Patch(':id')
   @Access(Resource.Tenants, Operation.Update)
   updateStatus(

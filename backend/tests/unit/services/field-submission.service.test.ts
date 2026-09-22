@@ -12,6 +12,7 @@ import {
 } from '../../../services/field/field-submission.service';
 import { ShiftPhotoRepository } from '../../../repositories/shifts/shift-photo.repository';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
   accessTtlSeconds: 1800,
@@ -19,12 +20,14 @@ const config: AuthConfig = {
   fieldTtlSeconds: 86400,
   bcryptRounds: 4,
 };
+
 function commandFor(
   tenantId: number,
   shiftId: number,
   overrides: Partial<FieldSubmissionCommand> = {},
 ): FieldSubmissionCommand {
   const key = (name: string): string => `uploads/${tenantId}/${shiftId}/${name}`;
+
   return {
     photoKeys: { before: [key('before-1.jpg')], after: [key('after-1.jpg')] },
     receiptPhotoKey: key('receipt.jpg'),
@@ -33,6 +36,7 @@ function commandFor(
     ...overrides,
   };
 }
+
 async function world(
   siteOverrides: {
     siteLatitude?: number | null;
@@ -57,6 +61,7 @@ async function world(
     assigneeId: null,
     scheduledDate: '2024-10-21',
   });
+
   return {
     dataSource,
     shifts,
@@ -69,6 +74,7 @@ async function world(
     service: new FieldSubmissionService(tokens, shifts, shiftPhotos, clock, dataSource),
   };
 }
+
 describe('FieldSubmissionService.submit — FR16, FR17, FR24', () => {
   it('completes the shift with server-stamped time and GPS', async () => {
     const { service, tokens, shiftId, shifts, tenant, clock, command } = await world();

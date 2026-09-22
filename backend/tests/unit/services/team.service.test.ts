@@ -8,6 +8,7 @@ import { EmployeeRepository } from '../../../repositories/employees/employee.rep
 import { TeamRepository } from '../../../repositories/teams/team.repository';
 import { RowScope } from '../../../services/access-control/row-scope';
 import { TeamService } from '../../../services/teams/team.service';
+
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Nhân viên');
@@ -19,15 +20,19 @@ function draftEmployee(overrides: Partial<Employee>): Employee {
   employee.status = EmployeeStatus.Active;
   employee.setPasswordHash('x');
   Object.assign(employee, overrides);
+
   return employee;
 }
+
 function draftTeam(overrides: Partial<Team>): Team {
   const team = new Team();
   team.setName('Tổ');
   team.setCode('T0');
   Object.assign(team, overrides);
+
   return team;
 }
+
 async function world() {
   const dataSource = await createTestDataSource();
   const teams = new TeamRepository(dataSource);
@@ -65,6 +70,7 @@ async function world() {
   const teamLessLead = await employees.create(
     draftEmployee({ tenantId: tenant.id, role: Role.TeamLead, teamId: null }),
   );
+
   return {
     dataSource,
     teams,
@@ -86,6 +92,7 @@ async function world() {
     teamLessLeadAccess: anAccessContext(teamLessLead, { scope: RowScope.Team }),
   };
 }
+
 describe('TeamService.list — FR18, lead and member_count derived from employees', () => {
   it('answers every team of the caller’s tenant, with the lead derived from members', async () => {
     const { service, directorAccess, teamT1, teamT3, teamLead } = await world();

@@ -1,7 +1,9 @@
 import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import { ENTITIES } from '../../models/entities';
+
 export const DATA_SOURCE = Symbol('DATA_SOURCE');
+
 export function createDataSource(env: NodeJS.ProcessEnv = process.env): DataSource {
   return new DataSource({
     type: 'postgres',
@@ -19,15 +21,21 @@ export function createDataSource(env: NodeJS.ProcessEnv = process.env): DataSour
     extra: { max: readPositiveInt(env, 'DB_POOL_MAX', 10) },
   });
 }
+
 export default createDataSource(process.env);
+
 function readPositiveInt(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
   const raw = env[name];
+
   if (raw === undefined || raw === '') {
     return fallback;
   }
+
   const value = Number(raw);
+
   if (!Number.isInteger(value) || value <= 0) {
     throw new Error(`${name} must be a positive whole number (got "${raw}")`);
   }
+
   return value;
 }

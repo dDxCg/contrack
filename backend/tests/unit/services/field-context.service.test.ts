@@ -8,6 +8,7 @@ import { InMemoryRevocationStore } from '../../../services/auth/revocation-store
 import { FieldContextService } from '../../../services/field/field-context.service';
 import { FieldTokenService } from '../../../services/field/field-token.service';
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
+
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
   accessTtlSeconds: 1800,
@@ -15,6 +16,7 @@ const config: AuthConfig = {
   fieldTtlSeconds: 86400,
   bcryptRounds: 4,
 };
+
 async function world(shiftOverrides: { status?: string } = {}) {
   const dataSource = await createTestDataSource();
   const shifts = new ShiftRepository(dataSource);
@@ -32,6 +34,7 @@ async function world(shiftOverrides: { status?: string } = {}) {
     scheduledDate: '2024-10-21',
     ...shiftOverrides,
   });
+
   return {
     dataSource,
     shifts,
@@ -42,6 +45,7 @@ async function world(shiftOverrides: { status?: string } = {}) {
     service: new FieldContextService(tokens, shifts),
   };
 }
+
 describe('FieldContextService.get', () => {
   it('returns the site, item and full remaining steps for an unsubmitted shift', async () => {
     const { service, token } = await world();

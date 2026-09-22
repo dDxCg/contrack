@@ -6,9 +6,11 @@ import { CurrentAccess, Public, SelfScoped } from '../../services/access-control
 import { LoginDto, LogoutDto, RefreshDto } from '../../dtos/auth/auth.dto';
 import { SessionView } from '../../dtos/auth/auth.response.dto';
 import { EmployeeView } from '../../dtos/employees/employees.response.dto';
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
   @Public()
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @Post('login')
@@ -19,6 +21,7 @@ export class AuthController {
   ): Promise<SessionView> {
     return this.authService.login({ email: body.email, password: body.password });
   }
+
   @Public()
   @Throttle({ default: { ttl: 60000, limit: 20 } })
   @Post('refresh')
@@ -29,6 +32,7 @@ export class AuthController {
   ): Promise<SessionView> {
     return this.authService.refresh(body.refresh_token);
   }
+
   @SelfScoped()
   @Post('logout')
   @HttpCode(204)
@@ -40,6 +44,7 @@ export class AuthController {
   ): Promise<void> {
     return this.authService.logout(access, body.refresh_token);
   }
+
   @SelfScoped()
   @Get('me')
   me(

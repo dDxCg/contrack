@@ -7,12 +7,15 @@ import { Role } from '../../../models/employees/employee.entity';
 import { ChannelClient } from '../../../data/channel-client/channel-client';
 import { AlertRepository } from '../../../repositories/alerts/alert.repository';
 import { AlertService } from '../../../services/alerts/alert.service';
+
 class FakeChannelClient implements ChannelClient {
   constructor(private readonly status: AlertDeliveryStatus) {}
+
   async send(): Promise<AlertDeliveryStatus> {
     return this.status;
   }
 }
+
 async function world(status: AlertDeliveryStatus = AlertDeliveryStatus.Fallback) {
   const dataSource = await createTestDataSource();
   const alerts = new AlertRepository(dataSource);
@@ -25,6 +28,7 @@ async function world(status: AlertDeliveryStatus = AlertDeliveryStatus.Fallback)
   alert.deliveryStatus = AlertDeliveryStatus.NotSent;
   const saved = await alerts.create(alert);
   const director = anEmployee({ id: 12, tenantId: tenant.id, role: Role.Director });
+
   return {
     alerts,
     tenant,
@@ -33,6 +37,7 @@ async function world(status: AlertDeliveryStatus = AlertDeliveryStatus.Fallback)
     service: new AlertService(alerts, channelClient),
   };
 }
+
 describe('AlertService.list', () => {
   it('lists alerts of the caller’s tenant', async () => {
     const { service, access, saved } = await world();

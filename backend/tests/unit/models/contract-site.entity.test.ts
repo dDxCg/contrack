@@ -1,4 +1,5 @@
 import { aContractSite } from '../../support/builders';
+
 describe('ContractSite', () => {
   describe('field changes', () => {
     it('changes name, work requirements and notes', () => {

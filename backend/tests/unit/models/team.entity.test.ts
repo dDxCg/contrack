@@ -1,6 +1,7 @@
 import { aTeam, anEmployee } from '../../support/builders';
 import { captureDomainError } from '../../support/domain-errors';
 import { Role } from '../../../models/employees/employee.entity';
+
 describe('Team', () => {
   describe('lead / memberCount — both derived from employees, never stored', () => {
     it('reports no lead for an empty team', () => {

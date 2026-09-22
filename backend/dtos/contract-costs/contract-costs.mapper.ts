@@ -1,5 +1,6 @@
 import { ContractCost } from '../../models/contract-costs/contract-cost.entity';
 import { ContractCostView } from './contract-costs.response.dto';
+
 export function toContractCostView(cost: ContractCost): ContractCostView {
   return {
     id: cost.id,

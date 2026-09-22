@@ -8,6 +8,7 @@ import { BcryptPasswordHasher } from '../../../services/auth/password-hasher.ser
 import { InMemoryRevocationStore } from '../../../services/auth/revocation-store';
 import { PlatformAuthService } from '../../../services/platform/platform-auth.service';
 import { TokenService } from '../../../services/auth/token.service';
+
 const config: AuthConfig = {
   jwtSecret: 'test-secret',
   accessTtlSeconds: 1800,
@@ -15,6 +16,7 @@ const config: AuthConfig = {
   fieldTtlSeconds: 86400,
   bcryptRounds: 4,
 };
+
 async function world() {
   const dataSource = await createTestDataSource();
   const repository = new PlatformAdminRepository(dataSource);
@@ -29,8 +31,10 @@ async function world() {
     `INSERT INTO platform_admins (name, username, password_hash) VALUES ('Ops Admin', 'ops.admin', $1)`,
     [await hasher.hash('correct-password')],
   );
+
   return { service, tokenService };
 }
+
 describe('PlatformAuthService.login', () => {
   it('exchanges valid credentials for a platform token carrying no tenant_id', async () => {
     const { service, tokenService } = await world();

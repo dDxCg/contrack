@@ -13,6 +13,7 @@ import { toShiftView } from '../../dtos/shifts/shifts.mapper';
 import { AccessContext } from '../access-control/access-context';
 import { RowScope } from '../access-control/row-scope';
 import { ScopeResolver } from '../access-control/scope-resolver';
+
 export interface ShiftListQuery {
   from?: string;
   to?: string;
@@ -22,6 +23,7 @@ export interface ShiftListQuery {
   teamId?: number;
   managerId?: number;
 }
+
 @Injectable()
 export class ShiftsService {
   constructor(
@@ -29,6 +31,7 @@ export class ShiftsService {
     private readonly shiftRepository: IShiftRepository,
     private readonly scopeResolver: ScopeResolver,
   ) {}
+
   async list(
     access: AccessContext,
     query: ShiftListQuery,
@@ -41,16 +44,21 @@ export class ShiftsService {
       filters,
       page,
     );
+
     return pageOf(items.map(toShiftView), total, page);
   }
+
   async get(access: AccessContext, id: number): Promise<ShiftView> {
     const found = await this.shiftRepository.findByIdWithScopeContext(access.tenantId, id);
+
     if (found === null || !this.scopeResolver.allows(access.scope, access.employee, found.scope)) {
       throw new AuthOutOfScopeException();
     }
+
     return toShiftView(found.shift);
   }
 }
+
 function scopeFilterFor(access: AccessContext): ShiftScopeFilter {
   switch (access.scope) {
     case RowScope.All:

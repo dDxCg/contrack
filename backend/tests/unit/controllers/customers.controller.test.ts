@@ -2,6 +2,7 @@ import { anAccessContext, anEmployee } from '../../support/builders';
 import { CustomersController } from '../../../controllers/customers/customers.controller';
 import { CustomerService } from '../../../services/customers/customer.service';
 import { CustomerSegment } from '../../../models/customers/customer.entity';
+
 describe('CustomersController', () => {
   const access = anAccessContext(anEmployee());
   it('list forwards the page window', async () => {

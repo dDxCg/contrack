@@ -7,7 +7,9 @@ import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shi
 import { AccessContext } from '../access-control/access-context';
 import { CLOCK, IClock } from '../access-control/clock';
 import { toShiftView } from '../../dtos/shifts/shifts.mapper';
+
 const DISPUTE_ROLES: readonly Role[] = [Role.Manager, Role.Director];
+
 export interface DisputeCommand {
   reason: string;
   reportedVia?: 'phone' | 'in_person';
@@ -15,6 +17,7 @@ export interface DisputeCommand {
   reportedAt?: Date;
   description?: string;
 }
+
 @Injectable()
 export class DisputeService {
   constructor(
@@ -23,6 +26,7 @@ export class DisputeService {
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}
+
   async mark(access: AccessContext, shiftId: number, command: DisputeCommand): Promise<ShiftView> {
     this.assertDisputeRole(access);
     const shift = await this.requireShift(access, shiftId);
@@ -33,24 +37,31 @@ export class DisputeService {
       reportedAt: command.reportedAt ?? this.clock.now(),
       description: command.description ?? null,
     });
+
     return toShiftView(await this.shiftRepository.update(shift));
   }
+
   async resolve(access: AccessContext, shiftId: number): Promise<ShiftView> {
     this.assertDisputeRole(access);
     const shift = await this.requireShift(access, shiftId);
     shift.resolveDispute();
+
     return toShiftView(await this.shiftRepository.update(shift));
   }
+
   private assertDisputeRole(access: AccessContext): void {
     if (!DISPUTE_ROLES.includes(access.employee.role)) {
       throw new AuthForbiddenRoleException(DISPUTE_ROLES);
     }
   }
+
   private async requireShift(access: AccessContext, id: number): Promise<Shift> {
     const shift = await this.shiftRepository.findById(access.tenantId, id);
+
     if (shift === null) {
       throw new AuthOutOfScopeException();
     }
+
     return shift;
   }
 }

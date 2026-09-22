@@ -5,6 +5,7 @@ import { ContractCreateCommand } from '../../../services/contracts/contract.serv
 import { ContractAssembler } from '../../../services/contracts/contract-assembler';
 import { ScheduleGeneratorService } from '../../../services/contracts/schedule-generator.service';
 import { Money } from '../../../utils/money';
+
 function aCommand(overrides: Partial<ContractCreateCommand> = {}): ContractCreateCommand {
   return {
     customerId: 9,
@@ -34,6 +35,7 @@ function aCommand(overrides: Partial<ContractCreateCommand> = {}): ContractCreat
     ...overrides,
   };
 }
+
 describe('ContractAssembler — pure command-to-entity-graph, no DB', () => {
   const assembler = new ContractAssembler(new ScheduleGeneratorService());
   const access = anAccessContext(anEmployee({ tenantId: 4 }));

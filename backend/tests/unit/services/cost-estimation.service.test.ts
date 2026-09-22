@@ -8,6 +8,7 @@ import { EmployeeRepository } from '../../../repositories/employees/employee.rep
 import { ShiftRepository } from '../../../repositories/shifts/shift.repository';
 import { CostEstimationService } from '../../../services/contract-costs/cost-estimation.service';
 import { Money } from '../../../utils/money';
+
 function draftEmployee(overrides: Partial<Employee>): Employee {
   const employee = new Employee();
   employee.setName('Kế toán');
@@ -19,8 +20,10 @@ function draftEmployee(overrides: Partial<Employee>): Employee {
   employee.status = EmployeeStatus.Active;
   employee.setPasswordHash('x');
   Object.assign(employee, overrides);
+
   return employee;
 }
+
 async function world() {
   const dataSource = await createTestDataSource();
   const costs = new ContractCostRepository(dataSource);
@@ -29,6 +32,7 @@ async function world() {
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id, { unitPrice: 1000000 });
   const accountant = await employees.create(draftEmployee({ tenantId: tenant.id }));
+
   return {
     dataSource,
     costs,
@@ -40,6 +44,7 @@ async function world() {
     service: new CostEstimationService(costs, shifts),
   };
 }
+
 async function recordCost(
   costs: ContractCostRepository,
   tenantId: number,
@@ -57,6 +62,7 @@ async function recordCost(
   cost.createdBy = createdBy;
   await costs.upsert(cost);
 }
+
 describe('CostEstimationService.estimate — FR28', () => {
   it('averages the trailing 3 months of the contract’s own recorded costs', async () => {
     const { service, costs, tenant, chain, accountant } = await world();

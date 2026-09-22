@@ -4,6 +4,7 @@ import { AuthCredentialExpiredException } from '../../../models/domain-errors';
 import { FieldContextService } from '../../../services/field/field-context.service';
 import { FieldSubmissionService } from '../../../services/field/field-submission.service';
 import { FieldUploadService } from '../../../services/field/field-upload.service';
+
 function aBody(): FieldSubmissionBodyDto {
   return {
     photo_keys: { before: ['a.jpg'], after: ['b.jpg'] },
@@ -12,6 +13,7 @@ function aBody(): FieldSubmissionBodyDto {
     longitude: null,
   };
 }
+
 function aController(
   submission: jest.Mock,
   upload: jest.Mock,
@@ -23,6 +25,7 @@ function aController(
     { issueTarget: upload } as unknown as FieldUploadService,
   );
 }
+
 describe('FieldController.context', () => {
   it('reads the field token from the X-Field-Token header', async () => {
     const context = jest.fn().mockResolvedValue({

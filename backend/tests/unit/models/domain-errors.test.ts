@@ -10,6 +10,7 @@ import {
   ValidationFailedException,
 } from '../../../models/domain-errors';
 import { toErrorEnvelope } from '../../../services/access-control/domain-exception.filter';
+
 describe('domain errors', () => {
   describe('toErrorEnvelope — one envelope for the whole catalogue (05-api.md §1, §9)', () => {
     it('maps a domain exception to its own code, message and details', () => {

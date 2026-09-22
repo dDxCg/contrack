@@ -1,5 +1,6 @@
 import { FrequencyUnit } from '../../../models/contracts/contract-item.entity';
 import { ScheduleGeneratorService } from '../../../services/contracts/schedule-generator.service';
+
 describe('ScheduleGeneratorService.generate — FR22', () => {
   const service = new ScheduleGeneratorService();
   it('generates one date per day for a daily frequency', () => {
@@ -126,6 +127,7 @@ describe('ScheduleGeneratorService.generate — FR22', () => {
     });
   });
 });
+
 function iso(date: Date): string {
   return date.toISOString().slice(0, 10);
 }

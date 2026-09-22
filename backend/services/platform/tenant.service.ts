@@ -15,11 +15,13 @@ import {
 } from '../../repositories/tenants/tenant.repository';
 import { withUniqueViolation } from '../../repositories/unique-violation';
 import { PASSWORD_HASHER, PasswordHasher } from '../auth/password-hasher.service';
+
 export interface TenantCreateCommand {
   name: string;
   directorEmail: string;
   directorPassword: string;
 }
+
 @Injectable()
 export class TenantService {
   constructor(
@@ -32,11 +34,14 @@ export class TenantService {
     @Inject(DATA_SOURCE)
     private readonly dataSource: DataSource,
   ) {}
+
   async create(command: TenantCreateCommand): Promise<TenantView> {
     if (await this.employeeRepository.existsEmail(command.directorEmail)) {
       throw new EmployeeEmailTakenException(command.directorEmail);
     }
+
     const passwordHash = await this.passwordHasher.hash(command.directorPassword);
+
     return this.dataSource.transaction(async (tx) => {
       const tenant = await this.tenantRepository.create(command.name, tx);
       const director = new Employee();
@@ -53,22 +58,28 @@ export class TenantService {
         () => this.employeeRepository.create(director, tx),
         () => new EmployeeEmailTakenException(command.directorEmail),
       );
+
       return toTenantView(tenant, savedDirector.id);
     });
   }
+
   async list(query: TenantListQuery): Promise<TenantPage> {
     const { items, total } = await this.tenantRepository.list(query);
+
     return pageOf(
       items.map((tenant) => toTenantView(tenant)),
       total,
       query,
     );
   }
+
   async updateStatus(id: number, status: TenantStatus): Promise<TenantView> {
     const existing = await this.tenantRepository.findById(id);
+
     if (existing === null) {
       throw new TenantNotFoundException(id);
     }
+
     return toTenantView(await this.tenantRepository.updateStatus(id, status));
   }
 }

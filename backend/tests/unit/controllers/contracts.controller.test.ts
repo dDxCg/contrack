@@ -3,6 +3,7 @@ import { ContractsController } from '../../../controllers/contracts/contracts.co
 import { ContractService } from '../../../services/contracts/contract.service';
 import { FrequencyUnit } from '../../../models/contracts/contract-item.entity';
 import { ContractStatus } from '../../../models/contracts/contract.entity';
+
 describe('ContractsController', () => {
   const access = anAccessContext(anEmployee());
   it('list forwards the page window', async () => {

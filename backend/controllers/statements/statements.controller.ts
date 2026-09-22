@@ -5,9 +5,11 @@ import { AccessContext } from '../../services/access-control/access-context';
 import { Access, CurrentAccess } from '../../services/access-control/access.decorator';
 import { Operation, Resource } from '../../services/access-control/role-resolver';
 import { StatementService } from '../../services/statements/statement.service';
+
 @Controller('statements')
 export class StatementsController {
   constructor(private readonly statementService: StatementService) {}
+
   @Get()
   @Access(Resource.Statements, Operation.Read)
   list(
@@ -22,6 +24,7 @@ export class StatementsController {
       { limit: query.limit, offset: query.offset },
     );
   }
+
   @Post()
   @HttpCode(201)
   @Access(Resource.Statements, Operation.Create)
@@ -36,6 +39,7 @@ export class StatementsController {
       period: new Date(body.period),
     });
   }
+
   @Get(':id')
   @Access(Resource.Statements, Operation.Read)
   get(
@@ -46,6 +50,7 @@ export class StatementsController {
   ): Promise<StatementView> {
     return this.statementService.get(access, id);
   }
+
   @Post(':id/export')
   @HttpCode(202)
   @Access(Resource.Statements, Operation.Update)
@@ -56,10 +61,13 @@ export class StatementsController {
     id: number,
   ): Promise<{
     job_id: string;
+    pdf_url: string;
   }> {
-    const { jobId } = await this.statementService.export(access, id);
-    return { job_id: jobId };
+    const { jobId, pdfUrl } = await this.statementService.export(access, id);
+
+    return { job_id: jobId, pdf_url: pdfUrl };
   }
+
   @Post(':id/send')
   @HttpCode(200)
   @Access(Resource.Statements, Operation.Update)

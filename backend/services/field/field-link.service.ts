@@ -5,6 +5,7 @@ import { IShiftRepository, ShiftRepository } from '../../repositories/shifts/shi
 import { AccessContext } from '../access-control/access-context';
 import { CLOCK, IClock } from '../access-control/clock';
 import { FieldTokenService } from './field-token.service';
+
 @Injectable()
 export class FieldLinkService {
   constructor(
@@ -14,13 +15,17 @@ export class FieldLinkService {
     @Inject(CLOCK)
     private readonly clock: IClock,
   ) {}
+
   async issue(access: AccessContext, shiftId: number): Promise<FieldLinkView> {
     const shift = await this.shiftRepository.findById(access.tenantId, shiftId);
+
     if (shift === null) {
       throw new AuthOutOfScopeException();
     }
+
     const token = this.fieldTokenService.sign(shift.id);
     const expiresAt = new Date(this.clock.now().getTime() + this.fieldTokenService.ttlSeconds * 1000);
+
     return {
       token,
       url: `${process.env.APP_BASE_URL ?? ''}/field#${token}`,

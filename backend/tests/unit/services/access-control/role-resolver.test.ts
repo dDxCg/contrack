@@ -3,6 +3,7 @@ import { captureDomainError } from '../../../support/domain-errors';
 import { EmployeeStatus, Role } from '../../../../models/employees/employee.entity';
 import { Operation, Resource, RoleResolver } from '../../../../services/access-control/role-resolver';
 import { RowScope } from '../../../../services/access-control/row-scope';
+
 describe('RoleResolver — 05-api.md §8', () => {
   const resolver = new RoleResolver();
   describe('rolesFor', () => {
@@ -101,7 +102,7 @@ describe('RoleResolver — 05-api.md §8', () => {
       expect(resolver.scopeFor(Resource.Shifts, Role.TeamLead)).toBe(RowScope.Team);
       expect(resolver.scopeFor(Resource.Shifts, Role.Employee)).toBe(RowScope.Own);
       expect(resolver.scopeFor(Resource.Shifts, Role.Manager)).toBe(RowScope.All);
-      expect(resolver.scopeFor(Resource.Alerts, Role.Manager)).toBe(RowScope.Unit);
+      expect(resolver.scopeFor(Resource.Alerts, Role.Manager)).toBe(RowScope.All);
     });
     it('answers none where the role has no grant at all', () => {
       expect(resolver.scopeFor(Resource.Employees, Role.Manager)).toBe(RowScope.None);

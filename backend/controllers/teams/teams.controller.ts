@@ -5,9 +5,11 @@ import { Operation, Resource } from '../../services/access-control/role-resolver
 import { TeamService } from '../../services/teams/team.service';
 import { TeamCreateDto, TeamUpdateDto } from '../../dtos/teams/teams.dto';
 import { TeamPage, TeamView } from '../../dtos/teams/teams.response.dto';
+
 @Controller('teams')
 export class TeamsController {
   constructor(private readonly teamService: TeamService) {}
+
   @Get()
   @Access(Resource.Teams, Operation.Read)
   list(
@@ -16,6 +18,7 @@ export class TeamsController {
   ): Promise<TeamPage> {
     return this.teamService.list(access);
   }
+
   @Post()
   @HttpCode(201)
   @Access(Resource.Teams, Operation.Create)
@@ -27,6 +30,7 @@ export class TeamsController {
   ): Promise<TeamView> {
     return this.teamService.create(access, { name: body.name, code: body.code });
   }
+
   @Get(':id')
   @Access(Resource.Teams, Operation.Read)
   get(
@@ -37,6 +41,7 @@ export class TeamsController {
   ): Promise<TeamView> {
     return this.teamService.get(access, id);
   }
+
   @Patch(':id')
   @Access(Resource.Teams, Operation.Update)
   update(
@@ -49,6 +54,7 @@ export class TeamsController {
   ): Promise<TeamView> {
     return this.teamService.update(access, id, { name: body.name, code: body.code });
   }
+
   @Delete(':id')
   @HttpCode(204)
   @Access(Resource.Teams, Operation.Delete)
