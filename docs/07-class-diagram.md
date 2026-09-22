@@ -25,6 +25,8 @@ classDiagram
         -signedAt: Date
         -expiresAt: Date
         -status: ContractStatus
+        +setTerm(signedAt: Date, expiresAt: Date) void
+        +setStatus(status: ContractStatus) void
     }
     class ContractSite {
         -id: int
@@ -38,21 +40,28 @@ classDiagram
         -frequencyCount: int
         -frequencyUnit: FrequencyUnit
         -frequencyRule: string
+        -dayOfWeek: int
+        -dayOfMonth: int
         -unitPrice: decimal
+        +setFrequency(count: int, unit: FrequencyUnit, rule: string, dayOfWeek: int, dayOfMonth: int) void
+        +assertValid() FieldViolation[]
     }
     class Shift {
         -id: int
         -scheduledDate: Date
         -status: ShiftStatus
+        -teamId: int
         -completedAt: DateTime
         -latitude: decimal
         -longitude: decimal
         -capturedAt: DateTime
         -receiptPhotoUrl: string
+        -geoVerified: bool
         +complete(evidence: ShiftEvidence, now: DateTime) void
-        +dispute() void
+        +dispute(details: DisputeDetails) void
         +resolveDispute() void
         +reassign(assigneeId: int, scheduledDate: Date) void
+        +assignTeam(teamId: int) void
     }
     class ShiftPhoto {
         -id: int
@@ -75,6 +84,8 @@ classDiagram
         -email: string
         -role: Role
         -status: EmployeeStatus
+        +setManager(managerId: int, managerChainIds: int[]) void
+        +deactivate(futureShiftIds: int[]) void
     }
     class Team {
         -id: int
@@ -82,6 +93,8 @@ classDiagram
         -code: string
         +lead() Employee
         +memberCount() int
+        +addMember(employee: Employee) void
+        +assertDeletable() void
     }
     class ContractCost {
         -id: int
@@ -92,6 +105,7 @@ classDiagram
     class Alert {
         -id: int
         -kind: AlertKind
+        -subjectId: int
         -deliveryStatus: AlertDeliveryStatus
         +setDeliveryStatus(status: AlertDeliveryStatus) void
     }
@@ -107,6 +121,7 @@ classDiagram
     Employee "1" --> "0..*" Shift : assignee
     Employee "0..1" --> "0..*" Employee : manager
     Team "0..1" --> "0..*" Employee : members
+    Team "0..1" --> "0..*" Shift : assigned
     Tenant "1" --> "0..*" Customer
     Tenant "1" --> "0..*" Employee
     Tenant "1" --> "0..*" Team

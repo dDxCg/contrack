@@ -234,6 +234,8 @@ classDiagram
         -signedAt: Date
         -expiresAt: Date
         -status: ContractStatus
+        +setTerm(signedAt: Date, expiresAt: Date) void
+        +setStatus(status: ContractStatus) void
     }
     class ContractSite {
         -id: int
@@ -247,21 +249,28 @@ classDiagram
         -frequencyCount: int
         -frequencyUnit: FrequencyUnit
         -frequencyRule: string
+        -dayOfWeek: int
+        -dayOfMonth: int
         -unitPrice: decimal
+        +setFrequency(count: int, unit: FrequencyUnit, rule: string, dayOfWeek: int, dayOfMonth: int) void
+        +assertValid() FieldViolation[]
     }
     class Shift {
         -id: int
         -scheduledDate: Date
         -status: ShiftStatus
+        -teamId: int
         -completedAt: DateTime
         -latitude: decimal
         -longitude: decimal
         -capturedAt: DateTime
         -receiptPhotoUrl: string
+        -geoVerified: bool
         +complete(evidence: ShiftEvidence, now: DateTime) void
-        +dispute() void
+        +dispute(details: DisputeDetails) void
         +resolveDispute() void
         +reassign(assigneeId: int, scheduledDate: Date) void
+        +assignTeam(teamId: int) void
     }
     class ShiftPhoto {
         -id: int
@@ -284,6 +293,8 @@ classDiagram
         -email: string
         -role: Role
         -status: EmployeeStatus
+        +setManager(managerId: int, managerChainIds: int[]) void
+        +deactivate(futureShiftIds: int[]) void
     }
     class Team {
         -id: int
@@ -291,6 +302,8 @@ classDiagram
         -code: string
         +lead() Employee
         +memberCount() int
+        +addMember(employee: Employee) void
+        +assertDeletable() void
     }
     class ContractCost {
         -id: int
@@ -301,6 +314,7 @@ classDiagram
     class Alert {
         -id: int
         -kind: AlertKind
+        -subjectId: int
         -deliveryStatus: AlertDeliveryStatus
         +setDeliveryStatus(status: AlertDeliveryStatus) void
     }
@@ -316,6 +330,7 @@ classDiagram
     Employee "1" --> "0..*" Shift : assignee
     Employee "0..1" --> "0..*" Employee : manager
     Team "0..1" --> "0..*" Employee : members
+    Team "0..1" --> "0..*" Shift : assigned
     Tenant "1" --> "0..*" Customer
     Tenant "1" --> "0..*" Employee
     Tenant "1" --> "0..*" Team
@@ -334,8 +349,8 @@ sequenceDiagram
     participant AuthService
     participant DB as Database
 
-    Employee->>API: POST /auth/login (email, password)
-    API->>AuthService: login(email, password)
+    Employee->>API: Login (email, password)
+    API->>AuthService: email, password
     AuthService->>DB: Find employee by email
     alt no matching employee, or inactive, or no password set
         AuthService-->>Employee: 401 auth.invalid_credentials
@@ -363,10 +378,10 @@ sequenceDiagram
     actor Employee
     participant API
     participant Guard as AccessControlGuard
-    participant Resolvers as Tenant/Role/Scope Resolver
+    participant Resolvers as Permission Resolver
     participant DB as Database
 
-    Employee->>API: Request with Authorization: Bearer <token>
+    Employee->>API: Send request
     API->>Guard: canActivate()
     Guard->>Guard: Verify bearer token signature + expiry
     alt token missing, malformed or expired
@@ -396,46 +411,63 @@ sequenceDiagram
     autonumber
     actor Manager
     participant System
+    participant Rebalancer as ScheduleRebalancer
     participant DB as Database
 
     Manager->>System: Submit new contract (customer, term, sites, items)
-    System->>DB: INSERT contracts, contract_sites, contract_items
     System->>System: Validate frequency + unit price per item
-    alt validation passed
-        System->>System: Generate shift schedule from each item's frequency
-        System->>DB: INSERT shifts (scheduled_date, status = scheduled)
+    alt validation failed
+        System-->>Manager: 422 Reject (missing frequency / invalid price), nothing written
+    else validation passed
+        System->>System: Generate each item's shift dates (ScheduleGeneratorService, anchored to the signed day-of-month)
+        rect rgb(245, 245, 245)
+            note over System,DB: single DB transaction
+            System->>DB: INSERT contract, contract_sites, contract_items
+            System->>DB: Team capacity for tenant
+            System->>DB: countsForTenantInRange — one batched query, term.from..term.to
+            System->>Rebalancer: resolve(candidates, existing counts) — in-memory, no per-date query
+            Rebalancer-->>System: placements (moved to nearest under-capacity date within +/-7 days, or kept as-is)
+            System->>DB: INSERT shifts (batch)
+            System->>DB: countsForTenantInRange again — post-insert, to detect overload
+        end
         System-->>Manager: Contract created, schedule generated
-    else validation failed
-        System-->>Manager: Reject (missing frequency / invalid price)
+        opt any date still over team capacity after rebalancing
+            System->>System: fireAlert(schedule_overload) per overloaded date — see diagram 6 for dedup
+        end
     end
 ```
 
-**4. Weekly dispatch and field shift execution**
+**4. Dispatch (manager → team lead → employee) and field shift execution**
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant System
+    actor Manager
     actor TeamLead as Team Lead
     actor Employee
     actor Customer
+    participant System
     participant DB as Database
 
-    System->>TeamLead: Push this week's shift list (Monday)
-    TeamLead->>Employee: Assign shift
-    Employee->>System: Open shift link on phone
+    Manager->>System: Assign a team to the shift (assignTeam)
+    System->>DB: UPDATE shifts SET team_id
+    System-->>Manager: Shift now owned by the team
+    TeamLead->>System: Reassign shift to a team member (own team only)
+    System->>System: Verify caller is Team Lead, shift.team_id == caller's team, assignee is on that team
+    alt shift already completed
+        System-->>TeamLead: Reject — shift already completed
+    else shift not yet completed
+        System->>DB: UPDATE shifts SET assignee_id
+        System-->>TeamLead: Shift assigned
+    end
+    Employee->>System: Open shift link on phone (signed field token)
     Employee->>System: Submit before / after photos
     Customer->>Employee: Sign paper receipt
     Employee->>System: Submit photo of signed receipt
-    System->>System: Capture GPS + timestamp
-    alt GPS signal available
-        System->>DB: UPDATE shift — completed, with location
-        System->>DB: INSERT shift_photos (before, after)
-        System-->>Employee: Shift marked completed
-    else no GPS signal
-        System->>DB: UPDATE shift — completed, no location
-        System-->>Employee: Shift completed, flagged for missing location
-    end
+    System->>System: Capture GPS + timestamp, check against site geofence
+    System->>DB: UPDATE shift — completed, geo_verified = within geofence?
+    System->>DB: INSERT shift_photos (before, after, receipt)
+    System-->>Employee: Shift marked completed (flagged if outside the geofence)
 ```
 
 **5. Dispute a shift**
@@ -461,58 +493,83 @@ sequenceDiagram
     end
 ```
 
-**6. Alerts: expiring contract and missed shift**
+**6. Alerts: expiring contract and missed shift (daily job, dedup-safe)**
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Scheduler as System (daily job)
+    participant Cron as AlertJobScheduler
+    participant Lock as DistributedLock
+    participant Job as AlertJobService
     participant DB as Database
-    participant Channel as Zalo / SMS Gateway
-    actor Director
-    actor TeamLead as Team Lead
+    participant Channel as ChannelClient
 
-    Scheduler->>DB: Query contracts WHERE expires_at <= today + 30 days
-    DB-->>Scheduler: Contracts expiring soon
-    Scheduler->>DB: Query shifts overdue vs. item frequency
-    DB-->>Scheduler: Missed shifts
-    Scheduler->>Channel: Send alerts (expiry list, missed-shift list)
-    alt channel available
-        Channel-->>Director: "N contracts expiring in 30 days"
-        Channel-->>TeamLead: "Shift at site X not completed"
-        Channel-->>Scheduler: Delivery confirmed
-    else channel unavailable
-        Channel-->>Scheduler: Delivery failed
-        Scheduler->>Director: Fallback in-app / email reminder
-        Scheduler->>TeamLead: Fallback in-app / email reminder
+    Cron->>Lock: try daily alert
+    alt another instance already holds the lock
+        Lock-->>Cron: busy
+        Cron->>Cron: skip this tick — no duplicate run
+    else lock acquired
+        Cron->>Job: runAll()
+        loop each active tenant, sequentially
+            Job->>DB: contracts expiring within 30 days (tenant's own timezone)
+            Job->>DB: shifts overdue vs. item frequency
+            loop each candidate alert (contract_expiring / shift_overdue / schedule_overload)
+                Job->>DB: INSERT alerts (UNIQUE tenant_id, kind, subject_id)
+                alt row already exists (duplicate)
+                    DB-->>Job: unique violation
+                    Job->>Job: skip — already fired, never re-sends
+                else first time for this (tenant, kind, subject)
+                    DB-->>Job: inserted
+                    Job->>Channel: send(message)
+                    Channel-->>Job: delivery status (sent / not_sent — never blocks the insert)
+                    Job->>DB: UPDATE alerts SET delivery_status
+                end
+            end
+        end
+        Job-->>Cron: summary (sent, skipped)
+        Cron->>Lock: release("alerts:daily")
     end
 ```
 
-**7. Month-end statement export**
+**7. Month-end statement — compute, export, send (three separate actions)**
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Accountant
     participant System
+    participant PDF as PdfKitStatementRenderer
+    participant S3 as "ObjectStorageClient (resilient - retry + circuit breaker)"
     participant DB as Database
-    actor Customer
+    participant Channel as ChannelClient
 
-    Accountant->>System: Request monthly statement for a contract
-    System->>DB: Query completed shifts + shift_photos for the period
-    DB-->>System: Shifts, photos, receipts
-    alt all shifts in period have complete evidence
-        System->>System: Compute total_amount from contract_items unit_price
-        System->>DB: INSERT statements (period, total_amount, status = draft)
-        System->>System: Render PDF with photos + signed receipts attached
-        System->>DB: UPDATE statements SET status = issued, pdf_url
-        System-->>Accountant: Statement ready
-        Accountant->>Customer: Send PDF statement
-        Accountant->>System: Confirm sent
-        System->>DB: UPDATE statements SET status = sent
-    else a shift is missing evidence or still disputed
-        System-->>Accountant: Cannot close period, list incomplete shifts
+    Accountant->>System: Compute statement for a contract + period
+    System->>DB: Query shifts for the period
+    alt a shift is missing evidence or still disputed
+        System-->>Accountant: Cannot close period, list incomplete shifts — nothing saved
+    else all shifts in period have complete evidence
+        System->>System: total_amount = sum(contract_items.unit_price)
+        System->>DB: INSERT statements (period, total_amount, status = draft, pdf_url = null)
+        System-->>Accountant: Draft statement
     end
+
+    Accountant->>System: Export statement (draft -> issued)
+    System->>System: statement.export() — status guard
+    System->>PDF: renderStatement(period, lines, total) — no photos, text only
+    PDF-->>System: PDF buffer
+    System->>S3: putObject(statements/{tenant}/{id}.pdf)
+    S3-->>System: stored (retried on transient failure, circuit opens after repeated failures)
+    System->>S3: presignDownload(key)
+    S3-->>System: pdf_url
+    System->>DB: UPDATE statements SET status = issued, pdf_url
+    System-->>Accountant: pdf_url ready to download
+
+    Accountant->>System: Send statement (issued -> sent)
+    System->>System: statement.send() — status guard
+    System->>Channel: send(text message with period, total, pdf_url)
+    Channel-->>System: delivery status (not_sent until a real channel is configured)
+    System->>DB: UPDATE statements SET status = sent
+    System-->>Accountant: Sent
 ```
 
 **8. Platform Admin onboards a new tenant**
@@ -560,7 +617,7 @@ sequenceDiagram
     end
 ```
 
-**10. Team lead reassigns or reschedules a shift**
+**10. Reassign or reschedule a shift — role and team-scope checks**
 
 ```mermaid
 sequenceDiagram
@@ -569,13 +626,27 @@ sequenceDiagram
     participant System
     participant DB as Database
 
-    TeamLead->>System: Reassign shift to a different team member, or move its date
-    System->>DB: SELECT shift status
-    alt shift not yet completed
-        System->>DB: UPDATE shifts SET assignee / scheduled_date
-        System-->>TeamLead: Shift updated
-    else shift already completed
-        System-->>TeamLead: Reject — shift already completed
+    TeamLead->>System: Reassign shift to a different team member, and/or move its date
+    alt caller is not a Team Lead
+        System-->>TeamLead: 403 auth.forbidden_role — only Team Lead calls this endpoint
+    else caller is a Team Lead
+        System->>DB: Find shift
+        alt shift.team_id is not the caller's own team
+            System-->>TeamLead: 404 auth.out_of_scope — cannot touch another team's shift
+        else shift belongs to the caller's team
+            opt new assignee given and caller's row scope is Team
+                System->>DB: Find assignee
+                alt assignee is on a different team
+                    System-->>TeamLead: Reject — assignee must be on the caller's team
+                end
+            end
+            alt shift already completed
+                System-->>TeamLead: Reject — shift already completed
+            else shift not yet completed
+                System->>DB: UPDATE shifts SET assignee_id / scheduled_date
+                System-->>TeamLead: Shift updated
+            end
+        end
     end
 ```
 
