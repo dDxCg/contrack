@@ -1,4 +1,4 @@
-import { ArgumentsHost, BadRequestException, Logger } from '@nestjs/common';
+import { ArgumentsHost, BadRequestException } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { AuthOutOfScopeException } from '../../../../models/domain-errors';
 import {
@@ -25,65 +25,59 @@ class FakeResponse {
 }
 
 describe('DomainExceptionFilter', () => {
-  let filter: DomainExceptionFilter;
-  let loggerError: jest.SpyInstance;
-  beforeEach(() => {
-    filter = new DomainExceptionFilter();
-    const logger = (filter as unknown as { logger: Logger }).logger;
-    loggerError = jest.spyOn(logger, 'error').mockImplementation(() => undefined);
-  });
+  const filter = new DomainExceptionFilter();
 
   function respondTo(
     exception: unknown,
-    request: { id?: string; url?: string; access?: { tenantId: number } } = {},
-  ): FakeResponse {
+    request: { url?: string; access?: { tenantId: number } } = {},
+  ): { response: FakeResponse; logError: jest.Mock } {
     const response = new FakeResponse();
+    const logError = jest.fn();
     filter.catch(exception, {
       switchToHttp: () => ({
         getResponse: () => response,
-        getRequest: () => ({ id: 'req-1', url: '/api/v1/whatever', ...request }),
+        getRequest: () => ({ id: 'req-1', url: '/api/v1/whatever', log: { error: logError }, ...request }),
       }),
     } as unknown as ArgumentsHost);
 
-    return response;
+    return { response, logError };
   }
 
   it('sends a domain exception as its own envelope — code, message, details, status', () => {
-    const response = respondTo(new AuthOutOfScopeException());
+    const { response, logError } = respondTo(new AuthOutOfScopeException());
     expect(response.sentStatus).toBe(404);
     expect(response.sentBody).toEqual({
       error: { code: 'auth.out_of_scope', message: 'Không tìm thấy dữ liệu', details: {} },
     });
-    expect(loggerError).not.toHaveBeenCalled();
+    expect(logError).not.toHaveBeenCalled();
   });
-  it('does not log 4xx failures — only 5xx get the error logger', () => {
-    respondTo(new BadRequestException());
-    expect(loggerError).not.toHaveBeenCalled();
+  it('does not log 4xx failures — only 5xx get the request logger', () => {
+    const { logError } = respondTo(new BadRequestException());
+    expect(logError).not.toHaveBeenCalled();
   });
-  it('collapses an unexpected Error to 500 internal.error and logs the stack server-side', () => {
-    const failure = new Error('connection refused by postgres');
-    const response = respondTo(failure, { access: { tenantId: 7 } });
+  it('collapses an unexpected Error to 500 internal.error and logs the stack via the request-scoped logger', () => {
+    const { response, logError } = respondTo(new Error('connection refused by postgres'), {
+      access: { tenantId: 7 },
+    });
     expect(response.sentStatus).toBe(500);
     expect(response.sentBody).toEqual({
       error: { code: 'internal.error', message: 'Lỗi hệ thống', details: {} },
     });
-    expect(loggerError).toHaveBeenCalledWith({
+    expect(logError).toHaveBeenCalledWith({
       message: 'Lỗi hệ thống',
-      requestId: 'req-1',
       tenantId: 7,
       path: '/api/v1/whatever',
-      stack: failure.stack,
+      stack: expect.stringContaining('connection refused by postgres'),
     });
   });
   it('still answers a non-Error throwable with the same fixed envelope', () => {
-    const response = respondTo('boom');
+    const { response, logError } = respondTo('boom');
     expect(response.sentStatus).toBe(500);
     expect(response.sentBody).toEqual({
       error: { code: 'internal.error', message: 'Lỗi hệ thống', details: {} },
     });
-    expect(loggerError).toHaveBeenCalledWith({
+    expect(logError).toHaveBeenCalledWith({
       message: 'Lỗi hệ thống',
-      requestId: 'req-1',
       tenantId: null,
       path: '/api/v1/whatever',
       stack: 'boom',

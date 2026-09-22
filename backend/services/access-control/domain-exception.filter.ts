@@ -4,16 +4,17 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Logger,
   ValidationError,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import type { Logger } from 'pino';
 import { DomainException, ErrorBody, FieldViolation, INTERNAL_ERROR_CODE } from '../../models/domain-errors';
-import type { RequestWithId } from '../../middleware/request-id.middleware';
 
-interface FailedRequest extends RequestWithId {
-  access?: { tenantId: number };
+interface FailedRequest {
+  id: string;
   url: string;
+  access?: { tenantId: number };
+  log: Logger;
 }
 
 export function toErrorEnvelope(exception: unknown): {
@@ -41,8 +42,6 @@ export function toErrorEnvelope(exception: unknown): {
 
 @Catch()
 export class DomainExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(DomainExceptionFilter.name);
-
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -50,9 +49,8 @@ export class DomainExceptionFilter implements ExceptionFilter {
 
     if (status >= 500) {
       const request = ctx.getRequest<FailedRequest>();
-      this.logger.error({
+      request.log.error({
         message: body.error.message,
-        requestId: request.id,
         tenantId: request.access?.tenantId ?? null,
         path: request.url,
         stack: exception instanceof Error ? exception.stack : String(exception),

@@ -1,6 +1,7 @@
-import { INestApplication, MiddlewareConsumer, Module, NestModule, ValidationPipe } from '@nestjs/common';
+import { INestApplication, Module, ValidationPipe } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { LoggerModule } from 'nestjs-pino';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ValidationFailedException } from './models/domain-errors';
@@ -39,8 +40,8 @@ import {
   loadStorageConfig,
 } from './data/object-storage-client/storage.config';
 import { DATA_SOURCE, createDataSource } from './data/db-context/data-source';
+import { buildPinoHttpOptions } from './logger/logger.config';
 import { DataSourceShutdownService } from './data/db-context/data-source-shutdown.service';
-import { RequestIdMiddleware } from './middleware/request-id.middleware';
 import { securityHeaders } from './middleware/security-headers';
 import { AlertRepository } from './repositories/alerts/alert.repository';
 import { ContractCostRepository } from './repositories/contract-costs/contract-cost.repository';
@@ -114,7 +115,11 @@ import { TeamService } from './services/teams/team.service';
 import { TokenService } from './services/auth/token.service';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }])],
+  imports: [
+    LoggerModule.forRoot({ pinoHttp: buildPinoHttpOptions(process.env) }),
+    ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
+  ],
   controllers: [
     AlertsController,
     AuthController,
@@ -239,11 +244,7 @@ import { TokenService } from './services/auth/token.service';
     PlatformDashboardService,
   ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(RequestIdMiddleware).forRoutes('*');
-  }
-}
+export class AppModule {}
 
 export function configureApp(app: INestApplication, env: NodeJS.ProcessEnv = process.env): void {
   app.setGlobalPrefix('api/v1');

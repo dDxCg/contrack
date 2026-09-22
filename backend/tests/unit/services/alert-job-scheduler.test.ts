@@ -9,7 +9,8 @@ function world(lockBusy = false) {
     tryAcquire: jest.fn().mockResolvedValue(!lockBusy),
     release: jest.fn().mockResolvedValue(undefined),
   } as unknown as DistributedLock & Record<'tryAcquire' | 'release', jest.Mock>;
-  const scheduler = new AlertJobScheduler(job, lock);
+  const logger = { info: jest.fn() };
+  const scheduler = new AlertJobScheduler(job, lock, logger as never);
 
   return { scheduler, runAll, lock };
 }

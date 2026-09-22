@@ -89,6 +89,33 @@ describe('AccessControlGuard', () => {
     expect(platform.resolve).not.toHaveBeenCalled();
     expect(request.access).toEqual({ resolved: 'desk' });
   });
+  it('tags the request-scoped logger with the resolved tenantId, for correlation on every log line after auth', async () => {
+    const claims: TokenClaims = { typ: 'access', jti: 't', iat: 0, exp: 1 };
+    const tokenService = verifyAnyReturning(claims);
+    const desk = fakeResolver('access', { tenantId: 42 });
+    const guard = new AccessControlGuard(new Reflector(), tokenService as never, [desk]);
+    const requirement: AccessRequirement = { resource: 'customers' as never, operation: 'read' as never };
+    const { context, request } = contextFor({ authorization: 'Bearer token' }, { access: requirement });
+    const childLogger = { child: jest.fn() };
+    const log = { child: jest.fn().mockReturnValue(childLogger) };
+    (request as { log?: unknown }).log = log;
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(log.child).toHaveBeenCalledWith({ tenantId: 42 });
+    expect((request as { log?: unknown }).log).toBe(childLogger);
+  });
+  it('leaves the logger alone when the resolved access has no tenantId (platform credentials)', async () => {
+    const claims: TokenClaims = { typ: 'platform', jti: 't', iat: 0, exp: 1 };
+    const tokenService = verifyAnyReturning(claims);
+    const platform = fakeResolver('platform', { role: 'super_admin' });
+    const guard = new AccessControlGuard(new Reflector(), tokenService as never, [platform]);
+    const requirement: AccessRequirement = { resource: 'tenants' as never, operation: 'read' as never };
+    const { context, request } = contextFor({ authorization: 'Bearer token' }, { access: requirement });
+    const log = { child: jest.fn() };
+    (request as { log?: unknown }).log = log;
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(log.child).not.toHaveBeenCalled();
+    expect((request as { log?: unknown }).log).toBe(log);
+  });
   it('fails closed when a handler carries neither @Access nor @SelfScoped — a forgotten decorator, not an open route', async () => {
     const claims: TokenClaims = { typ: 'access', jti: 't', iat: 0, exp: 1 };
     const tokenService = verifyAnyReturning(claims);

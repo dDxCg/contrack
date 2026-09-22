@@ -39,6 +39,10 @@ class ThrowingChannelClient implements ChannelClient {
   }
 }
 
+function fakeLogger(): { error: jest.Mock } {
+  return { error: jest.fn() };
+}
+
 async function world(now = new Date('2024-10-01T00:00:00.000Z'), status = AlertDeliveryStatus.Sent) {
   const dataSource = await createTestDataSource();
   const alerts = new AlertRepository(dataSource);
@@ -47,6 +51,7 @@ async function world(now = new Date('2024-10-01T00:00:00.000Z'), status = AlertD
   const tenants = new TenantRepository(dataSource);
   const clock = new FakeClock(now);
   const channelClient = new FakeChannelClient(status);
+  const logger = fakeLogger();
   const tenant = await seedTenant(dataSource);
   const chain = await seedContractItemChain(dataSource, tenant.id);
 
@@ -60,7 +65,8 @@ async function world(now = new Date('2024-10-01T00:00:00.000Z'), status = AlertD
     tenant,
     chain,
     channelClient,
-    service: new AlertJobService(contracts, shifts, alerts, tenants, channelClient, clock),
+    logger,
+    service: new AlertJobService(contracts, shifts, alerts, tenants, channelClient, clock, logger as never),
   };
 }
 
@@ -174,7 +180,15 @@ describe('AlertJobService.run — FR26, US-13', () => {
       assigneeId: null,
       scheduledDate: '2026-03-10',
     });
-    const service = new AlertJobService(contracts, shifts, alerts, tenants, channelClient, clock);
+    const service = new AlertJobService(
+      contracts,
+      shifts,
+      alerts,
+      tenants,
+      channelClient,
+      clock,
+      fakeLogger() as never,
+    );
 
     const vnSummary = await service.run(vnTenant.id);
     const utcSummary = await service.run(utcTenant.id);
@@ -239,7 +253,7 @@ describe('AlertJobService.runAll — the daily fan-out (FR25/FR26, decision 1)',
     expect(await alerts.list(suspended.id)).toHaveLength(0);
   });
   it('keeps fanning out when one tenant fails mid-run', async () => {
-    const { dataSource, tenant, contracts, shifts, alerts, clock, tenants } = await world();
+    const { dataSource, tenant, contracts, shifts, alerts, clock, tenants, logger } = await world();
     const service = new AlertJobService(
       contracts,
       shifts,
@@ -247,6 +261,7 @@ describe('AlertJobService.runAll — the daily fan-out (FR25/FR26, decision 1)',
       tenants,
       new ThrowingChannelClient(1),
       clock,
+      logger as never,
     );
     const second = await seedTenant(dataSource, { name: 'Second Co' });
     const chain = await seedContractItemChain(dataSource, tenant.id);
@@ -263,5 +278,9 @@ describe('AlertJobService.runAll — the daily fan-out (FR25/FR26, decision 1)',
     expect(summary.sent).toBe(1);
     expect(await alerts.list(second.id)).toHaveLength(1);
     expect(await tenants.activeIds()).toHaveLength(2);
+    expect(logger.error).toHaveBeenCalledWith(
+      { tenantId: expect.any(Number), err: expect.any(Error) },
+      'daily alert run failed for tenant — continuing with the next tenant',
+    );
   });
 });

@@ -1,4 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { ChannelClient, CHANNEL_CLIENT } from '../../data/channel-client/channel-client';
 import { AlertKind } from '../../models/alerts/alert.entity';
 import { AlertRepository, IAlertRepository } from '../../repositories/alerts/alert.repository';
@@ -18,8 +19,6 @@ export interface AlertJobSummary {
 
 @Injectable()
 export class AlertJobService {
-  private readonly logger = new Logger(AlertJobService.name);
-
   constructor(
     @Inject(ContractRepository)
     private readonly contractRepository: IContractRepository,
@@ -33,6 +32,8 @@ export class AlertJobService {
     private readonly channelClient: ChannelClient,
     @Inject(CLOCK)
     private readonly clock: IClock,
+    @InjectPinoLogger(AlertJobService.name)
+    private readonly logger: PinoLogger,
   ) {}
 
   async runAll(): Promise<AlertJobSummary> {
@@ -45,8 +46,8 @@ export class AlertJobService {
         total.skipped += summary.skipped;
       } catch (error) {
         this.logger.error(
-          `daily alert run failed for tenant ${tenantId} — continuing with the next tenant`,
-          error instanceof Error ? error.stack : String(error),
+          { tenantId, err: error },
+          'daily alert run failed for tenant — continuing with the next tenant',
         );
       }
     }

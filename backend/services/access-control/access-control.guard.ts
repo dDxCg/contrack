@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { Logger } from 'pino';
 import { AuthCredentialExpiredException, AuthForbiddenRoleException } from '../../models/domain-errors';
 import { TokenService } from '../auth/token.service';
 import { AccessContext } from './access-context';
@@ -15,6 +16,7 @@ import { PlatformAccessContext } from './platform-access-context';
 interface DeskRequest {
   headers: Record<string, string | string[] | undefined>;
   access?: AccessContext | PlatformAccessContext;
+  log?: Logger;
 }
 
 @Injectable()
@@ -49,6 +51,10 @@ export class AccessControlGuard implements CanActivate {
     }
 
     request.access = await resolver.resolve(claims, requirement);
+
+    if (request.log !== undefined && 'tenantId' in request.access) {
+      request.log = request.log.child({ tenantId: request.access.tenantId });
+    }
 
     return true;
   }
