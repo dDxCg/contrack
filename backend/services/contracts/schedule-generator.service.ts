@@ -37,12 +37,17 @@ export class ScheduleGeneratorService {
   }
 
   private generateByInterval(term: Term, unit: FrequencyUnit, count: number): Date[] {
+    if (isMonthlyGrained(unit)) {
+      return this.generateByDayOfMonth(term, unit, count, term.from.getUTCDate());
+    }
+
+    const stepDays = unit === FrequencyUnit.Week ? count * 7 : count;
     const dates: Date[] = [];
     let current = term.from;
 
     while (current.getTime() <= term.to.getTime()) {
       dates.push(current);
-      current = this.addUnit(current, unit, count);
+      current = this.addDays(current, stepDays);
     }
 
     return dates;
@@ -90,32 +95,11 @@ export class ScheduleGeneratorService {
     return new Date(Date.UTC(year, month, day));
   }
 
-  private addUnit(date: Date, unit: FrequencyUnit, count: number): Date {
-    switch (unit) {
-      case FrequencyUnit.Day:
-        return this.addDays(date, count);
-      case FrequencyUnit.Week:
-        return this.addDays(date, count * 7);
-      case FrequencyUnit.Month:
-      case FrequencyUnit.Quarter:
-      case FrequencyUnit.Year:
-        return this.addMonthsClamped(date, monthsPerStepOf(unit, count));
-    }
-  }
-
   private addDays(date: Date, days: number): Date {
     const next = new Date(date);
     next.setUTCDate(next.getUTCDate() + days);
 
     return next;
-  }
-
-  private addMonthsClamped(date: Date, months: number): Date {
-    const year = date.getUTCFullYear();
-    const month = date.getUTCMonth() + months;
-    const day = Math.min(date.getUTCDate(), daysInMonth(year, month));
-
-    return new Date(Date.UTC(year, month, day));
   }
 }
 

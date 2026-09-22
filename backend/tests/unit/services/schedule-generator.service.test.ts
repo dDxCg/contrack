@@ -59,12 +59,12 @@ describe('ScheduleGeneratorService.generate — FR22', () => {
     );
     expect(dates).toEqual([]);
   });
-  it('clamps to the target month’s last day instead of rolling into the next month (overflow bug)', () => {
+  it('anchors every occurrence to the signed day-of-month, not the previous clamped occurrence', () => {
     const dates = service.generate(
       { from: new Date('2024-01-31'), to: new Date('2024-04-30') },
       { frequencyCount: 1, frequencyUnit: FrequencyUnit.Month },
     );
-    expect(dates.map(iso)).toEqual(['2024-01-31', '2024-02-29', '2024-03-29', '2024-04-29']);
+    expect(dates.map(iso)).toEqual(['2024-01-31', '2024-02-29', '2024-03-31', '2024-04-30']);
   });
   it('clamps a yearly Feb 29 anchor to Feb 28 in a non-leap year', () => {
     const dates = service.generate(

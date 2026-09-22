@@ -182,12 +182,14 @@ export class ContractService {
     }
 
     const teamCapacity = await this.teamRepository.count(access.tenantId, tx);
-    const rebalancer = new ScheduleRebalancer(
-      (date) => this.shiftRepository.countForTenantOnDate(access.tenantId, toDateString(date), tx),
-      teamCapacity,
-      REBALANCE_WINDOW_DAYS,
+    const existingCounts = await this.shiftRepository.countsForTenantInRange(
+      access.tenantId,
+      toDateString(savedContract.signedAt),
+      toDateString(savedContract.expiresAt),
+      tx,
     );
-    const resolved = await rebalancer.resolve(candidates, {
+    const rebalancer = new ScheduleRebalancer(existingCounts, teamCapacity, REBALANCE_WINDOW_DAYS);
+    const resolved = rebalancer.resolve(candidates, {
       from: savedContract.signedAt,
       to: savedContract.expiresAt,
     });
@@ -199,12 +201,16 @@ export class ContractService {
       datesTouched.set(toDateString(result.date), result.date);
     });
     await this.shiftRepository.createMany(generatedShifts, tx);
+    const finalCounts = await this.shiftRepository.countsForTenantInRange(
+      access.tenantId,
+      toDateString(savedContract.signedAt),
+      toDateString(savedContract.expiresAt),
+      tx,
+    );
     const overloadedDates: Date[] = [];
 
     for (const [dateString, date] of datesTouched) {
-      const count = await this.shiftRepository.countForTenantOnDate(access.tenantId, dateString, tx);
-
-      if (count > teamCapacity) {
+      if ((finalCounts.get(dateString) ?? 0) > teamCapacity) {
         overloadedDates.push(date);
       }
     }

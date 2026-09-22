@@ -13,40 +13,28 @@ export interface Term {
   to: Date;
 }
 
-export type DateCountLookup = (date: Date) => Promise<number>;
-
 export class ScheduleRebalancer {
   constructor(
-    private readonly countLookup: DateCountLookup,
+    private readonly counts: Map<string, number>,
     private readonly capacity: number,
     private readonly windowDays: number,
   ) {}
 
-  async resolve(candidates: RebalanceCandidate[], term: Term): Promise<RebalanceResult[]> {
-    const batchCounts = new Map<string, number>();
-    const results: RebalanceResult[] = [];
+  resolve(candidates: RebalanceCandidate[], term: Term): RebalanceResult[] {
+    const counts = new Map(this.counts);
 
-    for (const candidate of candidates) {
-      const resolvedDate = await this.place(candidate, term, batchCounts);
-      results.push({ date: resolvedDate, moved: resolvedDate.getTime() !== candidate.date.getTime() });
-    }
+    return candidates.map((candidate) => {
+      const resolvedDate = this.place(candidate, term, counts);
 
-    return results;
+      return { date: resolvedDate, moved: resolvedDate.getTime() !== candidate.date.getTime() };
+    });
   }
 
-  private async place(
-    candidate: RebalanceCandidate,
-    term: Term,
-    batchCounts: Map<string, number>,
-  ): Promise<Date> {
-    const countAt = async (date: Date): Promise<number> => {
-      const existing = await this.countLookup(date);
+  private place(candidate: RebalanceCandidate, term: Term, counts: Map<string, number>): Date {
+    const countAt = (date: Date): number => counts.get(key(date)) ?? 0;
 
-      return existing + (batchCounts.get(key(date)) ?? 0);
-    };
-
-    if (candidate.constrained || (await countAt(candidate.date)) < this.capacity) {
-      record(batchCounts, candidate.date);
+    if (candidate.constrained || countAt(candidate.date) < this.capacity) {
+      record(counts, candidate.date);
 
       return candidate.date;
     }
@@ -58,14 +46,14 @@ export class ScheduleRebalancer {
         continue;
       }
 
-      if ((await countAt(altDate)) < this.capacity) {
-        record(batchCounts, altDate);
+      if (countAt(altDate) < this.capacity) {
+        record(counts, altDate);
 
         return altDate;
       }
     }
 
-    record(batchCounts, candidate.date);
+    record(counts, candidate.date);
 
     return candidate.date;
   }
@@ -75,9 +63,9 @@ function key(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function record(batchCounts: Map<string, number>, date: Date): void {
+function record(counts: Map<string, number>, date: Date): void {
   const k = key(date);
-  batchCounts.set(k, (batchCounts.get(k) ?? 0) + 1);
+  counts.set(k, (counts.get(k) ?? 0) + 1);
 }
 
 function nearestOffsets(windowDays: number): number[] {
